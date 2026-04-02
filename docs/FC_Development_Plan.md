@@ -123,8 +123,15 @@ This MUST start first because it produces `packages/shared` and `packages/databa
 | B17 | Export/Import routes | Bidirectional data exchange, password-protected ZIP | `routes/export.ts` | 3h |
 | B18 | Admin routes | FC admin: factory list, Act As impersonation, feature flags | `routes/admin/` | 4h |
 | B19 | Tests: API + workflow | TEST-011 through TEST-020 | 10 test cases | 5h |
+| B20 | **Real-time notification engine** | WebSocket server (Socket.IO) for push notifications to portal. Events: order status change, SLA breach warning, connection health change, saga step completion, mapping update applied, sandbox test result ready. Per-tenant rooms (RLS-aware). Fallback to SSE for restricted networks. Store unread notifications in `notifications` table. | `services/notification-service.ts` | 5h |
+| B21 | **Multi-channel alert service** | **3 channels with phased rollout:** **Email (default, enabled Day 1):** Nodemailer + configurable SMTP. Triggered by: SLA breach, connection down >30min, daily digest (orders processed, errors, pending actions). Templates stored in DB (editable by factory). **SMS (built but feature-flagged OFF):** Twilio/MSG91 (Indian provider). Provider interface ready, templates built, awaiting contract + template approval to enable. **WhatsApp (built but feature-flagged OFF):** WhatsApp Business API integration via provider interface. Rich message templates with buttons (e.g., "View Order" deep-link). Awaiting Meta Business verification + template approval to enable. **Architecture:** All 3 channels share one `NotificationDispatcher` with channel-specific adapters behind a common `NotificationChannel` interface. `notification_templates` table: template_id, channel (email/sms/whatsapp), event_type, subject, body_template (Handlebars), language, status (draft/approved/active). `notification_preferences` per user: channel toggles + quiet hours. Feature flag: `sms_notifications_enabled`, `whatsapp_notifications_enabled` — flip to ON after contracts signed. Enable after E2E simulation passes. | `services/alert-service.ts` | 7h |
+| B22 | **Rate limiter + API quota** | Per-factory rate limits: 100 req/min API, 1000 req/day sandbox. Per-plan quotas (Free: 50 orders/month, Starter: 500, Growth: 5000, Enterprise: unlimited). Redis sliding window. Returns `X-RateLimit-Remaining` header. 429 with retry-after. Admin can override per factory. | `middleware/rate-limiter.ts` | 3h |
+| B23 | **API documentation (OpenAPI/Swagger)** | Auto-generated OpenAPI 3.1 spec from Zod schemas. Swagger UI at `/docs`. Interactive "Try It" for sandbox mode APIs. Per-factory API key generation for REST adapter factories. Code samples in Node.js, Python, cURL. Versioned: `/v1/docs`. | `routes/api-docs.ts` | 4h |
+| B24 | **Webhook outbound engine** | Factory registers webhook URLs for events (order.created, shipment.sent, invoice.generated, error.occurred, sla.breached). FC sends signed POST (HMAC-SHA256) with retry (3 attempts, exponential backoff). Webhook log with response codes. "Test Webhook" button. Supports filtering by event type + buyer. | `services/webhook-service.ts` | 5h |
+| B25 | **Pre-dispatch validation engine** | Before any EDI/cXML leaves FC: validate all required fields present, field formats correct (date, numeric, string length), business rules (line item totals = order total, valid UPC/EAN, DUNS/GLN format). Returns structured validation errors with field path + fix suggestion. Blocks dispatch if critical errors. Warnings for non-critical. Per-buyer validation rule sets (Walmart is stricter than others). | `services/validation-engine.ts` | 5h |
+| B26 | **Analytics + reporting engine** | Aggregate metrics: orders/day, avg processing time, error rate, SLA compliance %, top error codes, orders by buyer, orders by status. Time-series data stored in `analytics_daily` table (materialized by cron). Export as CSV/PDF. Feeds the dashboard charts + FC admin reporting. | `services/analytics-service.ts` | 5h |
 
-**Estimated total: ~62 hours**
+**Estimated total: ~96 hours** (was ~62h, +34h for notifications/email/SMS/WhatsApp, rate limiting, API docs, webhooks, validation, analytics)
 
 ---
 
@@ -137,6 +144,14 @@ This MUST start first because it produces `packages/shared` and `packages/databa
 | C3 | AI mapper — Layer 2 (fallback) | Configurable fallback LLM endpoint (Gemini/GPT) | L2 fallback | 3h |
 | C4 | AI mapper — Layer 3 (local) | Placeholder + logging for future local model training | L3 stub + logging | 2h |
 | C5 | LLM cache + usage tracking | Cache by prompt_hash, hit rate tracking, budget guardrails | `llm_cache` + `llm_usage_log` | 3h |
+| C5b | Document analyzer service | Accept multi-file uploads (XML, JSON, CSV, PDF, Excel). Parse each format, extract all field names + sample values + data types. Return unified field inventory across all uploaded docs. | `packages/ai-mapper/document-analyzer.ts` | 6h |
+| C5c | AI field description generator | For each discovered source field, AI generates: human-readable description, suggested canonical mapping, confidence score, suggested transform function. Batch all fields in one LLM call. | `packages/ai-mapper/field-describer.ts` | 4h |
+| C5d | Chat-based mapping updater | API endpoint that accepts natural language mapping instructions. AI interprets the instruction → updates mapping config → returns updated mapping table. Supports: add, remove, rename, change transform. | `packages/ai-mapper/chat-mapper.ts` | 5h |
+| C5e | Mapping version manager (backend) | Versioned mapping configs: each save = new version. Diff between versions. Rollback API. Active version flag. Draft → Review → Active workflow. Changes apply only to future transactions. | `packages/mapping-engine/version-manager.ts` | 4h |
+| C5f | Mapping export service | Generate mapping report in JSON, CSV, or PDF. Include: source field, canonical field, transform, description, confidence, version, last modified. | `packages/mapping-engine/export-service.ts` | 3h |
+| C5g | **Field transformation rules engine** | Core rules engine supporting: **Date format mapping** (DD/MM/YYYY → YYYY-MM-DD, configurable per customer), **Field concatenation** (A + B → X1, e.g., firstName + lastName → fullName, with configurable separator), **Field splitting** (source.field → X1 + X2 using delimiter/position), **Value mapping** (source value "1" → CDM "X1", value "2" → CDM "X2", static lookup tables), **Conditional rules** (IF fieldA = "X" THEN map to Y ELSE map to Z), **Arithmetic** (qty × unitPrice → lineTotal), **Default/fallback values** (if source empty → use default). Rules stored as JSON configs per mapping. | `packages/mapping-engine/transform-rules.ts` | 8h |
+| C5h | **Rule builder API** | CRUD endpoints for transform rules: create rule, attach to mapping field, reorder priority, test rule against sample data, validate rule syntax. Each rule has: sourceFields[], operator, params, targetField, priority, enabled flag. | `packages/mapping-engine/rule-builder.ts` | 5h |
+| C5i | **Rule execution pipeline** | Execute rules in priority order per field during transform. Pipeline: raw value → apply rules chain → validate output type → write to canonical. Supports chaining (output of rule 1 = input of rule 2). Logs each rule execution for audit. | `packages/mapping-engine/rule-executor.ts` | 5h |
 | C6 | Source adapters: Tally | Parse Tally SALESORDER XML → apply mapping → CanonicalOrder | Tally adapter | 4h |
 | C7 | Source adapters: Zoho | Verify HMAC, parse Zoho SO JSON → mapping → CanonicalOrder | Zoho adapter | 3h |
 | C8 | Source adapters: Generic REST | Validate API key, accept CanonicalOrder JSON directly | REST adapter | 2h |
@@ -153,8 +168,14 @@ This MUST start first because it produces `packages/shared` and `packages/databa
 | C19 | Worker heartbeat | Claim saga step before processing, release on crash | Heartbeat logic | 3h |
 | C20 | DLQ + retry | Exponential backoff 5s/30s/5m/30m/2h, DLQ after 5 failures | DLQ handling | 3h |
 | C21 | Tests: Mapping + EDI | TEST-A1-101 through TEST-A1-229 | 29 test cases | 8h |
+| C22 | **Sandbox test harness — API endpoint** | Dedicated `/sandbox/test` REST endpoint. Factory sends a real input payload (JSON/XML) → system runs full pipeline in sandbox mode: parse → apply mapping → apply transform rules → generate canonical → generate EDI output. Returns **step-by-step result** at each stage: raw input, mapped fields, transformed fields, canonical output, final EDI/cXML. No actual dispatch to buyer — all output is captured and returned. Sandbox flag on connection config (`mode: sandbox | uat | production`). | `services/sandbox-test-service.ts` | 6h |
+| C23 | **Sandbox comparison engine** | Compare sandbox output against expected output. Factory uploads expected EDI/canonical → engine diffs field-by-field: matched, mismatched, missing, extra. Generates comparison report with pass/fail per field. Supports bulk test: run N sample payloads, show aggregate pass rate. | `services/sandbox-comparator.ts` | 5h |
+| C24 | **Sandbox test suite manager** | Save test payloads as reusable test cases per connection. Factory builds a test suite: input + expected output pairs. "Run All Tests" → executes suite, shows results. Regression testing: re-run after any mapping/rule change to verify nothing broke. | `services/sandbox-test-suite.ts` | 4h |
+| C25 | **Mock buyer responder** | Simulates buyer responses in sandbox: mock 997 (FA), mock 855 response for inbound 850 tests. Configurable response templates per buyer spec. Allows factory to test full round-trip without real buyer credentials. | `services/mock-buyer-responder.ts` | 4h |
+| C26 | **Connector catalog registry** | `connector_catalog` table: connector_id, name, type (source/target), protocol (EDI X12, cXML, REST, EDIFACT), supported_flows[] (Sales Order, Purchase Order, ASN, Invoice, Returns, Credit Memo), status (available/coming_soon/beta), sample_payload per flow, description, icon_url. Seed with all FC connectors: Tally Prime, Zoho Books, SAP B1, Generic REST (sources) + Walmart EDI, SAP Ariba, Coupa, Generic EDI (targets). API: `GET /catalog/connectors`, `GET /catalog/connectors/:id/flows`, `GET /catalog/connectors/:id/flows/:flow/sample`. Public endpoint — no auth needed for catalog browsing. | `services/connector-catalog.ts` | 5h |
+| C27 | **Sandbox flow simulator** | Given a selected source connector + target connector + flow type from catalog → auto-load sample payload + sample mapping + sample rules → run full sandbox pipeline → show result. Factory picks from dropdown: "Tally Prime → Walmart (Sales Order 850→855→856→810)" → system runs the demo flow end-to-end with mock data. No credentials needed. Shows what FC can do before the factory subscribes. | `services/sandbox-flow-simulator.ts` | 5h |
 
-**Estimated total: ~80 hours**
+**Estimated total: ~149 hours** (was ~80h, +22h AI Mapping Studio, +18h Transform Rules, +19h Sandbox Test Harness, +10h Connector Catalog)
 
 ---
 
@@ -208,7 +229,27 @@ This MUST start first because it produces `packages/shared` and `packages/databa
 | E11 | Product catalog | CRUD for item master, factory_sku ↔ buyer_sku mapping | `components/products/` | 4h |
 | E12 | Connections page | List all buyer connections with status badges (traffic lights) | `components/connections/ConnectionsPage.tsx` | 3h |
 | E13 | Connection setup wizard | 7-step: Select buyer → IDs → AI mapping → Review → Test → SLA → Activate | `components/connections/SetupWizard.tsx` | 8h |
-| E14 | Visual mapping UI | AI suggestions with confidence %, drag-drop override, test button | `components/mapping/` | 8h |
+| E14 | AI Mapping Studio — Document Upload | Multi-document upload zone (drag-drop any format: XML, JSON, CSV, PDF, Excel). AI parses ALL uploaded docs to discover source fields. Progress indicator per file. | `components/mapping/DocumentUpload.tsx` | 6h |
+| E14b | AI Mapping Studio — Field Analysis | AI analyzes source fields → shows Source Field ↔ Canonical Field table with: field name, data type, sample value, AI description of what the field means, confidence %, mapping status (mapped/unmapped/needs-review). Color-coded rows (green/yellow/red). | `components/mapping/FieldAnalysis.tsx` | 8h |
+| E14c | AI Mapping Studio — Drag-Drop Editor | Visual drag-drop to manually override any AI suggestion. Split-pane: source fields (left) → canonical fields (right). Draw lines between fields. Transform function picker per mapping (toDate, toUpperCase, etc.). | `components/mapping/MappingEditor.tsx` | 8h |
+| E14d | AI Mapping Studio — Chat Refinement | Embedded chat window where customer types natural language to update mappings (e.g., "map VOUCHERNUMBER to buyer_po_number" or "ignore the NARRATION field"). AI updates the mapping table in real-time. Chat history preserved per mapping config. | `components/mapping/MappingChat.tsx` | 10h |
+| E14e | AI Mapping Studio — Export & Versioning | Download concluded mapping as JSON, CSV, or PDF report. Each save creates a new version (v1, v2, v3...). Version history with diff view. Customer can revert to any previous version. Active version clearly marked. | `components/mapping/MappingExport.tsx` | 5h |
+| E14f | AI Mapping Studio — Dynamic Updates | Customer can reopen any saved mapping anytime to modify for future transactions. Changes apply to new transactions only (existing ones untouched). Approval workflow: draft → review → active. Notification when mapping is updated. | `components/mapping/MappingVersionManager.tsx` | 5h |
+| E14g | **Field Transform Rules UI** | Visual rule builder per mapping field. Dropdown to pick rule type: Date Format, Concatenate, Split, Value Map, Conditional, Arithmetic, Default. Each rule type has its own config form (e.g., Date: source format + target format picker; Concat: select fields + separator; Value Map: editable lookup table with add/remove rows; Conditional: if/then/else builder). Drag to reorder rule priority. "Test Rule" button with live sample data preview. | `components/mapping/TransformRuleBuilder.tsx` | 10h |
+| E14h | **Value Mapping Table UI** | Dedicated UI for static value lookups: source value column ↔ target value column. Add/remove/bulk-import rows. Search/filter. Used when customer says "value 1 = X1, value 2 = X2". Supports CSV import of lookup tables for large mappings. | `components/mapping/ValueMappingTable.tsx` | 5h |
+| E14i | **Rule Test & Preview** | Test any transform rule chain against real sample data from uploaded documents. Shows: input value → rule 1 output → rule 2 output → final value. Highlights errors in red. Bulk test: run all rules against all sample rows, show pass/fail summary. | `components/mapping/RuleTestPreview.tsx` | 5h |
+| E14j | **Sandbox Test Console** | After mapping + rules are finalized, factory pastes or uploads a real input payload (JSON/XML). Click "Run Sandbox Test" → shows **pipeline visualization**: Input → Parsed Fields → Mapped to Canonical → Transform Rules Applied → EDI/cXML Output. Each stage expandable with full field-level detail. Green checkmarks for success, red X for errors at each stage. Download output at any stage. | `components/sandbox/SandboxConsole.tsx` | 8h |
+| E14k | **Sandbox Comparison View** | Side-by-side diff: "Expected Output" (uploaded by factory) vs "Actual Output" (from sandbox run). Field-by-field: ✅ match, ❌ mismatch, ⚠️ missing, ➕ extra. Summary bar: "42/45 fields matched (93%)". Click any mismatch to jump back to mapping editor to fix. | `components/sandbox/ComparisonView.tsx` | 6h |
+| E14l | **Test Suite Manager UI** | Save input+expected pairs as named test cases. Group into test suites per connection/buyer. "Run All" button → progress bar → results grid (pass/fail per test case). Re-run after any mapping change for regression testing. Import/export test suites as JSON. | `components/sandbox/TestSuiteManager.tsx` | 5h |
+| E14m | **Sandbox Dashboard** | Overview page for sandbox mode: total test runs, pass rate trend chart, last run results, quick-launch buttons per connection. Status badge per connection: "Ready for Production" (all tests pass) vs "Needs Attention" (failures exist). Gate: cannot promote to UAT/Production until sandbox pass rate = 100%. | `components/sandbox/SandboxDashboard.tsx` | 5h |
+| E14n | **Connector & Flow Selector** | Dropdown at top of sandbox: **Step 1** — pick Source Connector (Tally Prime, Zoho Books, SAP B1, Generic REST) with logo icons. **Step 2** — pick Target Connector (Walmart EDI, SAP Ariba cXML, Coupa REST, Generic EDI). **Step 3** — pick Flow (Sales Order, Purchase Order, ASN, Invoice, Returns, Credit Memo). Dropdown shows available flows with green dot, coming-soon flows with grey dot + "Coming Soon" badge. Selected combo loads sample payload + sample mapping automatically. "Try It" button → runs sandbox simulator → shows full pipeline result. Acts as **product showcase**: factories see all connectors FC supports, try before they buy, and request new flows. | `components/sandbox/ConnectorFlowSelector.tsx` | 8h |
+| E14o | **Connector Catalog Page** | Public-facing page (no login required): grid of all connectors with logos, descriptions, supported flows, protocol badges (EDI X12, cXML, REST). Click any connector → detail card with: supported flows, sample data formats, integration complexity rating, "Try in Sandbox" CTA button. Filter by: source/target, protocol, flow type. "Request a Connector" form for factories to submit interest in new connectors (stored in `connector_requests` table, visible in admin). | `components/catalog/ConnectorCatalog.tsx` | 8h |
+| E14p | **Notification Center** | Bell icon in header with unread count badge. Dropdown panel: grouped by type (orders, connections, alerts, mapping). Click notification → navigates to relevant page. Mark read/unread, mark all read. **Notification preferences page:** per-event toggle matrix — rows = event types (SLA breach, connection down, order status, mapping updated, etc.), columns = channels (In-App ✅ always on, Email ✅ default on, SMS 🔒 greyed "Coming Soon", WhatsApp 🔒 greyed "Coming Soon"). SMS/WhatsApp columns become active when feature flags are enabled post-contract. Quiet hours config. Daily digest toggle (email only initially). **Template preview:** factory can preview what each notification looks like per channel before enabling. | `components/notifications/NotificationCenter.tsx` | 6h |
+| E14q | **Analytics Dashboard** | Rich dashboard tab: orders/day line chart (7d/30d/90d), processing time histogram, SLA compliance gauge, error rate trend, top 5 error codes bar chart, orders by buyer pie chart. Date range picker. Export charts as PNG or data as CSV. Compare periods: "this month vs last month". | `components/analytics/AnalyticsDashboard.tsx` | 8h |
+| E14r | **Webhook Manager UI** | CRUD for webhook endpoints: URL, secret, events to subscribe, active/paused toggle. Delivery log: timestamp, event, HTTP status, response time, payload preview. "Resend" button for failed deliveries. "Test" button sends sample event. | `components/settings/WebhookManager.tsx` | 4h |
+| E14s | **Validation Results View** | Before any dispatch, show validation results: green (all pass), yellow (warnings), red (blocking errors). Expandable per-field validation: field name, expected format, actual value, error message, fix suggestion. "Fix & Retry" shortcut → jumps to relevant data entry. Per-buyer rule summary: "Walmart requires: UPC, DUNS, SSCC — you're missing: SSCC". | `components/orders/ValidationResults.tsx` | 5h |
+| E14t | **API Explorer** | Embedded Swagger UI at `/docs` route in portal. Factory's API key management: generate, revoke, rotate keys. Usage stats per key. Code snippet generator: select endpoint → get copy-paste code in Node.js, Python, cURL, PHP. | `components/developer/ApiExplorer.tsx` | 5h |
+| E14u | **Guided Troubleshooting Wizard** | When any error occurs anywhere in the portal, show a "Fix This" button. Opens a guided wizard: shows the error in plain English (not just FC_ERR codes), explains what happened, shows the exact field/payload that caused it, provides step-by-step fix instructions, "Apply Fix" button where possible (e.g., missing field → opens the form with that field highlighted). Powered by the deterministic diagnostics engine (40+ patterns). | `components/support/TroubleshootingWizard.tsx` | 6h |
 | E15 | Resync page | Single retry, bulk resync, UAT/PROD routing, progress tracking | `components/resync/` | 4h |
 | E16 | Export/Import page | Format picker, password config, bidirectional data exchange | `components/export/` | 3h |
 | E17 | Calendar page | Monthly grid, color-coded (national/factory/maintenance), holiday form | `components/calendar/` | 5h |
@@ -229,36 +270,36 @@ This MUST start first because it produces `packages/shared` and `packages/databa
 | E32 | i18n: English + Hindi | 50+ translation keys, language switcher | `i18n/en.json`, `hi.json` | 3h |
 | E33 | Tests: Portal | TEST-A3-001 through TEST-A3-214 | 14 test cases | 6h |
 
-**Estimated total: ~130 hours**
+**Estimated total: ~258 hours** (was ~130h, +34h AI Mapping Studio, +20h Transform Rules, +24h Sandbox Test, +16h Connector Catalog, +34h Notifications/Analytics/Webhooks/Validation/API Explorer/Troubleshooting)
 
 ---
 
 ## 4. EXECUTION TIMELINE — Gantt View
 
 ```
-Week:  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17 18 19 20
-       ├──┤──┤──┤──┤──┤──┤──┤──┤──┤──┤──┤──┤──┤──┤──┤──┤──┤──┤──┤──┤
+Week:  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26
+       ├──┤──┤──┤──┤──┤──┤──┤──┤──┤──┤──┤──┤──┤──┤──┤──┤──┤──┤──┤──┤──┤──┤──┤──┤──┤──┤
 
-TRACK A [██████]                                          ← Foundation (Week 1-2)
+TRACK A [██████]                                                              ← Foundation (Week 1-2)
         🔗 schemas ready
 
-TRACK B      [████████████████████████]                   ← API + Workflow (Week 2-6)
-TRACK C         [██████████████████████████████████]       ← Mapping + EDI (Week 3-10)
-TRACK D      [████████████████████████████████████████]    ← Bridge Agent (Week 2-12)
-TRACK E      [██████████████████████████████████████████████████] ← Portal (Week 2-14)
+TRACK B      [██████████████████████████████████]                             ← API + Workflow + Notifications + Webhooks + Validation + Analytics (Week 2-8)
+TRACK C         [████████████████████████████████████████████]                 ← Mapping + AI + EDI + Transform Rules + Sandbox + Catalog (Week 3-12)
+TRACK D      [████████████████████████████████████████]                        ← Bridge Agent (Week 2-12)
+TRACK E      [████████████████████████████████████████████████████████████████] ← Portal UI full feature set (Week 2-18)
 
-                                                 [████████] ← E2E Integration (Week 15-16)
-                                                       [████████] ← Security + VAPT (Week 17-18)
-                                                             [████████] ← Production Deploy (Week 19-20)
+                                                                   [████████] ← E2E Integration (Week 19-22)
+                                                                         [████████] ← Security + VAPT (Week 23-24)
+                                                                               [████████] ← Production Deploy (Week 25-26)
 ```
 
 ### Parallelism Strategy
 
 - **Week 1-2:** Track A runs alone (produces shared foundation)
 - **Week 2+:** Tracks B, C, D, E all run in parallel
-- **Week 15-16:** All tracks converge for 9 simulation scenarios
-- **Week 17-18:** Security hardening + VAPT across all tracks
-- **Week 19-20:** OCI Free Tier deploy + first factory onboard
+- **Week 19-22:** All tracks converge for 9 simulation scenarios + sandbox validation
+- **Week 23-24:** Security hardening + VAPT across all tracks
+- **Week 25-26:** OCI Free Tier deploy + first factory onboard
 
 ---
 
@@ -298,18 +339,18 @@ TRACK E      [██████████████████████
 | Track | Hours | Can Run In Parallel? |
 |-------|-------|---------------------|
 | A: Foundation & Database | ~30h | Starts first (Week 1-2) |
-| B: API & Workflow | ~62h | Yes (after A7+A8) |
-| C: Mapping + AI + EDI | ~80h | Yes (after A7+A8) |
+| B: API + Workflow + Notifications + Webhooks + Validation + Analytics | ~96h | Yes (after A7+A8) |
+| C: Mapping + AI + EDI + Mapping Studio + Transform Rules + Sandbox + Catalog | ~149h | Yes (after A7+A8) |
 | D: Bridge Agent | ~91h | Yes (after A7) |
-| E: Portal UI | ~130h | Yes (after A7) |
+| E: Portal UI (full feature set) | ~258h | Yes (after A7) |
 | Integration Testing | ~40h | After B+C+D+E |
 | Security + VAPT | ~30h | After integration |
 | Production Deploy | ~20h | After security |
-| **TOTAL** | **~483h** | |
+| **TOTAL** | **~714h** | |
 
-**With 5 parallel tracks:** ~20 weeks calendar time (as designed)
-**With 3 parallel agents (as per blueprint):** ~20 weeks
-**Solo developer (40h/week):** ~12 weeks effective coding (some tracks overlap)
+**With 5 parallel tracks:** ~26 weeks calendar time
+**With 3 parallel agents (as per blueprint):** ~26 weeks
+**Solo developer (40h/week):** ~18 weeks effective coding (some tracks overlap)
 
 ---
 
@@ -347,12 +388,59 @@ TRACK E      [██████████████████████
    - Windows 10/11 for DPAPI testing
    - pkg for .exe compilation
 
+### Coding Standards (Enforced During Development)
+
+1. **DRY Rule — No code block repeated more than 2 times:**
+   - If any code block (logic, query pattern, validation, transform, API call, UI component pattern) appears **more than twice**, it MUST be extracted into a reusable function/utility/hook/component.
+   - **Backend examples:**
+     - DB query wrappers → `packages/database/query-helpers.ts` (e.g., `withTransaction()`, `findByTenant()`, `paginatedQuery()`)
+     - Zod parse + error formatting → `packages/shared/validation.ts` (e.g., `parseOrThrow()`, `formatZodErrors()`)
+     - Outbox event creation → `packages/database/outbox-helpers.ts` (e.g., `enqueueOutboxEvent(tx, type, payload)`)
+     - BullMQ job dispatch pattern → `packages/shared/job-helpers.ts` (e.g., `dispatchJob(queue, type, data, opts)`)
+     - Error response formatting → `packages/shared/errors.ts` (e.g., `throwFcError(code, message, details)`)
+     - Audit log insertion → `packages/database/audit-helpers.ts` (e.g., `auditLog(tx, action, before, after)`)
+     - Redis cache get/set with TTL → `packages/shared/cache-helpers.ts` (e.g., `cacheGetOrFetch(key, ttl, fetcher)`)
+   - **Frontend examples:**
+     - API fetch + loading + error state → custom hooks (e.g., `useApiQuery()`, `useApiMutation()`)
+     - Form field + label + validation error → reusable `<FormField>` component
+     - Table with filters + pagination + sort → reusable `<DataTable>` wrapper around TanStack Table
+     - Status badge (green/yellow/red) → `<StatusBadge status={} />` component
+     - Confirmation modal pattern → `<ConfirmDialog onConfirm={} message={} />`
+     - Toast notifications → `useToast()` hook wrapping a single toast provider
+     - Date formatting → `utils/date-format.ts` (e.g., `formatDate()`, `formatRelative()`, `toISODate()`)
+   - **Where to put shared code:**
+     - Cross-package backend utilities → `packages/shared/`
+     - Database-specific helpers → `packages/database/`
+     - Frontend shared components → `apps/portal/src/components/common/`
+     - Frontend hooks → `apps/portal/src/hooks/`
+     - Frontend utilities → `apps/portal/src/utils/`
+   - **ESLint enforcement:** Add `no-duplicate-code` custom rule or use `eslint-plugin-sonarjs` with `no-duplicate-string` and `no-identical-functions` rules to catch violations automatically during `make lint`.
+
+2. **Naming conventions:**
+   - Files: `kebab-case.ts` (e.g., `order-service.ts`, `sandbox-test-service.ts`)
+   - Classes/Types/Interfaces: `PascalCase` (e.g., `CanonicalOrder`, `MappingConfig`)
+   - Functions/variables: `camelCase` (e.g., `createOrder()`, `tenantId`)
+   - Constants: `UPPER_SNAKE_CASE` (e.g., `MAX_RETRY_COUNT`, `DEFAULT_POLL_INTERVAL_MS`)
+   - DB tables/columns: `snake_case` (e.g., `order_lines`, `factory_id`)
+   - API routes: `kebab-case` (e.g., `/api/v1/sandbox-test`, `/api/v1/mapping-config`)
+
+3. **Function size:** No function longer than 50 lines. If it is, split into smaller single-responsibility functions.
+
+4. **Error handling pattern:** Every thrown error uses `FcError` class with: error code (FC_ERR_xxx), HTTP status, user-friendly message, internal details. One pattern everywhere — no raw `throw new Error()`.
+
+5. **TypeScript strict mode enforced:** `strict: true`, `noImplicitAny: true`, `noUnusedLocals: true`, `noUnusedParameters: true`. Zero `any` types — use `unknown` + type guards instead.
+
+6. **Test co-location:** Tests live next to the code they test (e.g., `order-service.ts` → `order-service.test.ts`). Not in a separate `__tests__/` folder.
+
+7. **Import ordering:** External packages → monorepo packages → relative imports. Enforced by `eslint-plugin-import`.
+
 ### Workflow Tips
 
 - **Start every Claude Code session** by pasting `FC_MASTER_CONTEXT.md` — this restores full architecture context
 - **Agent 1 must complete Tasks A1-A9** before Agent 2 and 3 can begin — the shared schemas are the contract
 - **Run `make test` after every change** — the Makefile should have targets for each package
 - **Use feature branches** per track: `Phase1/track-a-foundation`, `Phase1/track-b-api`, etc.
+- **Run `make lint` before committing** — catches DRY violations, unused imports, type errors
 
 ---
 
