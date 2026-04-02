@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FactoryConnect — Module Blueprint</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:Arial,sans-serif;font-size:13px;background:#f4f6f9;color:#1a1a2e;}
+  .page{max-width:1400px;margin:0 auto;padding:24px 20px 60px;}
+
+  /* ── header ── */
+  .header{background:#1a1a2e;color:#fff;border-radius:10px;padding:28px 32px 22px;margin-bottom:24px;}
+  .header h1{font-size:22px;font-weight:700;letter-spacing:.5px;margin-bottom:6px;}
+  .header p{font-size:13px;color:#adb5c7;line-height:1.6;}
+  .meta{display:flex;gap:24px;margin-top:16px;flex-wrap:wrap;}
+  .meta-item{background:rgba(255,255,255,.08);border-radius:6px;padding:8px 16px;font-size:12px;color:#cfd6e6;}
+  .meta-item span{display:block;font-size:18px;font-weight:700;color:#fff;margin-bottom:2px;}
+
+  /* ── legend ── */
+  .legend{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;align-items:center;}
+  .legend-label{font-size:11px;color:#6c757d;margin-right:4px;font-weight:600;}
+  .pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;}
+  .pill-mvp   {background:#d4edda;color:#155724;}
+  .pill-moat  {background:#fff3cd;color:#856404;}
+  .pill-phase2{background:#e2e3e5;color:#383d41;}
+  .pill-plat  {background:#f8d7da;color:#721c24;}
+
+  /* ── filters ── */
+  .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;}
+  .f-btn{border:1.5px solid #dee2e6;background:#fff;color:#495057;font-size:11px;font-weight:600;padding:5px 14px;border-radius:20px;cursor:pointer;transition:all .15s;}
+  .f-btn:hover,.f-btn.active{border-color:#1a1a2e;background:#1a1a2e;color:#fff;}
+  .search-wrap{margin-left:auto;}
+  .search-wrap input{border:1.5px solid #dee2e6;border-radius:20px;padding:5px 14px;font-size:12px;outline:none;width:200px;}
+  .search-wrap input:focus{border-color:#1a1a2e;}
+
+  /* ── table ── */
+  .tbl-wrap{border-radius:10px;overflow:hidden;border:1px solid #dee2e6;background:#fff;}
+  table{width:100%;border-collapse:collapse;table-layout:fixed;}
+  col.c-id   {width:48px;}
+  col.c-layer{width:72px;}
+  col.c-mod  {width:170px;}
+  col.c-phase{width:72px;}
+  col.c-curr {width:auto;}
+  col.c-fut  {width:auto;}
+  col.c-who  {width:150px;}
+  col.c-pain {width:72px;}
+
+  thead tr{background:#1a1a2e;}
+  thead th{color:#fff;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;padding:12px 10px;text-align:left;border-right:1px solid rgba(255,255,255,.08);}
+  thead th:last-child{border-right:none;}
+
+  /* layer header rows */
+  .layer-row td{padding:8px 12px;font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#fff;border-bottom:none;}
+
+  /* data rows */
+  tbody tr.data-row{border-bottom:1px solid #f0f2f5;}
+  tbody tr.data-row:hover{background:#f8f9fa;}
+  tbody tr.data-row.hidden{display:none;}
+
+  td{padding:10px 10px;vertical-align:top;font-size:12px;line-height:1.55;border-right:1px solid #f0f2f5;}
+  td:last-child{border-right:none;}
+
+  .num{font-weight:700;color:#6c757d;font-size:11px;text-align:center;}
+  .mod-name{font-weight:700;color:#1a1a2e;font-size:12px;margin-bottom:3px;}
+
+  /* current / future cells */
+  .curr-cell{background:#fffdf0;}
+  .fut-cell{background:#f0fff4;}
+  .curr-cell .label{font-size:10px;font-weight:700;color:#856404;letter-spacing:.5px;margin-bottom:4px;}
+  .fut-cell  .label{font-size:10px;font-weight:700;color:#155724;letter-spacing:.5px;margin-bottom:4px;}
+  .curr-cell .txt{color:#4a3500;}
+  .fut-cell  .txt{color:#0d3320;}
+
+  /* pain / who */
+  .pain-critical{color:#dc3545;font-weight:700;font-size:11px;}
+  .pain-high    {color:#fd7e14;font-weight:700;font-size:11px;}
+  .pain-medium  {color:#6c757d;font-weight:700;font-size:11px;}
+  .who-cell{font-size:11px;color:#495057;}
+
+  /* print */
+  @media print{
+    body{background:#fff;}
+    .filters,.search-wrap,.f-btn{display:none;}
+    .tbl-wrap{border:none;}
+    tbody tr.hidden{display:table-row !important;}
+  }
+
+  .print-btn{float:right;border:1.5px solid #1a1a2e;background:#fff;color:#1a1a2e;font-size:12px;font-weight:600;padding:6px 18px;border-radius:20px;cursor:pointer;margin-top:-8px;}
+  .print-btn:hover{background:#1a1a2e;color:#fff;}
+  .count-label{font-size:12px;color:#6c757d;margin-bottom:8px;}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- header -->
+  <div class="header">
+    <h1>FactoryConnect — Full Module Blueprint</h1>
+    <p>Current state problem vs future state resolution across all 27 modules and 6 product layers.<br>
+       Use this as your working reference to discuss, prioritise, and build each module.</p>
+    <div class="meta">
+      <div class="meta-item"><span>27</span>Total Modules</div>
+      <div class="meta-item"><span>6</span>Product Layers</div>
+      <div class="meta-item"><span>8</span>MVP Modules</div>
+      <div class="meta-item"><span>5</span>Moat Modules</div>
+      <div class="meta-item"><span>10</span>Phase 2 Modules</div>
+      <div class="meta-item"><span>4</span>Platform Modules</div>
+    </div>
+  </div>
+
+  <!-- legend + print -->
+  <div style="display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+    <div class="legend">
+      <span class="legend-label">BUILD PHASE:</span>
+      <span class="pill pill-mvp">MVP — Build First</span>
+      <span class="pill pill-moat">Moat Builder</span>
+      <span class="pill pill-phase2">Phase 2</span>
+      <span class="pill pill-plat">Platform Layer</span>
+    </div>
+    <button class="print-btn" onclick="window.print()">Print / Save PDF</button>
+  </div>
+
+  <!-- filters -->
+  <div class="filters">
+    <button class="f-btn active" onclick="filter('all',this)">All 27</button>
+    <button class="f-btn" onclick="filter('mvp',this)">MVP Only</button>
+    <button class="f-btn" onclick="filter('moat',this)">Moat</button>
+    <button class="f-btn" onclick="filter('phase2',this)">Phase 2</button>
+    <button class="f-btn" onclick="filter('platform',this)">Platform</button>
+    <button class="f-btn" onclick="filter('layer1',this)">Layer 1</button>
+    <button class="f-btn" onclick="filter('layer2',this)">Layer 2</button>
+    <button class="f-btn" onclick="filter('layer3',this)">Layer 3</button>
+    <button class="f-btn" onclick="filter('layer4',this)">Layer 4</button>
+    <button class="f-btn" onclick="filter('layer5',this)">Layer 5</button>
+    <button class="f-btn" onclick="filter('layer6',this)">Layer 6</button>
+    <div class="search-wrap"><input id="srch" placeholder="Search modules..." oninput="search(this.value)"/></div>
+  </div>
+
+  <div class="count-label" id="count-label">Showing all 27 modules</div>
+
+  <!-- table -->
+  <div class="tbl-wrap">
+  <table>
+    <colgroup>
+      <col class="c-id"/><col class="c-layer"/><col class="c-mod"/>
+      <col class="c-phase"/><col class="c-curr"/><col class="c-fut"/>
+      <col class="c-who"/><col class="c-pain"/>
+    </colgroup>
+    <thead>
+      <tr>
+        <th>#</th><th>Layer</th><th>Module</th><th>Phase</th>
+        <th>Current State — The Problem Today</th>
+        <th>Future State — What FactoryConnect Delivers</th>
+        <th>Who Pays</th><th>Pain</th>
+      </tr>
+    </thead>
+    <tbody id="tbody">
+
+<!-- ═══════════ LAYER 1 ═══════════ -->
+<tr class="layer-row"><td colspan="8" style="background:#1d3557;">LAYER 1 — INTEGRATION &amp; CONNECTIVITY</td></tr>
+
+<tr class="data-row" data-phase="mvp" data-layer="layer1">
+  <td class="num">01</td>
+  <td style="font-size:11px;color:#6c757d;">L1</td>
+  <td><div class="mod-name">ERP Connector Library</div><span class="pill pill-mvp">MVP</span></td>
+  <td class="curr-cell"><div class="label">CURRENT STATE</div><div class="txt">Factory data is locked inside Tally, Busy, SAP B1, Zoho Books. Every integration requires a custom developer, weeks of work, and costs lakhs. No two factories share the same format. Data exchange is manual exports and email attachments.</div></td>
+  <td class="fut-cell"><div class="label">FUTURE STATE</div><div class="txt">Pre-built plug-and-play adapters for top 5 Indian ERPs. Factory connects in hours, zero custom dev. One standard data model flows automatically into every downstream FactoryConnect module.</div></td>
+  <td class="who-cell">Every factory on Day 1. Non-negotiable foundation.</td>
+  <td><span class="pain-critical">Critical</span></td>
+</tr>
+
+<tr class="data-row" data-phase="moat" data-layer="layer1">
+  <td class="num">02</td>
+  <td style="font-size:11px;color:#6c757d;">L1</td>
+  <td><div class="mod-name">EDI Engine (X12 + EDIFACT)</div><span class="pill pill-moat">Moat</span></td>
+  <td class="curr-cell"><div class="label">CURRENT STATE</div><div class="txt">Global buyers (Samsung, Apple vendors, auto OEMs) mandate EDI 850/856/810 transactions. Indian SMEs have zero EDI capability. Factories lose high-value export contracts solely because of this data format gap — not due to quality or price.</div></td>
+  <td class="fut-cell"><div class="label">FUTURE STATE</div><div class="txt">Auto-translate factory order data into EDI X12 and EDIFACT formats. Send and receive EDI with global buyers. Indian factory qualifies for export contracts it previously could not even bid on. Full trading partner onboarding workflow included.</div></td>
+  <td class="who-cell">Export-focused factories in electronics, auto, pharma clusters.</td>
+  <td><span class="pain-critical">Critical</span></td>
+</tr>
+
+<tr class="data-row" data-phase="mvp" data-layer="layer1">
+  <td class="num">03</td>
+  <td style="font-size:11px;color:#6c757d;">L1</td>
+  <td><div class="mod-name">WhatsApp Order Intake</div><span class="pill pill-mvp">MVP</span></td>
+  <td class="curr-cell"><div class="label">CURRENT STATE</div><div class="txt">Orders arrive as WhatsApp messages — sometimes voice notes. Someone manually re-types them into a register or Tally. Errors are daily. No audit trail. Orders get missed, duplicated, or fulfilled with wrong quantities.</div></td>
+  <td class="fut-cell"><div class="label">FUTURE STATE</div><div class="txt">WhatsApp messages intercepted via Business API. Claude AI parses SKU, quantity, delivery date and auto-creates a structured order. Zero re-typing. Full audit trail from first message to final invoice. Buyer gets instant acknowledgement.</div></td>
+  <td class="who-cell">Every Indian SME. WhatsApp is their current ERP.</td>
+  <td><span class="pain-high">High</span></td>
+</tr>
+
+<tr class="data-row" data-phase="phase2" data-layer="layer1">
+  <td class="num">04</td>
+  <td style="font-size:11px;color:#6c757d;">L1</td>
+  <td><div class="mod-name">API Gateway &amp; Buyer Connect</div><span class="pill pill-phase2">Phase 2</span></td>
+  <td class="curr-cell"><div class="label">CURRENT STATE</div><div class="txt">Large buyers managing 20+ Indian suppliers log into each supplier's portal separately. Procurement teams waste hours daily on manual status checks. No single integration point exists for Indian supplier networks.</div></td>
+  <td class="fut-cell"><div class="label">FUTURE STATE</div><div class="txt">Secure REST/SOAP API gateway. Buyer's SAP or Oracle procurement system connects once to FactoryConnect and sees all Indian suppliers in a single feed. Rate-limited, OAuth2-secured, buyer-specific API keys. Enterprise-grade reliability.</div></td>
+  <td class="who-cell">Global buyers managing large Indian supplier networks.</td>
+  <td><span class="pain-medium">Medium</span></td>
+</tr>
+
+<!-- ═══════════ LAYER 2 ═══════════ -->
+<tr class="layer-row"><td colspan="8" style="background:#457b9d;">LAYER 2 — ORDER &amp; OPERATIONS</td></tr>
+
+<tr class="data-row" data-phase="mvp" data-layer="layer2">
+  <td class="num">05</td>
+  <td style="font-size:11px;color:#6c757d;">L2</td>
+  <td><div class="mod-name">Order-to-Cash Automation</div><span class="pill pill-mvp">MVP</span></td>
+  <td class="curr-cell"><div class="label">CURRENT STATE</div><div class="txt">PO arrives → manually entered → production updated on whiteboard → dispatch organised by phone → GST invoice typed in Tally → PDF emailed → payment chased by call. 5–7 days, multiple people, daily errors. Cash flow suffers.</div></td>
+  <td class="fut-cell"><div class="label">FUTURE STATE</div><div class="txt">PO received → production schedule auto-updated → dispatch triggered → GST invoice auto-raised → payment link sent to buyer automatically. Entire cycle runs in hours. Cash arrives 3–4 days faster per order. Zero manual steps end-to-end.</div></td>
+  <td class="who-cell">Every factory owner. Immediate, measurable ROI on cash flow.</td>
+  <td><span class="pain-critical">Critical</span></td>
+</tr>
+
+<tr class="data-row" data-phase="phase2" data-layer="layer2">
+  <td class="num">06</td>
+  <td style="font-size:11px;color:#6c757d;">L2</td>
+  <td><div class="mod-name">Production Scheduling</div><span class="pill pill-phase2">Phase 2</span></td>
+  <td class="curr-cell"><div class="label">CURRENT STATE</div><div class="txt">Production is planned on whiteboards or Excel sheets updated manually. No visibility on machine capacity or shift availability. Factories routinely over-commit delivery dates and miss them, damaging buyer trust and triggering penalty clauses.</div></td>
+  <td class="fut-cell"><div class="label">FUTURE STATE</div><div class="txt">Confirmed orders auto-converted into a production schedule. Machines, shifts, and raw materials assigned automatically. Alert fires when a delivery date is at risk before it becomes a problem. Buyer sees realistic available-to-promise dates upfront.</div></td>
+  <td class="who-cell">Factories with multiple production lines. Mid-tier growth module.</td>
+  <td><span class="pain-high">High</span></td>
+</tr>
+
+<tr class="data-row" data-phase="mvp" data-layer="layer2">
+  <td class="num">07</td>
+  <td style="font-size:11px;color:#6c757d;">L2</td>
+  <td><div class="mod-name">Inventory Sync &amp; Alerts</div><span class="pill pill-mvp">MVP</span></td>
+  <td class="curr-cell"><div class="label">CURRENT STATE</div><div class="txt">Factory accepts an order it cannot fulfill because nobody checked live stock. Buyer receives a surprise shortage notification after expecting delivery. Relationships are damaged. This happens weekly across Indian SMEs. Inventory is tracked in Excel updated weekly at best.</div></td>
+  <td class="fut-cell"><div class="label">FUTURE STATE</div><div class="txt">Real-time inventory pulled from ERP via connector. Alert fires when stock hits reorder level. Buyer sees live available-to-promise quantities before placing a PO. Zero surprise shortages. Factory owner gets daily inventory health summary on WhatsApp.</div></td>
+  <td class="who-cell">Every factory. Prevents the #1 cause of buyer relationship breakdowns.</td>
+  <td><span class="pain-critical">Critical</span></td>
+</tr>
+
+<tr class="data-row" data-phase="mvp" data-layer="layer2">
+  <td class="num">08</td>
+  <td style="font-size:11px;color:#6c757d;">L2</td>
+  <td><div class="mod-name">Dispatch &amp; Logistics Tracking</div><span class="pill pill-mvp">MVP</span></td>
+  <td class="curr-cell"><div class="label">CURRENT STATE</div><div class="txt">After goods leave the factory gate, visibility disappears. Buyer calls daily asking "where is my shipment?" Factory calls the transporter. Transporter is unreachable. E-way bill is generated manually and often forgotten or generated after goods are already in transit — a compliance violation.</div></td>
+  <td class="fut-cell"><div class="label">FUTURE STATE</div><div class="txt">E-way bill auto-generated on dispatch trigger. Shipment tracked via courier/transporter API (Delhivery, FedEx India, Blue Dart). Live tracking link pushed to buyer automatically. Order auto-closed on delivery confirmation. Zero buyer calls about shipment status.</div></td>
+  <td class="who-cell">Every dispatching factory. Eliminates the highest-frequency buyer complaint.</td>
+  <td><span class="pain-high">High</span></td>
+</tr>
+
+<tr class="data-row" data-phase="phase2" data-layer="layer2">
+  <td class="num">09</td>
+  <td style="font-size:11px;color:#6c757d;">L2</td>
+  <td><div class="mod-name">Pricing &amp; Quote Engine</div><span class="pill pill-phase2">Phase 2</span></td>
+  <td class="curr-cell"><div class="label">CURRENT STATE</div><div class="txt">Factory sends price quotes as WhatsApp messages or hand-typed Word documents. No version control. Buyer reverts with changes, factory resends, nobody knows which version is current. Conversion from quote to PO is tracked in someone's head.</div></td>
+  <td class="fut-cell"><div class="label">FUTURE STATE</div><div class="txt">Professional branded PDF quotes created in minutes. Version history tracked automatically. Buyer approves digitally within the portal. On approval, order is auto-created in the system — zero manual handoff from quote to production.</div></td>
+  <td class="who-cell">Factories with custom or project-based manufacturing.</td>
+  <td><span class="pain-medium">Medium</span></td>
+</tr>
+
+<!-- ═══════════ LAYER 3 ═══════════ -->
+<tr class="layer-row"><td colspan="8" style="background:#2d6a4f;">LAYER 3 — COMPLIANCE &amp; QUALITY</td></tr>
+
+<tr class="data-row" data-phase="mvp" data-layer="layer3">
+  <td class="num">10</td>
+  <td style="font-size:11px;color:#6c757d;">L3</td>
+  <td><div class="mod-name">Digital QC Trail</div><span class="pill pill-mvp">MVP</span></td>
+  <td class="curr-cell"><div class="label">CURRENT STATE</div><div class="txt">Quality checks happen on paper registers signed by a supervisor. When a buyer raises a quality dispute, the factory has no digital evidence. ISO and IATF audits require traceable records — factories scramble to produce them, sometimes fabricating records retrospectively.</div></td>
+  <td class="fut-cell"><div class="label">FUTURE STATE</div><div class="txt">Mobile QC checkpoints at each production stage with mandatory photo, timestamp, and digital sign-off. Auto-generated ISO/IATF audit PDF per batch. Buyer sees live QC status on their portal. Disputes resolved with incontestable digital evidence in minutes.</div></td>
+  <td class="who-cell">Auto, pharma, electronics factories. Required for export quality certs.</td>
+  <td><span class="pain-critical">Critical</span></td>
+</tr>
+
+<tr class="data-row" data-phase="mvp" data-layer="layer3">
+  <td class="num">11</td>
+  <td style="font-size:11px;color:#6c757d;">L3</td>
+  <td><div class="mod-name">GST &amp; Export Compliance</div><span class="pill pill-mvp">MVP</span></td>
+  <td class="curr-cell"><div class="label">CURRENT STATE</div><div class="txt">Export invoices need DGFT compliance, shipping bill reconciliation, e-way bills, LUT bonds, and IGST refund tracking. Factories get this wrong constantly. GST notices arrive months later. IGST refund rejections cost lakhs per year. Factory owners don't know their compliance status until it's too late.</div></td>
+  <td class="fut-cell"><div class="label">FUTURE STATE</div><div class="txt">Auto e-way bill generation on dispatch. DGFT shipping bill auto-reconciled. LUT bond expiry tracker with advance alerts. IGST refund status monitored in real-time. Compliance calendar shows every upcoming deadline. Zero GST notices from missed filings or incorrect e-way bills.</div></td>
+  <td class="who-cell">Every exporting factory. High willingness to pay — errors cost crores.</td>
+  <td><span class="pain-critical">Critical</span></td>
+</tr>
+
+<tr class="data-row" data-phase="mvp" data-layer="layer3">
+  <td class="num">12</td>
+  <td style="font-size:11px;color:#6c757d;">L3</td>
+  <td><div class="mod-name">Document Management</div><span class="pill pill-mvp">MVP</span></td>
+  <td class="curr-cell"><div class="label">CURRENT STATE</div><div class="txt">Certificates of Analysis, COCs, test reports, packing lists, and shipping docs are stored in physical files or scattered across email inboxes. Finding a document from 6 months ago takes hours. Buyers request documents and receive wrong versions or outdated certificates.</div></td>
+  <td class="fut-cell"><div class="label">FUTURE STATE</div><div class="txt">Centralised document store (MinIO). Every document versioned and auto-linked to its order, batch, or shipment. Buyer requests a COA — it is shared instantly from the correct order record. Compliance auditors see a complete, searchable document trail with zero manual filing.</div></td>
+  <td class="who-cell">Pharma API factories, electronics exporters. Legally required traceability.</td>
+  <td><span class="pain-high">High</span></td>
+</tr>
+
+<tr class="data-row" data-phase="moat" data-layer="layer3">
+  <td class="num">13</td>
+  <td style="font-size:11px;color:#6c757d;">L3</td>
+  <td><div class="mod-name">ESG &amp; Carbon Reporting</div><span class="pill pill-moat">Moat</span></td>
+  <td class="curr-cell"><div class="label">CURRENT STATE</div><div class="txt">EU Carbon Border Adjustment Mechanism (CBAM) and global ESG mandates require Indian exporters to report emissions per production run. 99% of Indian SMEs have no idea how to comply. They risk export bans or buyer delistings from 2026 onward. No Indian SME tool addresses this yet.</div></td>
+  <td class="fut-cell"><div class="label">FUTURE STATE</div><div class="txt">Factory records energy, water, waste per production run via simple mobile form. FactoryConnect auto-calculates carbon footprint and generates CBAM-compliant ESG reports. Reports submitted to buyer sustainability portals automatically. Factory maintains EU export eligibility with zero manual effort.</div></td>
+  <td class="who-cell">Factories exporting to EU. First-mover market — mandatory from 2026.</td>
+  <td><span class="pain-critical">Critical</span></td>
+</tr>
+
+<tr class="data-row" data-phase="platform" data-layer="layer3">
+  <td class="num">14</td>
+  <td style="font-size:11px;color:#6c757d;">L3</td>
+  <td><div class="mod-name">Audit Log &amp; Compliance Trail</div><span class="pill pill-plat">Platform</span></td>
+  <td class="curr-cell"><div class="label">CURRENT STATE</div><div class="txt">No digital record of who did what and when. ISO audits require proof that processes were followed. Legal disputes over orders or quality have no audit trail to reference. Factories are exposed to litigation with zero documentary defence.</div></td>
+  <td class="fut-cell"><div class="label">FUTURE STATE</div><div class="txt">Immutable, append-only log of every system action — order created, QC approved, document uploaded, invoice raised — with user identity and timestamp. Exportable audit PDF for ISO auditors. Full chain of custody for every order from PO to payment.</div></td>
+  <td class="who-cell">Required platform foundation. All customers benefit automatically.</td>
+  <td><span class="pain-high">High</span></td>
+</tr>
+
+<!-- ═══════════ LAYER 4 ═══════════ -->
+<tr class="layer-row"><td colspan="8" style="background:#6b4226;">LAYER 4 — INTELLIGENCE &amp; AI</td></tr>
+
+<tr class="data-row" data-phase="moat" data-layer="layer4">
+  <td class="num">15</td>
+  <td style="font-size:11px;color:#6c757d;">L4</td>
+  <td><div class="mod-name">AI Field Mapper (Claude)</div><span class="pill pill-moat">Moat</span></td>
+  <td class="curr-cell"><div class="label">CURRENT STATE</div><div class="txt">Every new factory has a different ERP data structure. Mapping "Item Code" in Tally to "Material Number" in a buyer's SAP system takes a consultant 2–3 days per factory onboarding. This is a hidden cost that kills scalability — every new customer requires expensive manual effort.</div></td>
+  <td class="fut-cell"><div class="label">FUTURE STATE</div><div class="txt">Claude AI reads both schemas, auto-suggests field mappings with confidence scores, and the factory confirms with one click. Onboarding time drops from 3 days to 3 hours. You scale to 1,000 factories without proportionally growing a services team. Unmatchable competitive advantage.</div></td>
+  <td class="who-cell">Every onboarding customer. Reduces your cost-to-serve as you scale.</td>
+  <td><span class="pain-critical">Critical</span></td>
+</tr>
+
+<tr class="data-row" data-phase="phase2" data-layer="layer4">
+  <td class="num">16</td>
+  <td style="font-size:11px;color:#6c757d;">L4</td>
+  <td><div class="mod-name">Analytics &amp; BI Dashboard</div><span class="pill pill-phase2">Phase 2</span></td>
+  <td class="curr-cell"><div class="label">CURRENT STATE</div><div class="txt">Factory owner has no data-driven view of their business performance. On-time delivery rate, quality rejection rate, top buyer by revenue, average payment days — none of this exists as a dashboard. Decisions are made on gut feel and memory. Profitable and loss-making product lines are indistinguishable.</div></td>
+  <td class="fut-cell"><div class="label">FUTURE STATE</div><div class="txt">Live dashboards: on-time delivery rate, QC rejection trends, revenue by buyer, cash collection days, inventory turnover. Factory owner logs in to a single screen and knows exactly where their business stands. Positions FactoryConnect as a management tool, not just integration middleware.</div></td>
+  <td class="who-cell">Factory owners and CFOs. Drives upgrade to higher pricing tier.</td>
+  <td><span class="pain-high">High</span></td>
+</tr>
+
+<tr class="data-row" data-phase="phase2" data-layer="layer4">
+  <td class="num">17</td>
+  <td style="font-size:11px;color:#6c757d;">L4</td>
+  <td><div class="mod-name">Demand Forecasting</div><span class="pill pill-phase2">Phase 2</span></td>
+  <td class="curr-cell"><div class="label">CURRENT STATE</div><div class="txt">Factories react to orders as they arrive. No forward visibility. Raw material procurement happens too late, causing production delays. Seasonal demand spikes (Diwali, year-end) catch factories unprepared every year. Working capital is mis-timed because there is no forecast to plan against.</div></td>
+  <td class="fut-cell"><div class="label">FUTURE STATE</div><div class="txt">12 months of order history analysed per buyer to predict next quarter demand. Factory receives advance alert to build stock or book raw materials before the surge. Claude narrates the forecast in plain language for non-technical owners. Turns reactive factories into proactive supply chain partners.</div></td>
+  <td class="who-cell">Growth-tier factories. Premium module unlocking higher monthly price.</td>
+  <td><span class="pain-medium">Medium</span></td>
+</tr>
+
+<tr class="data-row" data-phase="moat" data-layer="layer4">
+  <td class="num">18</td>
+  <td style="font-size:11px;color:#6c757d;">L4</td>
+  <td><div class="mod-name">AI Order Anomaly Detection</div><span class="pill pill-moat">Moat</span></td>
+  <td class="curr-cell"><div class="label">CURRENT STATE</div><div class="txt">Factories occasionally receive fraudulent or erroneous orders — sudden 10x quantity from an unknown buyer, price far below market, suspicious new account. They accept them without any verification, causing costly production runs for goods that are never paid for or never collected.</div></td>
+  <td class="fut-cell"><div class="label">FUTURE STATE</div><div class="txt">Every incoming order automatically scored against historical patterns. Anomalies flagged before factory accepts — unusual quantity, new buyer with no transaction history, price variance beyond normal range. Factory owner reviews the flag and decides. Fraud and costly errors prevented at the gate.</div></td>
+  <td class="who-cell">Mid to large factories. Protects against fraud and supply chain shocks.</td>
+  <td><span class="pain-medium">Medium</span></td>
+</tr>
+
+<!-- ═══════════ LAYER 5 ═══════════ -->
+<tr class="layer-row"><td colspan="8" style="background:#5c4033;">LAYER 5 — EXPERIENCE &amp; PORTALS</td></tr>
+
+<tr class="data-row" data-phase="mvp" data-layer="layer5">
+  <td class="num">19</td>
+  <td style="font-size:11px;color:#6c757d;">L5</td>
+  <td><div class="mod-name">Buyer Portal</div><span class="pill pill-mvp">MVP</span></td>
+  <td class="curr-cell"><div class="label">CURRENT STATE</div><div class="txt">Global buyers have zero visibility into Indian supplier production. They send daily WhatsApp and email pings chasing order status. Factory teams spend 1–2 hours per day answering status queries instead of working. Buyer stress damages the commercial relationship over time.</div></td>
+  <td class="fut-cell"><div class="label">FUTURE STATE</div><div class="txt">White-labeled portal per buyer. Live order status, QC reports, dispatch tracking, invoice history, available inventory — visible 24/7 without contacting the factory. Buyer bookmarks it and stops calling. This is the module that makes factories impossible to churn — buyers are deeply embedded.</div></td>
+  <td class="who-cell">Every factory's buyers. The #1 retention and upsell hook.</td>
+  <td><span class="pain-critical">Critical</span></td>
+</tr>
+
+<tr class="data-row" data-phase="phase2" data-layer="layer5">
+  <td class="num">20</td>
+  <td style="font-size:11px;color:#6c757d;">L5</td>
+  <td><div class="mod-name">Factory Owner Mobile App</div><span class="pill pill-phase2">Phase 2</span></td>
+  <td class="curr-cell"><div class="label">CURRENT STATE</div><div class="txt">Factory owners are always on their phone, rarely at a desktop. The web portal is inaccessible during factory floor walks, travel, or off-hours. Critical approvals — urgent orders, QC failures, payment confirmations — are missed until the owner reaches a computer.</div></td>
+  <td class="fut-cell"><div class="label">FUTURE STATE</div><div class="txt">Full-featured mobile app for factory owners. Approve orders, review QC alerts, check payment status, see dispatch updates from anywhere. Push notifications for critical events. Same backend as web portal — no duplication, just a mobile-optimised experience.</div></td>
+  <td class="who-cell">Every factory owner. Drives daily active engagement with the platform.</td>
+  <td><span class="pain-high">High</span></td>
+</tr>
+
+<tr class="data-row" data-phase="phase2" data-layer="layer5">
+  <td class="num">21</td>
+  <td style="font-size:11px;color:#6c757d;">L5</td>
+  <td><div class="mod-name">Shop Floor Worker App</div><span class="pill pill-phase2">Phase 2</span></td>
+  <td class="curr-cell"><div class="label">CURRENT STATE</div><div class="txt">Factory floor workers have no digital tool. QC checks are on paper. Production stage completions are called out verbally. Supervisors compile manual reports at end of shift. Data arrives in the system 12–24 hours after the event — too late to act on problems.</div></td>
+  <td class="fut-cell"><div class="label">FUTURE STATE</div><div class="txt">Simple PWA for shop floor workers. Scan job order QR, mark production stage complete, upload QC photo. Works offline on low-end Android, syncs when connected. Regional language UI labels. Data flows into QC trail and production tracking in real-time — supervisors eliminated as data intermediaries.</div></td>
+  <td class="who-cell">Factories with multi-stage production. Feeds the QC and scheduling modules.</td>
+  <td><span class="pain-medium">Medium</span></td>
+</tr>
+
+<tr class="data-row" data-phase="platform" data-layer="layer5">
+  <td class="num">22</td>
+  <td style="font-size:11px;color:#6c757d;">L5</td>
+  <td><div class="mod-name">Notification &amp; Alert Engine</div><span class="pill pill-plat">Platform</span></td>
+  <td class="curr-cell"><div class="label">CURRENT STATE</div><div class="txt">Critical alerts — low stock, QC failure, overdue payment, compliance deadline — exist only in the minds of individual people. When that person is unavailable, the alert is missed. No system proactively notifies the right person through the right channel at the right time.</div></td>
+  <td class="fut-cell"><div class="label">FUTURE STATE</div><div class="txt">Unified alert engine via Novu. WhatsApp, email, SMS, and in-app notifications for every critical event — order deadline, QC failure, payment overdue, GST deadline, low inventory. Right channel, right person, right time. Configurable per role and per factory. No critical event ever goes unnoticed.</div></td>
+  <td class="who-cell">All users across every factory. Core platform infrastructure.</td>
+  <td><span class="pain-high">High</span></td>
+</tr>
+
+<!-- ═══════════ LAYER 6 ═══════════ -->
+<tr class="layer-row"><td colspan="8" style="background:#4a1942;">LAYER 6 — PLATFORM &amp; MULTI-TENANCY</td></tr>
+
+<tr class="data-row" data-phase="phase2" data-layer="layer6">
+  <td class="num">23</td>
+  <td style="font-size:11px;color:#6c757d;">L6</td>
+  <td><div class="mod-name">Multi-Factory Dashboard</div><span class="pill pill-phase2">Phase 2</span></td>
+  <td class="curr-cell"><div class="label">CURRENT STATE</div><div class="txt">Industrial groups and holding companies managing 5–50 factories have zero consolidated view. Each factory is a data silo. Group CFO calls each plant manager for numbers. Board reporting takes days of manual aggregation. Cross-factory performance comparison is impossible.</div></td>
+  <td class="fut-cell"><div class="label">FUTURE STATE</div><div class="txt">One login reveals all factories in the group. Consolidated view: total orders, QC pass rates, GST liability, pending payments, ESG scores across the entire network. Group can benchmark factories against each other. One group customer equals the revenue of 10 individual factory subscriptions.</div></td>
+  <td class="who-cell">Industrial groups, holding companies, vendor parks. Enterprise tier ₹39,999+/mo.</td>
+  <td><span class="pain-high">High</span></td>
+</tr>
+
+<tr class="data-row" data-phase="platform" data-layer="layer6">
+  <td class="num">24</td>
+  <td style="font-size:11px;color:#6c757d;">L6</td>
+  <td><div class="mod-name">User &amp; Role Management</div><span class="pill pill-plat">Platform</span></td>
+  <td class="curr-cell"><div class="label">CURRENT STATE</div><div class="txt">Everyone in the factory sees everything — or nothing. There is no concept of role-based access. Finance team sees production data irrelevant to them. QC team cannot raise invoices even when needed. Buyers see internal cost data accidentally shared in the wrong portal section.</div></td>
+  <td class="fut-cell"><div class="label">FUTURE STATE</div><div class="txt">Granular permissions per module per role. Factory owner, plant manager, QC inspector, finance, and buyer each see exactly what they need and nothing more. SSO via SAML/OIDC for enterprise buyer organisations. Keycloak-powered, open source, production-grade IAM from Day 1.</div></td>
+  <td class="who-cell">Required by all customers from Day 1. Non-negotiable platform foundation.</td>
+  <td><span class="pain-high">High</span></td>
+</tr>
+
+<tr class="data-row" data-phase="phase2" data-layer="layer6">
+  <td class="num">25</td>
+  <td style="font-size:11px;color:#6c757d;">L6</td>
+  <td><div class="mod-name">Supplier &amp; Sub-contractor Network</div><span class="pill pill-phase2">Phase 2</span></td>
+  <td class="curr-cell"><div class="label">CURRENT STATE</div><div class="txt">Factories sub-contract work or buy raw materials from their own supplier network via phone calls and WhatsApp. No digital sub-order trail. When the sub-contractor delays, the factory has no early warning. The supply chain below the factory is as blind as the supply chain above it.</div></td>
+  <td class="fut-cell"><div class="label">FUTURE STATE</div><div class="txt">Factory sends sub-orders to suppliers and sub-contractors through FactoryConnect. Each sub-contractor gets a portal. Delivery status is tracked upward automatically. Every factory onboarded pulls their upstream suppliers into the network — viral growth built into the product architecture.</div></td>
+  <td class="who-cell">Factories with complex sub-contracting. Creates network virality for growth.</td>
+  <td><span class="pain-medium">Medium</span></td>
+</tr>
+
+<tr class="data-row" data-phase="platform" data-layer="layer6">
+  <td class="num">26</td>
+  <td style="font-size:11px;color:#6c757d;">L6</td>
+  <td><div class="mod-name">Subscription &amp; Billing Engine</div><span class="pill pill-plat">Platform</span></td>
+  <td class="curr-cell"><div class="label">CURRENT STATE</div><div class="txt">Without this, you track subscriptions in a spreadsheet. Renewals are manually chased. Tier upgrades happen on a phone call and are noted in a chat message. Usage-based billing (EDI partners, invoice volume) is impossible to calculate accurately. Revenue leakage is certain.</div></td>
+  <td class="fut-cell"><div class="label">FUTURE STATE</div><div class="txt">Razorpay/Stripe integration handles all subscription flows. Usage metered automatically in PostgreSQL. Tier upgrades trigger instantly. Dunning management handles failed payments without you. Monthly invoices auto-generated for every factory. Your revenue operations run on autopilot from 10 customers to 1,000.</div></td>
+  <td class="who-cell">Your own operations. Required to scale without a billing team.</td>
+  <td><span class="pain-critical">Critical</span></td>
+</tr>
+
+<tr class="data-row" data-phase="platform" data-layer="layer6">
+  <td class="num">27</td>
+  <td style="font-size:11px;color:#6c757d;">L6</td>
+  <td><div class="mod-name">Monitoring &amp; Observability</div><span class="pill pill-plat">Platform</span></td>
+  <td class="curr-cell"><div class="label">CURRENT STATE</div><div class="txt">Without this, you find out an integration broke when the factory owner calls you angry. There is no proactive view of which connectors are failing, which EDI transactions errored, or which orders are stuck in a workflow. Support becomes entirely reactive and expensive.</div></td>
+  <td class="fut-cell"><div class="label">FUTURE STATE</div><div class="txt">Grafana + Prometheus + Loki + Tempo give real-time health of every factory's integrations. Failed connectors alert your ops team before the factory notices. Per-tenant integration health scores. Distributed tracing shows exactly where a stuck order broke in the workflow. Support becomes proactive.</div></td>
+  <td class="who-cell">Your engineering and support team. Required to run reliable SaaS at scale.</td>
+  <td><span class="pain-high">High</span></td>
+</tr>
+
+    </tbody>
+  </table>
+  </div>
+
+  <div style="margin-top:20px;font-size:11px;color:#adb5bd;text-align:right;">
+    FactoryConnect — Module Blueprint &bull; Generated April 2026 &bull; Confidential
+  </div>
+</div>
+
+<script>
+function filter(type, btn) {
+  document.querySelectorAll('.f-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('srch').value = '';
+  const rows = document.querySelectorAll('tbody tr.data-row');
+  let vis = 0;
+  rows.forEach(r => {
+    let show = false;
+    if (type === 'all') show = true;
+    else if (['mvp','moat','phase2','platform'].includes(type)) show = r.dataset.phase === type;
+    else show = r.dataset.layer === type;
+    r.classList.toggle('hidden', !show);
+    if (show) vis++;
+  });
+  document.getElementById('count-label').textContent = `Showing ${vis} of 27 modules`;
+}
+
+function search(val) {
+  document.querySelectorAll('.f-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('.f-btn').classList.add('active');
+  const v = val.toLowerCase().trim();
+  const rows = document.querySelectorAll('tbody tr.data-row');
+  let vis = 0;
+  rows.forEach(r => {
+    const show = !v || r.textContent.toLowerCase().includes(v);
+    r.classList.toggle('hidden', !show);
+    if (show) vis++;
+  });
+  document.getElementById('count-label').textContent =
+    v ? `Showing ${vis} of 27 modules matching "${val}"` : `Showing all 27 modules`;
+}
+</script>
+</body>
+</html>
