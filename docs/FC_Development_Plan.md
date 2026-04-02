@@ -140,10 +140,12 @@ This MUST start first because it produces `packages/shared` and `packages/databa
 | # | Task | Details | Output | Est |
 |---|------|---------|--------|-----|
 | C1 | JSONata mapping engine | MappingConfig CRUD, transform functions (toDate, toEdiDate, etc.) | `packages/mapping-engine/` | 5h |
-| C2 | AI mapper — Layer 1 (Claude) | Claude Haiku/Sonnet, PII scrubbing before call, confidence scores | `packages/ai-mapper/` | 5h |
-| C3 | AI mapper — Layer 2 (fallback) | Configurable fallback LLM endpoint (Gemini/GPT) | L2 fallback | 3h |
-| C4 | AI mapper — Layer 3 (local) | Placeholder + logging for future local model training | L3 stub + logging | 2h |
-| C5 | LLM cache + usage tracking | Cache by prompt_hash, hit rate tracking, budget guardrails | `llm_cache` + `llm_usage_log` | 3h |
+| C2 | **LLM Provider Registry (backend)** | `llm_providers` table: provider_id, name (Claude, Gemini, GPT, Mistral, Llama, etc.), provider_type (anthropic/openai/google/azure/custom), base_url, api_version, supported_models[] (fetched from provider API or manually added), auth_type (api_key/oauth/azure_ad), status (active/inactive/error), created_by, last_tested_at. Support up to **10 providers**. CRUD API: `POST/GET/PUT/DELETE /admin/llm-providers`. On add/update: test connection → verify key → fetch available models → store in `llm_models` table. | `packages/ai-mapper/llm-registry.ts` | 6h |
+| C2b | **LLM Model Registry (backend)** | `llm_models` table: model_id, provider_id (FK), model_name (e.g., "claude-sonnet-4-6", "gpt-4o", "gemini-2.0-flash"), display_name, capabilities[] (mapping/error_resolution/field_description/chat/diagnostics), input_token_limit, output_token_limit, cost_per_1k_input, cost_per_1k_output, is_available (from provider health check), last_refreshed_at. **Auto-refresh:** scheduled job polls each provider's model list API every 24h → updates `llm_models` with new/deprecated models. Manual refresh via admin button. | `packages/ai-mapper/model-registry.ts` | 5h |
+| C2c | **LLM Task Router (backend)** | `llm_task_defaults` table: task_type ENUM (mapping, error_resolution, field_description, chat_refinement, diagnostics, document_analysis), primary_model_id (FK), fallback_chain (ordered array of model_ids, up to 5 fallbacks per task). FC Super Admin sets: "For mapping → primary: claude-sonnet-4-6, fallback: [gemini-2.0-flash, gpt-4o]". "For error resolution → primary: claude-haiku-4-5, fallback: [mistral-large]". Runtime: `LlmTaskRouter.resolve(taskType)` → returns primary model config. On primary failure → walk fallback chain. All routing decisions logged to `llm_usage_log`. Config cached in Redis (TTL 5 min), invalidated on admin change. | `packages/ai-mapper/task-router.ts` | 6h |
+| C2d | **Unified LLM Client (backend)** | Single `LlmClient.complete(provider, model, messages, opts)` that abstracts all provider SDKs behind one interface. Adapters: AnthropicAdapter (Claude), OpenAiAdapter (GPT + compatible), GoogleAdapter (Gemini), AzureAdapter (Azure OpenAI), CustomAdapter (any OpenAI-compatible endpoint). Each adapter: handles auth, formats messages to provider's API shape, normalizes response to `{ content, usage: { input_tokens, output_tokens }, latency_ms, model }`. PII scrubbing runs BEFORE any adapter call. All calls logged to `llm_usage_log` with: provider, model, task_type, prompt_hash, tokens, latency, cost, success/failure. | `packages/ai-mapper/llm-client.ts` | 8h |
+| C2e | **LLM Health Monitor** | Background job (every 5 min): send lightweight test prompt to each active provider → measure latency → update `llm_providers.status` (active/degraded/error). If primary model for any task is degraded → auto-switch to first healthy fallback → notify FC admin. If all models for a task are down → cache-only mode (serve from `llm_cache`). Dashboard metrics: per-model latency p50/p95/p99, error rate, uptime %. | `packages/ai-mapper/llm-health-monitor.ts` | 4h |
+| C5 | LLM cache + usage tracking | Cache by prompt_hash, hit rate tracking, budget guardrails per provider. Budget tracked per model: `llm_budget` table with monthly_limit, current_spend, alert_threshold (80%). 0-80% normal, 80-100% force cheapest model, 100%+ cache-only. | `llm_cache` + `llm_usage_log` + `llm_budget` | 4h |
 | C5b | Document analyzer service | Accept multi-file uploads (XML, JSON, CSV, PDF, Excel). Parse each format, extract all field names + sample values + data types. Return unified field inventory across all uploaded docs. | `packages/ai-mapper/document-analyzer.ts` | 6h |
 | C5c | AI field description generator | For each discovered source field, AI generates: human-readable description, suggested canonical mapping, confidence score, suggested transform function. Batch all fields in one LLM call. | `packages/ai-mapper/field-describer.ts` | 4h |
 | C5d | Chat-based mapping updater | API endpoint that accepts natural language mapping instructions. AI interprets the instruction → updates mapping config → returns updated mapping table. Supports: add, remove, rename, change transform. | `packages/ai-mapper/chat-mapper.ts` | 5h |
@@ -175,7 +177,7 @@ This MUST start first because it produces `packages/shared` and `packages/databa
 | C26 | **Connector catalog registry** | `connector_catalog` table: connector_id, name, type (source/target), protocol (EDI X12, cXML, REST, EDIFACT), supported_flows[] (Sales Order, Purchase Order, ASN, Invoice, Returns, Credit Memo), status (available/coming_soon/beta), sample_payload per flow, description, icon_url. Seed with all FC connectors: Tally Prime, Zoho Books, SAP B1, Generic REST (sources) + Walmart EDI, SAP Ariba, Coupa, Generic EDI (targets). API: `GET /catalog/connectors`, `GET /catalog/connectors/:id/flows`, `GET /catalog/connectors/:id/flows/:flow/sample`. Public endpoint — no auth needed for catalog browsing. | `services/connector-catalog.ts` | 5h |
 | C27 | **Sandbox flow simulator** | Given a selected source connector + target connector + flow type from catalog → auto-load sample payload + sample mapping + sample rules → run full sandbox pipeline → show result. Factory picks from dropdown: "Tally Prime → Walmart (Sales Order 850→855→856→810)" → system runs the demo flow end-to-end with mock data. No credentials needed. Shows what FC can do before the factory subscribes. | `services/sandbox-flow-simulator.ts` | 5h |
 
-**Estimated total: ~149 hours** (was ~80h, +22h AI Mapping Studio, +18h Transform Rules, +19h Sandbox Test Harness, +10h Connector Catalog)
+**Estimated total: ~169 hours** (was ~80h, +22h AI Mapping Studio, +18h Transform Rules, +19h Sandbox Test, +10h Connector Catalog, +20h Dynamic LLM Registry)
 
 ---
 
@@ -263,14 +265,17 @@ This MUST start first because it produces `packages/shared` and `packages/databa
 | E25 | FC Admin: Factory list | All factories with health scores | `components/admin/FactoryList.tsx` | 3h |
 | E26 | FC Admin: Act As | Impersonation with yellow banner, action logging, 2hr auto-expire | `components/admin/ActAsFactory.tsx` | 4h |
 | E27 | FC Admin: Partner dashboard | Partners, commissions, referral codes, payout history | `components/admin/PartnerDashboard.tsx` | 4h |
-| E28 | FC Admin: Token observatory | AI budget usage, cost by model/task, cache hit rate, optimization tips | `components/admin/AiOperations.tsx` | 4h |
+| E28 | **FC Admin: LLM Provider Manager** | CRUD for LLM providers (up to 10): add provider → enter name, type (Anthropic/OpenAI/Google/Azure/Custom), base URL, API key (masked after save, stored in Vault). "Test Connection" button → verifies key → shows latency + available models. Status badge per provider: 🟢 active, 🟡 degraded, 🔴 error. Edit/deactivate/remove provider. Provider health history chart (uptime %, latency trend). | `components/admin/LlmProviderManager.tsx` | 6h |
+| E28b | **FC Admin: Model Registry & Browser** | Auto-populated from provider APIs. Table: model name, provider, capabilities, token limits, cost/1K tokens, status (available/deprecated). "Refresh Models" button per provider. Filter by: provider, capability (mapping/error/chat). For custom endpoints: manual model entry form. Shows which models are currently set as default for which tasks. | `components/admin/LlmModelBrowser.tsx` | 5h |
+| E28c | **FC Admin: Task-to-Model Configurator** | Matrix view: rows = task types (Mapping, Error Resolution, Field Description, Chat Refinement, Diagnostics, Document Analysis), columns = Primary Model (dropdown of active models) + Fallback Chain (drag-to-reorder list of up to 5 models). Click a task row → select primary model from dropdown → drag fallback models in priority order. "Test This Config" button → sends sample prompt for that task type → shows response + latency + cost. Save → updates `llm_task_defaults` → invalidates Redis cache → immediate effect. Change log: who changed what, when. | `components/admin/LlmTaskConfigurator.tsx` | 6h |
+| E28d | **FC Admin: AI Operations Dashboard (enhanced)** | Real-time metrics: cost/day by provider and model (stacked bar chart), tokens consumed by task type (pie chart), cache hit rate gauge (target: 87%+), latency p50/p95/p99 per model, error rate per provider, budget usage % with threshold alerts. Per-model comparison: "Claude Sonnet costs ₹X/day for mapping at 200ms avg vs Gemini Flash at ₹Y/day at 150ms avg". Budget guardrails: set monthly limit per provider, alert at 80%, force cheapest model at 100%. Optimization tips: "Switch field_description from Sonnet to Haiku — saves ₹800/month, quality impact: minimal". | `components/admin/AiOperationsDashboard.tsx` | 8h |
 | E29 | FC Admin: Feature flags | Global feature toggle admin | `components/admin/FeatureFlagAdmin.tsx` | 2h |
 | E30 | FC Admin: DLQ viewer | Dead letter queue inspect, modify, replay | `components/admin/DLQViewer.tsx` | 3h |
 | E31 | FC Admin: Agent fleet | Agent versions, health, upgrade status | `components/admin/AgentFleet.tsx` | 3h |
 | E32 | i18n: English + Hindi | 50+ translation keys, language switcher | `i18n/en.json`, `hi.json` | 3h |
 | E33 | Tests: Portal | TEST-A3-001 through TEST-A3-214 | 14 test cases | 6h |
 
-**Estimated total: ~258 hours** (was ~130h, +34h AI Mapping Studio, +20h Transform Rules, +24h Sandbox Test, +16h Connector Catalog, +34h Notifications/Analytics/Webhooks/Validation/API Explorer/Troubleshooting)
+**Estimated total: ~279 hours** (was ~130h, +34h AI Mapping Studio, +20h Transform Rules, +24h Sandbox Test, +16h Connector Catalog, +34h Notifications/Analytics/Webhooks/Validation/API Explorer/Troubleshooting, +21h LLM Admin UI)
 
 ---
 
@@ -340,17 +345,17 @@ TRACK E      [██████████████████████
 |-------|-------|---------------------|
 | A: Foundation & Database | ~30h | Starts first (Week 1-2) |
 | B: API + Workflow + Notifications + Webhooks + Validation + Analytics | ~96h | Yes (after A7+A8) |
-| C: Mapping + AI + EDI + Mapping Studio + Transform Rules + Sandbox + Catalog | ~149h | Yes (after A7+A8) |
+| C: Mapping + AI + EDI + Mapping Studio + Transform Rules + Sandbox + Catalog + LLM Registry | ~169h | Yes (after A7+A8) |
 | D: Bridge Agent | ~91h | Yes (after A7) |
-| E: Portal UI (full feature set) | ~258h | Yes (after A7) |
+| E: Portal UI (full feature set) | ~279h | Yes (after A7) |
 | Integration Testing | ~40h | After B+C+D+E |
 | Security + VAPT | ~30h | After integration |
 | Production Deploy | ~20h | After security |
-| **TOTAL** | **~714h** | |
+| **TOTAL** | **~755h** | |
 
-**With 5 parallel tracks:** ~26 weeks calendar time
-**With 3 parallel agents (as per blueprint):** ~26 weeks
-**Solo developer (40h/week):** ~18 weeks effective coding (some tracks overlap)
+**With 5 parallel tracks:** ~27 weeks calendar time
+**With 3 parallel agents (as per blueprint):** ~27 weeks
+**Solo developer (40h/week):** ~19 weeks effective coding (some tracks overlap)
 
 ---
 
