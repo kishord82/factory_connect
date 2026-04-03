@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FactoryConnect Documentation Index</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #0a1e3e 0%, #1a2f5a 100%);
+            color: #333;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 50px;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .version {
+            font-size: 0.9em;
+            opacity: 0.7;
+            margin-top: 10px;
+        }
+
+        .intro-box {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            margin-bottom: 40px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            line-height: 1.6;
+        }
+
+        .intro-box h2 {
+            color: #0a1e3e;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+
+        .intro-box p {
+            margin-bottom: 10px;
+            color: #555;
+        }
+
+        .document-section {
+            background: white;
+            border-radius: 8px;
+            padding: 0;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .section-header {
+            background: #0a1e3e;
+            color: white;
+            padding: 20px 30px;
+            border-left: 5px solid #4a9eff;
+        }
+
+        .section-header h3 {
+            font-size: 1.3em;
+            margin: 0;
+        }
+
+        .section-content {
+            padding: 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table tr {
+            border-bottom: 1px solid #eee;
+        }
+
+        table tr:last-child {
+            border-bottom: none;
+        }
+
+        table th {
+            background: #f5f5f5;
+            padding: 15px 20px;
+            text-align: left;
+            font-weight: 600;
+            color: #0a1e3e;
+            font-size: 0.95em;
+        }
+
+        table td {
+            padding: 15px 20px;
+            color: #555;
+        }
+
+        table td:first-child {
+            font-weight: 500;
+            color: #0a1e3e;
+        }
+
+        table a {
+            color: #4a9eff;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        table a:hover {
+            text-decoration: underline;
+            color: #3080d0;
+        }
+
+        .category-badge {
+            display: inline-block;
+            background: #e8f1ff;
+            color: #0a1e3e;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+
+        .quick-links {
+            background: #e8f1ff;
+            border-left: 5px solid #4a9eff;
+            padding: 20px;
+            margin: 30px 0;
+            border-radius: 4px;
+        }
+
+        .quick-links h4 {
+            color: #0a1e3e;
+            margin-bottom: 10px;
+            font-size: 1.05em;
+        }
+
+        .quick-links ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .quick-links li {
+            margin-bottom: 8px;
+        }
+
+        .quick-links a {
+            color: #4a9eff;
+            text-decoration: none;
+        }
+
+        .quick-links a:hover {
+            text-decoration: underline;
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            opacity: 0.7;
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 0.9em;
+        }
+
+        .last-updated {
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8em;
+            }
+
+            table {
+                font-size: 0.9em;
+            }
+
+            table th,
+            table td {
+                padding: 10px;
+            }
+
+            .section-header {
+                padding: 15px 20px;
+            }
+
+            .section-header h3 {
+                font-size: 1.1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>FactoryConnect Documentation</h1>
+            <p>Multi-tenant SaaS integration platform connecting Indian SME factory ERPs to global buyer procurement systems</p>
+            <div class="version">Version 3.0 | April 2026</div>
+        </header>
+
+        <div class="intro-box">
+            <h2>What is FactoryConnect?</h2>
+            <p>FactoryConnect bridges the data format gap between Indian SME factory ERPs (Tally, Zoho, SAP B1, ERPNext, Busy, Marg) and global buyer procurement systems (EDI X12, SAP Ariba, Coupa, Oracle Fusion, EDIFACT).</p>
+            <p>Indian factories lose export contracts not due to quality or price, but due to data format gaps. 63M+ MSMEs can't speak EDI/Ariba/Coupa. FactoryConnect solves this problem.</p>
+        </div>
+
+        <div class="quick-links">
+            <h4>Quick Navigation</h4>
+            <ul>
+                <li><a href="#architecture">Architecture Documents</a></li>
+                <li><a href="#raid">RAID Analysis & Recommendations</a></li>
+                <li><a href="#research">Research Reports</a></li>
+                <li><a href="#business">Business & Marketing</a></li>
+                <li><a href="#security">Security & Compliance</a></li>
+            </ul>
+        </div>
+
+        <!-- Architecture Section -->
+        <div class="document-section" id="architecture">
+            <div class="section-header">
+                <h3>Architecture Documents</h3>
+            </div>
+            <div class="section-content">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Document</th>
+                            <th>Category</th>
+                            <th>Description</th>
+                            <th>Last Updated</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><a href="./architecture/FC_Architecture_Blueprint.html">FC Architecture Blueprint</a></td>
+                            <td><span class="category-badge">Architecture</span></td>
+                            <td>Master architecture document v3.0 (single source of truth)</td>
+                            <td class="last-updated">Apr 2026</td>
+                        </tr>
+                        <tr>
+                            <td><a href="./architecture/FC_Versioned_Adapter_Architecture.html">Versioned Adapter Architecture</a></td>
+                            <td><span class="category-badge">Architecture</span></td>
+                            <td>Microservice adapter design, scaling, and lifecycle management</td>
+                            <td class="last-updated">Apr 2026</td>
+                        </tr>
+                        <tr>
+                            <td><a href="./architecture/FC_Integration_Specs_Reference.html">Integration Specs Reference</a></td>
+                            <td><span class="category-badge">Architecture</span></td>
+                            <td>All source/target API docs, sales order flow, and best practices</td>
+                            <td class="last-updated">Apr 2026</td>
+                        </tr>
+                        <tr>
+                            <td><a href="./architecture/FC_Onboarding_Configuration_Engine.html">Onboarding Configuration Engine</a></td>
+                            <td><span class="category-badge">Architecture</span></td>
+                            <td>10-step onboarding workflow for factory customers</td>
+                            <td class="last-updated">Apr 2026</td>
+                        </tr>
+                        <tr>
+                            <td><a href="./architecture/FC_Grey_Areas_MultiVersion_Strategy.html">Multi-Version Strategy</a></td>
+                            <td><span class="category-badge">Architecture</span></td>
+                            <td>Multi-version handling decisions and implementation approach</td>
+                            <td class="last-updated">Apr 2026</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- RAID Analysis Section -->
+        <div class="document-section" id="raid">
+            <div class="section-header">
+                <h3>RAID Analysis & Recommendations</h3>
+            </div>
+            <div class="section-content">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Document</th>
+                            <th>Category</th>
+                            <th>Description</th>
+                            <th>Last Updated</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><a href="./raid/FC_RAID_Analysis.html">RAID Analysis</a></td>
+                            <td><span class="category-badge">Risk & Planning</span></td>
+                            <td>24 Risks, 18 Assumptions, 15 Issues, 20 Dependencies identified</td>
+                            <td class="last-updated">Apr 2026</td>
+                        </tr>
+                        <tr>
+                            <td><a href="./raid/FC_RAID_Recommendations.html">RAID Recommendations</a></td>
+                            <td><span class="category-badge">Risk & Planning</span></td>
+                            <td>Expert answers for all 20 questions + 6-month execution plan</td>
+                            <td class="last-updated">Apr 2026</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Research Section -->
+        <div class="document-section" id="research">
+            <div class="section-header">
+                <h3>Research Reports</h3>
+            </div>
+            <div class="section-content">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Document</th>
+                            <th>Category</th>
+                            <th>Description</th>
+                            <th>Last Updated</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><a href="./research/FC_Report1_Connector_DeepDive.md">Connector Deep Dive Report</a></td>
+                            <td><span class="category-badge">Research</span></td>
+                            <td>Source and target connector technical analysis</td>
+                            <td class="last-updated">Apr 2026</td>
+                        </tr>
+                        <tr>
+                            <td><a href="./research/FC_Report2_Market_Revenue_Model.md">Market & Revenue Model Report</a></td>
+                            <td><span class="category-badge">Research</span></td>
+                            <td>Revenue modeling and market sizing analysis</td>
+                            <td class="last-updated">Apr 2026</td>
+                        </tr>
+                        <tr>
+                            <td><a href="./research/FactoryConnect_Research_Report.md">Initial Research Report</a></td>
+                            <td><span class="category-badge">Research</span></td>
+                            <td>Comprehensive initial research findings and market assessment</td>
+                            <td class="last-updated">Apr 2026</td>
+                        </tr>
+                        <tr>
+                            <td><a href="./research/FactoryConnect_TestData_Samples.md">Test Data Samples</a></td>
+                            <td><span class="category-badge">Research</span></td>
+                            <td>Test data and sample payloads for development and QA</td>
+                            <td class="last-updated">Apr 2026</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Business Section -->
+        <div class="document-section" id="business">
+            <div class="section-header">
+                <h3>Business & Marketing</h3>
+            </div>
+            <div class="section-content">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Document</th>
+                            <th>Category</th>
+                            <th>Description</th>
+                            <th>Last Updated</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><a href="./business/FC_Marketing_Strategy.html">Marketing Strategy</a></td>
+                            <td><span class="category-badge">Marketing</span></td>
+                            <td>Go-to-market strategy, channels, and positioning</td>
+                            <td class="last-updated">Apr 2026</td>
+                        </tr>
+                        <tr>
+                            <td><a href="./business/FC_Leads_Potential_Customers.html">Target Customers</a></td>
+                            <td><span class="category-badge">Marketing</span></td>
+                            <td>Potential customer profiles and lead generation strategy</td>
+                            <td class="last-updated">Apr 2026</td>
+                        </tr>
+                        <tr>
+                            <td><a href="./business/FC_Global_Market_Potential.html">Global Market Potential</a></td>
+                            <td><span class="category-badge">Business</span></td>
+                            <td>TAM, SAM, and SOM analysis for global expansion</td>
+                            <td class="last-updated">Apr 2026</td>
+                        </tr>
+                        <tr>
+                            <td><a href="./business/FC_Cloud_Hosting_Comparison.html">Cloud Hosting Comparison</a></td>
+                            <td><span class="category-badge">Business</span></td>
+                            <td>Evaluation of GCP, AWS, and Azure for production deployment</td>
+                            <td class="last-updated">Apr 2026</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Security Section -->
+        <div class="document-section" id="security">
+            <div class="section-header">
+                <h3>Security & Compliance</h3>
+            </div>
+            <div class="section-content">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Document</th>
+                            <th>Category</th>
+                            <th>Description</th>
+                            <th>Last Updated</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><a href="./security/FC_Security_BestPractices_RACI.html">Security Best Practices & RACI</a></td>
+                            <td><span class="category-badge">Security</span></td>
+                            <td>Security controls, compliance matrix, and responsibility assignment</td>
+                            <td class="last-updated">Apr 2026</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Key Decisions -->
+        <div class="intro-box">
+            <h2>Key Strategic Decisions (v3.0)</h2>
+            <table style="margin-top: 15px; width: 100%; border-collapse: collapse;">
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 10px 0; font-weight: 600; color: #0a1e3e; width: 30%;">EDI Parser</td>
+                    <td style="padding: 10px 0; color: #555;">Python Bots gRPC sidecar → Go native (hybrid approach)</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 10px 0; font-weight: 600; color: #0a1e3e;">Buyer Connectivity</td>
+                    <td style="padding: 10px 0; color: #555;">TrueCommerce ISV Partnership + direct certification in parallel</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 10px 0; font-weight: 600; color: #0a1e3e;">Tally Adapter</td>
+                    <td style="padding: 10px 0; color: #555;">JSON-first (TallyPrime 7.0) with XML fallback, 5-Star Partner application</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 10px 0; font-weight: 600; color: #0a1e3e;">Pricing</td>
+                    <td style="padding: 10px 0; color: #555;">₹4,999-24,999/month, INR-only, annual with 2-months-free discount</td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px 0; font-weight: 600; color: #0a1e3e;">Go-to-Market</td>
+                    <td style="padding: 10px 0; color: #555;">Tally Partner ecosystem + Tiruppur textile cluster + WhatsApp referral</td>
+                </tr>
+            </table>
+        </div>
+
+        <footer class="footer">
+            <p>FactoryConnect Documentation Hub v3.0 | Last Updated April 2026</p>
+            <p style="margin-top: 10px; opacity: 0.6;">All documents are maintained in the FactoryConnect project repository</p>
+        </footer>
+    </div>
+</body>
+</html>

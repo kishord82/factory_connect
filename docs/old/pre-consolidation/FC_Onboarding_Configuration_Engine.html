@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FactoryConnect — Onboarding Configuration Engine</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f6f9; color: #1a1a2e; padding: 24px; max-width: 1300px; margin: 0 auto; }
+  h1 { font-size: 1.5rem; color: #0f3460; margin-bottom: 4px; }
+  h2 { font-size: 1.15rem; color: #0f3460; margin: 28px 0 12px; border-bottom: 2px solid #0f3460; padding-bottom: 6px; }
+  h3 { font-size: 0.95rem; color: #16213e; margin: 16px 0 8px; }
+  h4 { font-size: 0.88rem; color: #333; margin: 12px 0 6px; }
+  .subtitle { color: #555; font-size: 0.88rem; margin-bottom: 24px; }
+  .card { background: #fff; border-radius: 8px; padding: 20px 24px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin: 12px 0; }
+  th { background: #0f3460; color: #fff; padding: 9px 10px; text-align: left; font-size: 0.78rem; }
+  td { padding: 8px 10px; border-bottom: 1px solid #eee; vertical-align: top; }
+  tr:hover td { background: #f0f4ff; }
+  .tag { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.72rem; font-weight: 600; margin: 1px 2px; }
+  .tag-req { background: #ffe0e0; color: #c0392b; }
+  .tag-opt { background: #d4edda; color: #155724; }
+  .tag-fc { background: #e8f0fe; color: #1a73e8; }
+  .tag-factory { background: #fff3cd; color: #856404; }
+  .tag-buyer { background: #f3e5f5; color: #7b1fa2; }
+  .tag-ai { background: #fce4ec; color: #c62828; }
+  .tag-both { background: #e0f2f1; color: #00695c; }
+  .flow-box { background: #16213e; color: #fff; border-radius: 8px; padding: 18px 22px; margin: 14px 0; font-family: 'Courier New', monospace; font-size: 0.82rem; line-height: 1.7; white-space: pre-wrap; overflow-x: auto; }
+  .callout { background: #e8f0fe; border-left: 4px solid #1a73e8; padding: 14px 18px; margin: 14px 0; border-radius: 0 6px 6px 0; font-size: 0.85rem; }
+  .callout-ai { background: #fce4ec; border-left-color: #c62828; }
+  .callout-warn { background: #fff3cd; border-left-color: #e67e22; }
+  .callout-green { background: #d4edda; border-left-color: #27ae60; }
+  .section-header { background: linear-gradient(135deg, #0f3460, #16213e); color: #fff; padding: 14px 20px; border-radius: 8px 8px 0 0; font-weight: 700; }
+  .section-body { background: #fff; padding: 16px 20px; border-radius: 0 0 8px 8px; border: 1px solid #e0e0e0; border-top: none; margin-bottom: 20px; }
+  code { background: #f0f0f0; padding: 2px 6px; border-radius: 3px; font-size: 0.8rem; }
+  pre { background: #1a1a2e; color: #e0e0e0; padding: 16px; border-radius: 6px; overflow-x: auto; font-size: 0.78rem; line-height: 1.6; margin: 10px 0; }
+  pre .key { color: #82aaff; } pre .str { color: #c3e88d; } pre .num { color: #f78c6c; } pre .comment { color: #546e7a; }
+  p, li { font-size: 0.87rem; line-height: 1.65; }
+  ul { margin: 6px 0 12px 20px; }
+  .arrow { font-size: 1.2rem; color: #0f3460; text-align: center; padding: 8px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 800px) { .grid-2 { grid-template-columns: 1fr; } }
+  .footer { margin-top: 24px; font-size: 0.78rem; color: #888; text-align: center; }
+  .step-num { display: inline-block; width: 28px; height: 28px; border-radius: 50%; background: #0f3460; color: #fff; text-align: center; line-height: 28px; font-weight: 700; font-size: 0.8rem; margin-right: 8px; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; margin: 10px 0; font-size: 0.8rem; }
+</style>
+</head>
+<body>
+
+<h1>FactoryConnect — Onboarding Configuration Engine</h1>
+<p class="subtitle">End-to-end specification: What the factory provides, what FC provisions, what the buyer provides, and how AI auto-maps the connection for N factories &times; M buyers | April 2026</p>
+
+<h2>1. The Missing Piece: Bidirectional Provisioning</h2>
+<div class="card">
+<p>The current architecture defines the routing tables (<code>connections</code>, <code>routing_rules</code>, <code>mapping_configs</code>) but doesn't specify the <strong>onboarding workflow</strong> — the step-by-step provisioning where factory, buyer, and FactoryConnect each contribute configuration to establish a live connection. This document fills that gap.</p>
+
+<div class="flow-box">
+┌──────────────────┐          ┌──────────────────┐          ┌──────────────────┐
+│   FACTORY SIDE   │          │   FACTORYCONNECT  │          │   BUYER SIDE     │
+│                  │          │   (Hub / Bridge)   │          │                  │
+│  Tally/Zoho/SAP  │  ──▶──  │  Canonical Model   │  ──▶──  │  EDI/Ariba/Coupa │
+│  REST/SOAP/XML   │          │  AI Mapper Engine  │          │  AS2/HTTPS/SFTP  │
+│                  │  ◀──◀──  │  Config Registry   │  ◀──◀──  │                  │
+│  Provides:       │          │  Provisions:       │          │  Provides:       │
+│  - ERP creds     │          │  - API endpoints   │          │  - EDI params    │
+│  - Sample data   │          │  - Certs & keys    │          │  - AS2 certs     │
+│  - Buyer list    │          │  - Mapping rules   │          │  - Ariba ANID    │
+│  - Contact info  │          │  - Test sandbox    │          │  - Test PO       │
+└──────────────────┘          └──────────────────┘          └──────────────────┘
+</div>
+
+<div class="legend">
+  <span><span class="tag tag-factory">Factory Provides</span></span>
+  <span><span class="tag tag-fc">FC Provisions</span></span>
+  <span><span class="tag tag-buyer">Buyer Provides</span></span>
+  <span><span class="tag tag-both">Both Sides</span></span>
+  <span><span class="tag tag-ai">AI Auto-Detected</span></span>
+  <span><span class="tag tag-req">Required</span></span>
+  <span><span class="tag tag-opt">Optional</span></span>
+</div>
+</div>
+
+<h2>2. Onboarding Configuration: What Each Party Provides</h2>
+
+<!-- FACTORY SIDE -->
+<div class="section-header">2.1 Factory Side — What the Factory Must Provide to FC</div>
+<div class="section-body">
+
+<h4>A. Factory Identity & ERP Configuration</h4>
+<table>
+<tr><th style="width:4%">#</th><th style="width:22%">Config Item</th><th style="width:10%">Source</th><th style="width:8%">Required</th><th style="width:56%">Details / Format</th></tr>
+<tr><td>1</td><td>Company legal name</td><td><span class="tag tag-factory">Factory</span></td><td><span class="tag tag-req">Req</span></td><td>As registered. Used in EDI ISA/GS headers, Ariba party names, invoice generation.</td></tr>
+<tr><td>2</td><td>GSTIN</td><td><span class="tag tag-factory">Factory</span></td><td><span class="tag tag-req">Req</span></td><td>15-digit GST number. Validated via GSTN API. Used for e-Invoice IRN generation.</td></tr>
+<tr><td>3</td><td>PAN</td><td><span class="tag tag-factory">Factory</span></td><td><span class="tag tag-req">Req</span></td><td>10-character PAN. Cross-validated with GSTIN.</td></tr>
+<tr><td>4</td><td>DUNS Number</td><td><span class="tag tag-factory">Factory</span></td><td><span class="tag tag-opt">Opt</span></td><td>9-digit D&amp;B number. Required for EDI X12 (ISA qualifier "01"). Many Indian SMEs don't have one — FC can help apply.</td></tr>
+<tr><td>5</td><td>IEC (Import Export Code)</td><td><span class="tag tag-factory">Factory</span></td><td><span class="tag tag-req">Req</span></td><td>10-digit DGFT code. Required for all export transactions.</td></tr>
+<tr><td>6</td><td>ERP Type</td><td><span class="tag tag-factory">Factory</span></td><td><span class="tag tag-req">Req</span></td><td>Enum: <code>TALLY_PRIME | ZOHO_BOOKS | SAP_B1 | BUSY | MARG | ERPNEXT | CUSTOM</code></td></tr>
+<tr><td>7</td><td>ERP Version</td><td><span class="tag tag-factory">Factory</span></td><td><span class="tag tag-req">Req</span></td><td>e.g., "Tally Prime 4.1", "Zoho Books 2024", "SAP B1 10.0 FP2402"</td></tr>
+<tr><td>8</td><td>ERP API Endpoint / Access</td><td><span class="tag tag-factory">Factory</span></td><td><span class="tag tag-req">Req</span></td><td>
+  <strong>Tally:</strong> localhost:9000 (Bridge Agent handles). Factory IT confirms Tally XML Server is enabled.<br>
+  <strong>Zoho:</strong> OAuth client ID + secret from Zoho API Console. Scopes: <code>ZohoBooks.invoices.READ, ZohoBooks.salesorders.ALL</code><br>
+  <strong>SAP B1:</strong> Service Layer URL (e.g., <code>https://sapb1:50000/b1s/v1</code>), CompanyDB name, username, password.<br>
+  <strong>Custom REST:</strong> Base URL, auth type (API_KEY/OAUTH/BASIC/mTLS), credentials.<br>
+  <strong>Custom SOAP:</strong> WSDL URL, SOAPAction headers, WS-Security username/password token.</td></tr>
+<tr><td>9</td><td>ERP API Version (REST/SOAP)</td><td><span class="tag tag-factory">Factory</span></td><td><span class="tag tag-req">Req</span></td><td>API version string. FC must support multiple versions simultaneously. e.g., Zoho API v3 vs v2, SAP B1 SL v1 vs v2.</td></tr>
+<tr><td>10</td><td>Network / Firewall Info</td><td><span class="tag tag-factory">Factory</span></td><td><span class="tag tag-req">Req</span></td><td>Static IP (if any), firewall type, proxy config. FC provides IPs to whitelist. Factory opens outbound 443 to FC endpoints.</td></tr>
+</table>
+
+<h4>B. Factory's Buyer List & Communication Targets</h4>
+<table>
+<tr><th style="width:4%">#</th><th style="width:22%">Config Item</th><th style="width:10%">Source</th><th style="width:8%">Required</th><th style="width:56%">Details / Format</th></tr>
+<tr><td>11</td><td>List of Buyers (trading partners)</td><td><span class="tag tag-factory">Factory</span></td><td><span class="tag tag-req">Req</span></td><td>For each buyer: company name, country, system type (if known), contact person + email. Factory may not know buyer's system — FC + AI will detect.</td></tr>
+<tr><td>12</td><td>Factory's internal code per buyer</td><td><span class="tag tag-factory">Factory</span></td><td><span class="tag tag-req">Req</span></td><td>The code used in ERP for this buyer. e.g., Tally LEDGER name "ACM-001 Acme Corp", Zoho customer ID "4815162342". Critical for routing.</td></tr>
+<tr><td>13</td><td>Buyer communication channel info</td><td><span class="tag tag-factory">Factory</span></td><td><span class="tag tag-opt">Opt</span></td><td>How does the factory currently exchange POs/invoices with this buyer? Email? Portal login? EDI VAN? This helps FC identify the target system type.</td></tr>
+<tr><td>14</td><td>Buyer contact (IT/procurement)</td><td><span class="tag tag-factory">Factory</span></td><td><span class="tag tag-opt">Opt</span></td><td>If factory has a contact at the buyer's IT/procurement team who can provide EDI/Ariba credentials. If not, FC reaches out.</td></tr>
+</table>
+
+<h4>C. Sample Data (for AI Mapping)</h4>
+<table>
+<tr><th style="width:4%">#</th><th style="width:22%">Config Item</th><th style="width:10%">Source</th><th style="width:8%">Required</th><th style="width:56%">Details / Format</th></tr>
+<tr><td>15</td><td>Sample Sales Order (from ERP)</td><td><span class="tag tag-factory">Factory</span></td><td><span class="tag tag-req">Req</span></td><td>One real or sanitized sales order export from their ERP. XML (Tally), JSON (Zoho/SAP B1), CSV, or even a screenshot. AI analyzes the field structure.</td></tr>
+<tr><td>16</td><td>Sample Invoice (from ERP)</td><td><span class="tag tag-factory">Factory</span></td><td><span class="tag tag-req">Req</span></td><td>One invoice export. FC AI maps fields to CanonicalInvoice. Identifies GST breakup, HSN codes, payment terms format.</td></tr>
+<tr><td>17</td><td>Product catalog / Stock items</td><td><span class="tag tag-factory">Factory</span></td><td><span class="tag tag-req">Req</span></td><td>Export of product master with SKU, name, HSN, unit, price. Can be Excel/CSV. AI maps to CanonicalProduct.</td></tr>
+<tr><td>18</td><td>Sample Delivery Note / Challan</td><td><span class="tag tag-factory">Factory</span></td><td><span class="tag tag-opt">Opt</span></td><td>For ASN (856) mapping. Vehicle number, LR number, package details format.</td></tr>
+<tr><td>19</td><td>Sample buyer PO (received)</td><td><span class="tag tag-factory">Factory</span></td><td><span class="tag tag-req">Req</span></td><td>A PO received from the buyer — could be email PDF, EDI file, Ariba cXML, or Excel. AI identifies buyer system type from this.</td></tr>
+<tr><td>20</td><td>Custom fields / attributes</td><td><span class="tag tag-factory">Factory</span></td><td><span class="tag tag-opt">Opt</span></td><td>Any industry-specific fields: batch numbers (pharma), heat numbers (steel), style numbers (garments), VIN references (auto).</td></tr>
+</table>
+
+<div class="callout callout-ai"><strong>AI Auto-Detection from Sample Data:</strong> When the factory uploads sample POs received from buyers, the FC AI engine (Claude) analyzes the format and automatically detects: (1) buyer system type (EDI X12 vs Ariba cXML vs Coupa vs EDIFACT), (2) message version (X12 4010 vs 5010), (3) field mapping to canonical model, (4) buyer's EDI identifiers (ISA/GS IDs), (5) required acknowledgment types. This eliminates the need for the factory to know technical details about their buyer's system.</div>
+</div>
+
+<!-- FC PROVISIONS -->
+<div class="section-header">2.2 FactoryConnect — What FC Provisions for the Factory</div>
+<div class="section-body">
+
+<h4>A. API Credentials & Endpoints (FC → Factory)</h4>
+<table>
+<tr><th style="width:4%">#</th><th style="width:22%">Config Item</th><th style="width:56%">Details</th><th style="width:18%">Format / Example</th></tr>
+<tr><td>1</td><td>FC API Key</td><td>Unique per-factory API key for authenticating all API calls to FC. Stored in factory's ERP connector config.</td><td><code>fc_live_k7x9m2p...</code> (64-char hex)</td></tr>
+<tr><td>2</td><td>FC API Base URL</td><td>Factory's dedicated API endpoint. Versioned. Supports REST.</td><td><code>https://api.factoryconnect.io/v1</code></td></tr>
+<tr><td>3</td><td>FC Webhook Receiver URL</td><td>Endpoint for factory ERPs that push via webhooks (Zoho, ERPNext). Unique per factory for routing.</td><td><code>https://api.factoryconnect.io/v1/webhooks/{factory_id}</code></td></tr>
+<tr><td>4</td><td>FC SOAP Endpoint (if needed)</td><td>For factories with legacy SOAP-only systems. WSDL published. Supports WS-Security.</td><td><code>https://api.factoryconnect.io/soap/v1?wsdl</code></td></tr>
+<tr><td>5</td><td>FC Bridge Agent Installer</td><td>For Tally/Busy/Marg (on-prem ERPs). Downloadable .exe/.msi with embedded factory API key and config.</td><td>Signed installer package</td></tr>
+<tr><td>6</td><td>FC IP Addresses (for whitelisting)</td><td>Static IPs that factory must whitelist for outbound connections from FC (for webhook delivery, Tally polling response).</td><td><code>34.93.x.x, 34.93.y.y</code> (GCP Mumbai)</td></tr>
+<tr><td>7</td><td>FC OAuth 2.0 Credentials</td><td>For factories preferring OAuth over API key. Client ID + Secret + Token endpoint.</td><td>client_id, client_secret, <code>/oauth/token</code></td></tr>
+<tr><td>8</td><td>FC mTLS Certificate</td><td>For high-security factories (pharma, defense). FC's client certificate for mutual TLS.</td><td>PEM certificate + CA chain</td></tr>
+<tr><td>9</td><td>FC Test Sandbox</td><td>Isolated sandbox environment for testing before go-live. Same API, test data only. No impact on production.</td><td><code>https://sandbox.factoryconnect.io/v1</code></td></tr>
+<tr><td>10</td><td>FC API Specification</td><td>OpenAPI 3.1 spec document. Covers all endpoints: products, orders, invoices, shipments, inventory, webhooks.</td><td>JSON/YAML OpenAPI spec + Postman collection</td></tr>
+</table>
+
+<h4>B. Security Provisions (FC → Factory)</h4>
+<table>
+<tr><th style="width:4%">#</th><th style="width:22%">Config Item</th><th style="width:56%">Details</th><th style="width:18%">Version Support</th></tr>
+<tr><td>11</td><td>TLS Certificate</td><td>FC endpoint TLS 1.3 certificate. Factory validates FC's identity on every call.</td><td>TLS 1.2 (legacy), TLS 1.3 (default)</td></tr>
+<tr><td>12</td><td>API Key Rotation Schedule</td><td>Keys auto-expire every 90 days. FC notifies 14 days before expiry. Old key grace period: 7 days.</td><td>v1 (static), v2 (rotating)</td></tr>
+<tr><td>13</td><td>Webhook HMAC Secret</td><td>Shared secret for HMAC-SHA256 verification of webhook payloads sent TO the factory.</td><td>256-bit secret</td></tr>
+<tr><td>14</td><td>JWT Signing Public Key</td><td>For factories that want to verify FC-issued JWT tokens independently.</td><td>RS256 / ES256 public key (JWKS endpoint)</td></tr>
+<tr><td>15</td><td>IP Allowlist (FC-side)</td><td>FC restricts API access to factory's registered IP addresses (if factory has static IP).</td><td>CIDR notation</td></tr>
+</table>
+
+<h4>C. Mapping Configuration (FC Provisions via AI)</h4>
+<table>
+<tr><th style="width:4%">#</th><th style="width:22%">Config Item</th><th style="width:56%">Details</th><th style="width:18%">How Generated</th></tr>
+<tr><td>16</td><td>Source Mapping (ERP → Canonical)</td><td>JSONata rules mapping factory's ERP fields to 6 canonical entities. e.g., Tally STOCKITEM.NAME → CanonicalProduct.name</td><td><span class="tag tag-ai">AI Generated</span> from sample data, human-reviewed</td></tr>
+<tr><td>17</td><td>Target Mapping (Canonical → Buyer)</td><td>JSONata rules mapping canonical fields to buyer's format. e.g., CanonicalOrder.line_items → EDI 850 PO1 segments</td><td><span class="tag tag-ai">AI Generated</span> from buyer spec + sample PO</td></tr>
+<tr><td>18</td><td>Field Transform Functions</td><td>Custom transforms: date format conversion, unit mapping (KG→LB), currency conversion, HSN→HTS code mapping.</td><td><span class="tag tag-ai">AI + Template Library</span></td></tr>
+<tr><td>19</td><td>Validation Rules</td><td>Per-field validation: required fields, format regex, value ranges, cross-field dependencies.</td><td><span class="tag tag-fc">FC Template</span> per buyer type</td></tr>
+<tr><td>20</td><td>Default Values</td><td>Fields the factory doesn't have but buyer requires. e.g., Incoterms default "FOB", currency default "USD".</td><td><span class="tag tag-ai">AI Suggested</span>, factory confirms</td></tr>
+</table>
+</div>
+
+<!-- BUYER SIDE -->
+<div class="section-header">2.3 Buyer Side — What the Buyer Must Provide</div>
+<div class="section-body">
+
+<h4>A. By Buyer System Type</h4>
+
+<h4>EDI X12 (AS2/SFTP) Buyers</h4>
+<table>
+<tr><th style="width:4%">#</th><th style="width:25%">Config Item</th><th style="width:8%">Required</th><th style="width:63%">Details</th></tr>
+<tr><td>1</td><td>EDI ISA Qualifier + ID (Sender)</td><td><span class="tag tag-req">Req</span></td><td>Buyer's ISA05/ISA06. e.g., Qualifier "ZZ", ID "WALMART001". This identifies the buyer in every EDI envelope.</td></tr>
+<tr><td>2</td><td>EDI ISA Qualifier + ID (Receiver — for factory)</td><td><span class="tag tag-req">Req</span></td><td>What ISA07/ISA08 the buyer expects for the factory. May be DUNS ("01") or mutually defined ("ZZ").</td></tr>
+<tr><td>3</td><td>GS Application Sender/Receiver Codes</td><td><span class="tag tag-req">Req</span></td><td>GS02 (sender) and GS03 (receiver) codes. Often same as ISA but not always.</td></tr>
+<tr><td>4</td><td>EDI Version</td><td><span class="tag tag-req">Req</span></td><td>X12 version: 4010, 4030, 5010, 5020. Determines segment structure.</td></tr>
+<tr><td>5</td><td>Supported Transaction Sets</td><td><span class="tag tag-req">Req</span></td><td>Which EDI documents: 850 (PO), 855 (PO Ack), 856 (ASN), 810 (Invoice), 820 (Payment), 997 (Func Ack).</td></tr>
+<tr><td>6</td><td>AS2 URL + AS2 ID</td><td><span class="tag tag-req">Req</span></td><td>Buyer's AS2 receiving endpoint URL and their AS2-From ID. e.g., <code>https://as2.walmart.com/receive</code>, AS2 ID: "WALMARTAS2"</td></tr>
+<tr><td>7</td><td>AS2 Public Certificate</td><td><span class="tag tag-req">Req</span></td><td>Buyer's X.509 certificate for AS2 encryption + signing. PEM or DER format.</td></tr>
+<tr><td>8</td><td>AS2 MDN Preference</td><td><span class="tag tag-req">Req</span></td><td>Sync MDN or Async MDN? Signed or unsigned? MDN return URL if async.</td></tr>
+<tr><td>9</td><td>SFTP Credentials (if SFTP transport)</td><td><span class="tag tag-opt">Opt</span></td><td>Host, port, username, SSH key or password. Inbound/outbound directory paths.</td></tr>
+<tr><td>10</td><td>Buyer's Implementation Guide</td><td><span class="tag tag-req">Req</span></td><td>Buyer-specific EDI implementation guide (most large buyers have one). Defines required segments, qualifiers, custom fields.</td></tr>
+<tr><td>11</td><td>Test EDI Partner ID (if different)</td><td><span class="tag tag-opt">Opt</span></td><td>Some buyers have separate test ISA IDs and AS2 endpoints for certification testing.</td></tr>
+<tr><td>12</td><td>Sample 850 PO</td><td><span class="tag tag-req">Req</span></td><td>One sample purchase order in the buyer's EDI format. FC AI parses to auto-generate mapping.</td></tr>
+</table>
+
+<h4>SAP Ariba Buyers</h4>
+<table>
+<tr><th style="width:4%">#</th><th style="width:25%">Config Item</th><th style="width:8%">Required</th><th style="width:63%">Details</th></tr>
+<tr><td>1</td><td>Ariba Network ID (ANID)</td><td><span class="tag tag-req">Req</span></td><td>Buyer's ANID on SAP Ariba Network. e.g., "AN01234567890"</td></tr>
+<tr><td>2</td><td>Supplier ANID (for factory)</td><td><span class="tag tag-req">Req</span></td><td>Factory must register on Ariba Network. FC assists with registration. Free for suppliers.</td></tr>
+<tr><td>3</td><td>cXML Shared Secret</td><td><span class="tag tag-req">Req</span></td><td>Shared secret for cXML authentication between FC (as supplier) and buyer's Ariba instance.</td></tr>
+<tr><td>4</td><td>Ariba Commerce URL</td><td><span class="tag tag-req">Req</span></td><td>Buyer's Ariba endpoint for cXML document exchange. e.g., <code>https://service.ariba.com/service/transaction/cxml.asp</code></td></tr>
+<tr><td>5</td><td>Supported cXML Documents</td><td><span class="tag tag-req">Req</span></td><td>OrderRequest, ConfirmationRequest, ShipNoticeRequest, InvoiceDetailRequest, StatusUpdateRequest.</td></tr>
+<tr><td>6</td><td>Punch-out Configuration (if catalog)</td><td><span class="tag tag-opt">Opt</span></td><td>If buyer wants punch-out catalog: SetupRequest/SetupResponse configuration, hosted catalog URL.</td></tr>
+<tr><td>7</td><td>Sample cXML OrderRequest</td><td><span class="tag tag-req">Req</span></td><td>One sample PO in cXML. FC AI parses structure, identifies buyer-specific extensions.</td></tr>
+</table>
+
+<h4>Coupa Buyers</h4>
+<table>
+<tr><th style="width:4%">#</th><th style="width:25%">Config Item</th><th style="width:8%">Required</th><th style="width:63%">Details</th></tr>
+<tr><td>1</td><td>Coupa Instance URL</td><td><span class="tag tag-req">Req</span></td><td>Buyer's Coupa instance. e.g., <code>https://acme.coupahost.com</code></td></tr>
+<tr><td>2</td><td>Coupa Supplier API Key</td><td><span class="tag tag-req">Req</span></td><td>API key issued by buyer's Coupa admin for the factory supplier account.</td></tr>
+<tr><td>3</td><td>Coupa OAuth Credentials</td><td><span class="tag tag-opt">Opt</span></td><td>If buyer uses OAuth instead of API key: client_id, client_secret, scope.</td></tr>
+<tr><td>4</td><td>Coupa Supplier ID</td><td><span class="tag tag-req">Req</span></td><td>Factory's supplier ID within buyer's Coupa instance.</td></tr>
+<tr><td>5</td><td>Webhook Subscription URL</td><td><span class="tag tag-req">Req</span></td><td>FC provides webhook URL. Buyer configures in Coupa to push PO notifications.</td></tr>
+<tr><td>6</td><td>Supported Coupa APIs</td><td><span class="tag tag-req">Req</span></td><td>POs, Invoices, ASN, Contracts, Catalogs. Version: Coupa API v34+.</td></tr>
+</table>
+
+<h4>EDIFACT (EU) Buyers</h4>
+<table>
+<tr><th style="width:4%">#</th><th style="width:25%">Config Item</th><th style="width:8%">Required</th><th style="width:63%">Details</th></tr>
+<tr><td>1</td><td>UNB Sender/Receiver IDs</td><td><span class="tag tag-req">Req</span></td><td>EDIFACT interchange header identifiers. Qualifier (e.g., "14" for EAN) + ID.</td></tr>
+<tr><td>2</td><td>EDIFACT Version</td><td><span class="tag tag-req">Req</span></td><td>D96A, D01B, D19A etc. Determines message structure.</td></tr>
+<tr><td>3</td><td>Message Types</td><td><span class="tag tag-req">Req</span></td><td>ORDERS, ORDRSP, DESADV, INVOIC, REMADV. Which ones this buyer uses.</td></tr>
+<tr><td>4</td><td>Transport: AS2 / OFTP2 / SFTP</td><td><span class="tag tag-req">Req</span></td><td>EU buyers often use OFTP2 (Odette) for automotive or AS2. Credentials per transport type.</td></tr>
+<tr><td>5</td><td>CBAM Reporting Requirements</td><td><span class="tag tag-opt">Opt</span></td><td>If EU buyer requires embedded carbon data: CBAM installation ID, emission factor format, reporting period.</td></tr>
+</table>
+
+<h4>Custom REST / SOAP Buyers</h4>
+<table>
+<tr><th style="width:4%">#</th><th style="width:25%">Config Item</th><th style="width:8%">Required</th><th style="width:63%">Details</th></tr>
+<tr><td>1</td><td>API Base URL</td><td><span class="tag tag-req">Req</span></td><td>Buyer's REST API or SOAP WSDL endpoint.</td></tr>
+<tr><td>2</td><td>Auth Type</td><td><span class="tag tag-req">Req</span></td><td>Enum: <code>API_KEY | OAUTH2 | BASIC | mTLS | HMAC | WS_SECURITY | SAML</code></td></tr>
+<tr><td>3</td><td>Auth Credentials</td><td><span class="tag tag-req">Req</span></td><td>Per auth type: API key + header name, OAuth client_id/secret/token_url, Basic user:pass, mTLS cert, WS-Security token.</td></tr>
+<tr><td>4</td><td>API Version</td><td><span class="tag tag-req">Req</span></td><td>Buyer's API version. FC stores and supports multiple versions per buyer.</td></tr>
+<tr><td>5</td><td>Endpoint Map</td><td><span class="tag tag-req">Req</span></td><td>For REST: method + path per operation. e.g., <code>POST /api/v2/purchase-orders</code>, <code>PUT /api/v2/invoices/{id}</code></td></tr>
+<tr><td>6</td><td>SOAP Action Headers</td><td><span class="tag tag-opt">Opt</span></td><td>For SOAP: SOAPAction per operation. WSDL import for auto-discovery.</td></tr>
+<tr><td>7</td><td>Request/Response Schemas</td><td><span class="tag tag-req">Req</span></td><td>OpenAPI spec, JSON Schema, XSD, or sample JSON/XML. FC AI generates mapping from these.</td></tr>
+<tr><td>8</td><td>Rate Limits</td><td><span class="tag tag-opt">Opt</span></td><td>Buyer's API rate limits. FC respects and queues accordingly.</td></tr>
+<tr><td>9</td><td>Webhook Config (if buyer pushes)</td><td><span class="tag tag-opt">Opt</span></td><td>Webhook verification method (HMAC, challenge-response, IP allowlist). FC provides receiver URL.</td></tr>
+</table>
+</div>
+
+<h2>3. The Onboarding Configuration Database Schema</h2>
+<div class="card">
+<p>This extends the existing <code>connections</code> table with a full onboarding state machine and configuration registry:</p>
+<pre>
+<span class="comment">-- Onboarding configuration per factory-buyer connection</span>
+<span class="key">CREATE TABLE</span> connection_configs (
+  config_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  connection_id UUID NOT NULL REFERENCES connections(connection_id),
+
+  <span class="comment">-- FACTORY SIDE CONFIG (what factory provided)</span>
+  factory_erp_config JSONB NOT NULL,      <span class="comment">-- {erp_type, version, api_url, auth_type, polling_interval}</span>
+  factory_erp_credentials JSONB,          <span class="comment">-- ENCRYPTED: {oauth_token, api_key, username, password}</span>
+  factory_buyer_code VARCHAR NOT NULL,    <span class="comment">-- Factory's internal code for this buyer in ERP</span>
+  factory_sample_data JSONB,             <span class="comment">-- References to uploaded sample files (S3/MinIO paths)</span>
+  factory_custom_fields JSONB,           <span class="comment">-- Industry-specific field definitions</span>
+  factory_network_config JSONB,          <span class="comment">-- {static_ip, proxy, firewall_type, whitelisted_ips}</span>
+
+  <span class="comment">-- FC PROVISIONS (what FC generated/assigned)</span>
+  fc_api_key VARCHAR NOT NULL,            <span class="comment">-- FC-issued API key for this factory</span>
+  fc_api_endpoint VARCHAR NOT NULL,       <span class="comment">-- Dedicated or shared API endpoint</span>
+  fc_webhook_url VARCHAR,                 <span class="comment">-- Factory-specific webhook receiver URL</span>
+  fc_webhook_secret VARCHAR,              <span class="comment">-- HMAC secret for webhook verification</span>
+  fc_soap_endpoint VARCHAR,               <span class="comment">-- SOAP WSDL if factory needs SOAP</span>
+  fc_bridge_agent_config JSONB,          <span class="comment">-- Bridge agent installer config (Tally/Busy/Marg)</span>
+  fc_tls_cert_fingerprint VARCHAR,       <span class="comment">-- FC's TLS cert fingerprint for pinning</span>
+  fc_mtls_cert JSONB,                    <span class="comment">-- FC's client cert for mTLS (if required)</span>
+  fc_api_spec_version VARCHAR DEFAULT '1.0', <span class="comment">-- API spec version provisioned</span>
+
+  <span class="comment">-- BUYER SIDE CONFIG (what buyer provided)</span>
+  buyer_system_type VARCHAR NOT NULL,     <span class="comment">-- EDI_X12, ARIBA, COUPA, EDIFACT, REST, SOAP</span>
+  buyer_protocol VARCHAR NOT NULL,        <span class="comment">-- AS2, HTTPS, SFTP, FTP, OFTP2</span>
+  buyer_endpoint_config JSONB NOT NULL,  <span class="comment">-- {url, as2_id, sftp_host, port, paths}</span>
+  buyer_credentials JSONB,               <span class="comment">-- ENCRYPTED: {as2_cert, api_key, oauth, shared_secret}</span>
+  buyer_edi_config JSONB,                <span class="comment">-- {isa_qualifier, isa_id, gs_codes, version, test_ids}</span>
+  buyer_ariba_config JSONB,              <span class="comment">-- {anid, supplier_anid, cxml_secret, commerce_url}</span>
+  buyer_coupa_config JSONB,              <span class="comment">-- {instance_url, supplier_id, api_key}</span>
+  buyer_supported_messages JSONB,        <span class="comment">-- ["850","855","856","810","997"] or ["OrderRequest","ShipNotice"]</span>
+  buyer_impl_guide_ref VARCHAR,          <span class="comment">-- MinIO path to buyer's implementation guide PDF</span>
+  buyer_sample_po_ref VARCHAR,           <span class="comment">-- MinIO path to sample PO from buyer</span>
+  buyer_api_version VARCHAR,             <span class="comment">-- Buyer's API version</span>
+  buyer_rate_limits JSONB,               <span class="comment">-- {requests_per_minute, daily_limit}</span>
+
+  <span class="comment">-- AI MAPPING CONFIG (auto-generated, human-reviewed)</span>
+  source_mapping JSONB,                  <span class="comment">-- JSONata: factory ERP → canonical</span>
+  target_mapping JSONB,                  <span class="comment">-- JSONata: canonical → buyer format</span>
+  field_transforms JSONB,                <span class="comment">-- Custom transform functions</span>
+  default_values JSONB,                  <span class="comment">-- Defaults for fields factory doesn't have</span>
+  validation_rules JSONB,                <span class="comment">-- Per-field validation schema</span>
+  ai_confidence_score DECIMAL(5,2),      <span class="comment">-- AI mapping confidence 0-100%</span>
+  ai_mapping_review_status VARCHAR       <span class="comment">-- PENDING_REVIEW, APPROVED, NEEDS_MANUAL</span>
+    DEFAULT 'PENDING_REVIEW'
+    CHECK (ai_mapping_review_status IN ('PENDING_REVIEW','APPROVED','NEEDS_MANUAL')),
+
+  <span class="comment">-- SECURITY & VERSIONING</span>
+  security_tier VARCHAR DEFAULT 'STANDARD'
+    CHECK (security_tier IN ('BASIC','STANDARD','ENTERPRISE')),  <span class="comment">-- BASIC=API key, STANDARD=OAuth, ENTERPRISE=mTLS</span>
+  config_version INTEGER DEFAULT 1,
+  previous_config_id UUID,               <span class="comment">-- Link to previous version for rollback</span>
+
+  <span class="comment">-- ONBOARDING STATE</span>
+  onboarding_status VARCHAR DEFAULT 'FACTORY_SETUP'
+    CHECK (onboarding_status IN (
+      'FACTORY_SETUP',        <span class="comment">-- Factory providing ERP config + samples</span>
+      'BUYER_SETUP',          <span class="comment">-- Awaiting buyer credentials/endpoints</span>
+      'AI_MAPPING',           <span class="comment">-- AI generating field mappings</span>
+      'MAPPING_REVIEW',       <span class="comment">-- Human reviewing AI-generated mappings</span>
+      'TESTING',              <span class="comment">-- End-to-end testing in sandbox</span>
+      'CERTIFICATION',        <span class="comment">-- Buyer certification testing (EDI)</span>
+      'READY',                <span class="comment">-- Configuration complete, pending go-live</span>
+      'LIVE',                 <span class="comment">-- Production active</span>
+      'SUSPENDED'             <span class="comment">-- Temporarily suspended</span>
+    )),
+
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  go_live_at TIMESTAMPTZ
+);
+
+<span class="comment">-- Protocol support registry: what protocols FC supports per version</span>
+<span class="key">CREATE TABLE</span> protocol_registry (
+  protocol_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  protocol_type VARCHAR NOT NULL,        <span class="comment">-- REST, SOAP, EDI_X12, EDIFACT, ARIBA_CXML, AS2, SFTP, OFTP2</span>
+  version VARCHAR NOT NULL,              <span class="comment">-- "1.0", "2.0", "4010", "5010", "D96A"</span>
+  supported BOOLEAN DEFAULT TRUE,
+  spec_schema JSONB,                     <span class="comment">-- JSON Schema / XSD for this protocol version</span>
+  sample_messages JSONB,                 <span class="comment">-- Reference sample messages</span>
+  deprecated_at TIMESTAMPTZ,
+  replacement_version VARCHAR,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+<span class="comment">-- Onboarding audit trail</span>
+<span class="key">CREATE TABLE</span> onboarding_events (
+  event_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  config_id UUID NOT NULL REFERENCES connection_configs(config_id),
+  event_type VARCHAR NOT NULL,           <span class="comment">-- CONFIG_SUBMITTED, AI_MAPPING_GENERATED, TEST_PASSED, CERT_PASSED, GO_LIVE</span>
+  actor VARCHAR NOT NULL,                <span class="comment">-- 'factory:user@acme.com', 'fc:system', 'fc:admin@fc.io', 'buyer:edi@walmart.com'</span>
+  details JSONB,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+</pre>
+</div>
+
+<h2>4. AI-Powered Auto-Mapping Flow</h2>
+<div class="card">
+<p>This is the intelligence layer that makes onboarding fast. When a factory uploads sample data and a buyer PO, the AI engine performs automatic source/target detection and field mapping.</p>
+
+<div class="flow-box">
+<span style="color:#82aaff;">STEP 1: SOURCE DETECTION</span>
+Factory uploads sample data (invoice, SO, product list)
+  → AI identifies: format (XML/JSON/CSV/Excel)
+  → AI identifies: ERP type (Tally XML Server response, Zoho webhook JSON, SAP B1 REST)
+  → AI extracts: field names, data types, nesting structure
+  → AI generates: source_mapping (ERP fields → Canonical)
+  → Confidence score: 85-99% for known ERPs, 60-80% for custom
+
+<span style="color:#82aaff;">STEP 2: TARGET DETECTION</span>
+Factory uploads sample buyer PO (received from buyer)
+  → AI identifies: buyer system type
+     - Starts with "ISA*" → EDI X12. Extract version from GS08.
+     - Contains "&lt;cXML&gt;" or "&lt;OrderRequest&gt;" → Ariba cXML
+     - JSON with "purchase-order-lines" → Coupa REST
+     - Starts with "UNB+" → EDIFACT. Extract version from UNH.
+     - Other XML/JSON → Custom REST/SOAP. Analyze schema.
+  → AI extracts: buyer identifiers (ISA IDs, ANID, Coupa supplier ID)
+  → AI generates: target_mapping (Canonical → Buyer format)
+  → AI identifies: required acknowledgments (997, ConfirmationRequest)
+
+<span style="color:#82aaff;">STEP 3: FIELD MATCHING</span>
+AI matches source fields to target fields through canonical model:
+  Factory "STOCKITEM.NAME"  → Canonical "product.name"     → EDI "PO1*PID*F*93*"
+  Factory "VOUCHER.AMOUNT"  → Canonical "invoice.amount"    → EDI "TDS*total*"
+  Factory "GODOWN.CLOSING"  → Canonical "inventory.qty"     → Ariba "&lt;SupplyQuantity&gt;"
+
+For unmatched fields:
+  → AI suggests: closest match with explanation
+  → AI flags: "NEEDS_MANUAL" for ambiguous fields
+  → AI sets: default values for buyer-required fields factory doesn't have
+
+<span style="color:#82aaff;">STEP 4: VALIDATION</span>
+AI generates validation rules per connection:
+  → Required fields check (buyer-mandated)
+  → Format validation (date formats, number precision)
+  → Value range checks (quantities, amounts)
+  → Cross-field validation (ship date after order date)
+  → Buyer-specific rules (Walmart requires ASN within 24hrs of shipment)
+</div>
+
+<div class="callout callout-ai">
+<strong>AI Prompt Template for Mapping (Claude API call):</strong><br>
+<code>"Given this factory ERP sample [attached], identify all fields and map them to the FactoryConnect canonical model. For each field, provide: source_path, canonical_path, transform_function (if needed), confidence_score (0-1). Flag any fields that need human review. Also identify the ERP type and version from the data structure."</code><br><br>
+<strong>AI Prompt Template for Buyer Detection:</strong><br>
+<code>"Analyze this buyer purchase order [attached]. Identify: (1) system type (EDI X12/Ariba cXML/Coupa/EDIFACT/Custom), (2) version, (3) all buyer identifiers, (4) required response documents, (5) map all buyer fields to FactoryConnect canonical model with confidence scores."</code>
+</div>
+</div>
+
+<h2>5. Complete Onboarding Workflow (10 Steps)</h2>
+<div class="card">
+<table>
+<tr><th style="width:5%">Step</th><th style="width:18%">Phase</th><th style="width:10%">Actor</th><th style="width:35%">Actions</th><th style="width:17%">Output</th><th style="width:15%">Duration</th></tr>
+<tr>
+  <td><span class="step-num">1</span></td>
+  <td>Factory Registration</td>
+  <td><span class="tag tag-factory">Factory</span></td>
+  <td>Signs up on FC portal. Provides: company name, GSTIN, IEC, ERP type, admin contact. WhatsApp or web form.</td>
+  <td>Factory tenant created. API key generated.</td>
+  <td>10 minutes</td>
+</tr>
+<tr>
+  <td><span class="step-num">2</span></td>
+  <td>ERP Connection</td>
+  <td><span class="tag tag-factory">Factory</span> + <span class="tag tag-fc">FC</span></td>
+  <td><strong>Tally:</strong> Download + install Bridge Agent. <strong>Zoho:</strong> OAuth authorize. <strong>SAP B1:</strong> Provide Service Layer URL + creds. <strong>Custom REST/SOAP:</strong> Provide endpoint + auth + API version.</td>
+  <td>ERP connectivity verified. First data sync.</td>
+  <td>30 min (Tally) / 5 min (cloud ERP)</td>
+</tr>
+<tr>
+  <td><span class="step-num">3</span></td>
+  <td>Sample Data Upload</td>
+  <td><span class="tag tag-factory">Factory</span></td>
+  <td>Upload: sample SO, invoice, product list, delivery note. Upload: sample buyer PO (email/PDF/EDI file). Via portal, WhatsApp photo, or email.</td>
+  <td>Sample data stored in MinIO. Ready for AI.</td>
+  <td>15 minutes</td>
+</tr>
+<tr>
+  <td><span class="step-num">4</span></td>
+  <td>AI Source Mapping</td>
+  <td><span class="tag tag-ai">AI Engine</span></td>
+  <td>Claude analyzes factory ERP samples. Auto-generates source mapping (ERP → Canonical). Identifies custom fields. Sets confidence scores.</td>
+  <td>source_mapping JSONB with confidence scores.</td>
+  <td>2-5 minutes (automated)</td>
+</tr>
+<tr>
+  <td><span class="step-num">5</span></td>
+  <td>AI Target Detection</td>
+  <td><span class="tag tag-ai">AI Engine</span></td>
+  <td>Claude analyzes buyer PO sample. Detects buyer system type + version. Extracts buyer identifiers. Generates target mapping (Canonical → Buyer).</td>
+  <td>target_mapping JSONB. Buyer system auto-identified.</td>
+  <td>2-5 minutes (automated)</td>
+</tr>
+<tr>
+  <td><span class="step-num">6</span></td>
+  <td>Buyer Credential Collection</td>
+  <td><span class="tag tag-buyer">Buyer</span> + <span class="tag tag-fc">FC</span></td>
+  <td>FC contacts buyer IT (or factory provides contact). Collects: AS2 certs, Ariba ANID, Coupa API key, EDI IDs, SFTP creds. FC provides FC's AS2 cert + endpoints.</td>
+  <td>Buyer config populated. Mutual certs exchanged.</td>
+  <td>1-5 days (buyer response dependent)</td>
+</tr>
+<tr>
+  <td><span class="step-num">7</span></td>
+  <td>Mapping Review</td>
+  <td><span class="tag tag-fc">FC Admin</span> + <span class="tag tag-factory">Factory</span></td>
+  <td>FC admin reviews AI mappings. Factory confirms field meanings for low-confidence matches. FC finalizes default values + transform functions.</td>
+  <td>Mapping status → APPROVED.</td>
+  <td>1-2 hours</td>
+</tr>
+<tr>
+  <td><span class="step-num">8</span></td>
+  <td>Sandbox Testing</td>
+  <td><span class="tag tag-fc">FC</span> + <span class="tag tag-factory">Factory</span></td>
+  <td>End-to-end test in sandbox: Factory sends test order via ERP → FC transforms → generates buyer-format output. Factory verifies output matches expected format.</td>
+  <td>Test report. All message types validated.</td>
+  <td>1-2 days</td>
+</tr>
+<tr>
+  <td><span class="step-num">9</span></td>
+  <td>Buyer Certification</td>
+  <td><span class="tag tag-fc">FC</span> + <span class="tag tag-buyer">Buyer</span></td>
+  <td>For EDI: send test transactions to buyer's test environment. Buyer validates and sends 997 FA. For Ariba: test cXML exchange. For Coupa: test API calls.</td>
+  <td>Buyer certification passed. Production credentials issued.</td>
+  <td>2-10 days (buyer dependent)</td>
+</tr>
+<tr>
+  <td><span class="step-num">10</span></td>
+  <td>Go-Live</td>
+  <td><span class="tag tag-fc">FC</span></td>
+  <td>Switch connection status to LIVE. Enable production routing. Monitor first 10 transactions. Set up alerts for factory + FC ops.</td>
+  <td>Connection LIVE. First real transaction flows.</td>
+  <td>1 day</td>
+</tr>
+</table>
+
+<div class="callout callout-green"><strong>Total onboarding time:</strong> 5-15 business days depending on buyer response time. Steps 1-5 (factory side + AI) complete in &lt;1 day. Step 6 (buyer credentials) is typically the bottleneck. Target: same-day for factory side, &lt;1 week for buyer side when factory already has buyer contact.</div>
+</div>
+
+<h2>6. Protocol & Version Support Matrix</h2>
+<div class="card">
+<p>FC must support multiple protocol versions simultaneously — buyers don't all upgrade at the same pace. The <code>protocol_registry</code> table tracks what FC supports:</p>
+<table>
+<tr><th>Protocol</th><th>Versions Supported</th><th>Transport</th><th>Auth Methods</th><th>Direction</th></tr>
+<tr><td><strong>REST API</strong></td><td>v1.0, v1.1, v2.0 (FC's own API)</td><td>HTTPS</td><td>API Key, OAuth 2.0, mTLS, HMAC</td><td>Inbound + Outbound</td></tr>
+<tr><td><strong>SOAP</strong></td><td>SOAP 1.1, SOAP 1.2</td><td>HTTPS</td><td>WS-Security (UsernameToken, X509), Basic, SAML</td><td>Inbound + Outbound</td></tr>
+<tr><td><strong>EDI X12</strong></td><td>4010, 4030, 5010, 5020</td><td>AS2, SFTP, FTP</td><td>AS2 certs, SSH keys, username/password</td><td>Bidirectional</td></tr>
+<tr><td><strong>EDIFACT</strong></td><td>D96A, D01B, D19A</td><td>AS2, OFTP2, SFTP</td><td>AS2 certs, OFTP2 certs, SSH keys</td><td>Bidirectional</td></tr>
+<tr><td><strong>Ariba cXML</strong></td><td>cXML 1.2.025+</td><td>HTTPS</td><td>Shared Secret, Ariba Network auth</td><td>Bidirectional</td></tr>
+<tr><td><strong>Coupa API</strong></td><td>v34, v35, v36+</td><td>HTTPS</td><td>API Key, OAuth 2.0</td><td>Bidirectional</td></tr>
+<tr><td><strong>Webhooks</strong></td><td>Custom per source/target</td><td>HTTPS</td><td>HMAC-SHA256, challenge-response, IP allowlist</td><td>Inbound</td></tr>
+<tr><td><strong>Tally XML</strong></td><td>Tally Prime 3.x, 4.x</td><td>HTTP (local)</td><td>None (localhost only via Bridge Agent)</td><td>Inbound (polling)</td></tr>
+<tr><td><strong>SAP B1 SL</strong></td><td>v1, v2</td><td>HTTPS</td><td>Session (B1Session cookie), Basic</td><td>Outbound (FC polls)</td></tr>
+</table>
+</div>
+
+<h2>7. Whitelisting & Network Configuration (Both Sides)</h2>
+<div class="card">
+<table>
+<tr><th style="width:25%">Config</th><th style="width:35%">Factory Must Do</th><th style="width:40%">FC Provides</th></tr>
+<tr><td><strong>Outbound IP Whitelist</strong></td><td>Factory firewall allows outbound HTTPS (443) to FC's IP range</td><td>FC static IPs: <code>34.93.x.x/28</code> (GCP Mumbai), <code>34.131.x.x/28</code> (GCP Jakarta for Indonesia). Published in FC docs.</td></tr>
+<tr><td><strong>Inbound IP Whitelist (FC → Factory)</strong></td><td>If factory exposes API (SAP B1 on-prem), whitelist FC's outbound IPs</td><td>Same FC IP range. For Bridge Agent: no inbound needed (agent polls outbound).</td></tr>
+<tr><td><strong>AS2 Whitelist (FC → Buyer)</strong></td><td>N/A</td><td>Buyer must whitelist FC's AS2 IP. FC provides dedicated AS2 gateway IPs.</td></tr>
+<tr><td><strong>DNS / Domain Whitelist</strong></td><td>Factory allows: <code>*.factoryconnect.io</code>, <code>api.factoryconnect.io</code>, <code>sandbox.factoryconnect.io</code></td><td>FC publishes FQDN list for corporate proxy/firewall rules.</td></tr>
+<tr><td><strong>Certificate Pinning</strong></td><td>Optional: Factory can pin FC's TLS certificate fingerprint</td><td>FC publishes cert fingerprint + rotation schedule (annually). 30-day overlap during rotation.</td></tr>
+</table>
+</div>
+
+<h2>8. What This Enables: N Factories &times; M Buyers</h2>
+<div class="card">
+<div class="flow-box">
+<span style="color:#82aaff;">THE N×M VISION:</span>
+
+Factory A (Tally Prime) ──┐
+Factory B (Zoho Books)  ──┤                    ┌── Buyer 1 (EDI X12 / AS2)
+Factory C (SAP B1)      ──┤                    ├── Buyer 2 (SAP Ariba / cXML)
+Factory D (Busy)        ──┼── FC Canonical ────┼── Buyer 3 (Coupa / REST)
+Factory E (Marg)        ──┤    Model Hub       ├── Buyer 4 (EDIFACT / OFTP2)
+Factory F (ERPNext)     ──┤                    ├── Buyer 5 (Custom REST)
+Factory G (WhatsApp)    ──┤                    └── Buyer 6 (Custom SOAP)
+Factory H (CSV Upload)  ──┘
+
+<span style="color:#c3e88d;">Adding a new Factory-Buyer pair = 1 database record (connection_configs)</span>
+<span style="color:#c3e88d;">AI auto-generates the mapping in minutes, not weeks</span>
+<span style="color:#c3e88d;">No code changes. No deployments. Pure configuration.</span>
+
+<span style="color:#82aaff;">SCALE MATH:</span>
+  100 factories × 3 buyers each = 300 connections
+  500 factories × 4 buyers each = 2,000 connections
+  All running through the SAME canonical model
+  All managed via the SAME onboarding workflow
+  All mapped by the SAME AI engine
+</div>
+
+<div class="callout callout-green"><strong>This is the network effect:</strong> Every new factory added benefits from existing buyer connections (already configured). Every new buyer added benefits from existing factory connections. Connection #1,000 is configured in hours, not weeks, because the AI has learned from the previous 999 mappings.</div>
+</div>
+
+<h2>9. Implementation Priority for the Codebase</h2>
+<div class="card">
+<table>
+<tr><th>Priority</th><th>Module</th><th>What to Build</th><th>Depends On</th></tr>
+<tr><td><span class="tag tag-req">P0</span></td><td><code>connection_configs</code> table + API</td><td>Database migration. CRUD API for config. Encrypted credential storage via Vault.</td><td>Existing <code>connections</code> table</td></tr>
+<tr><td><span class="tag tag-req">P0</span></td><td><code>protocol_registry</code> table</td><td>Seed all supported protocols + versions. API for querying capabilities.</td><td>None</td></tr>
+<tr><td><span class="tag tag-req">P0</span></td><td>Onboarding Wizard API</td><td>Step-by-step REST API: <code>/onboarding/start</code>, <code>/onboarding/{id}/factory-config</code>, <code>/onboarding/{id}/upload-samples</code>, <code>/onboarding/{id}/buyer-config</code></td><td>connection_configs</td></tr>
+<tr><td><span class="tag tag-req">P1</span></td><td>AI Mapping Engine</td><td>Claude API integration. Sample data analysis. Auto-mapping with confidence scores. Review UI.</td><td>Onboarding API</td></tr>
+<tr><td><span class="tag tag-req">P1</span></td><td>Buyer Auto-Detection</td><td>Parse uploaded buyer PO. Identify system type + version. Extract identifiers. Generate target mapping.</td><td>AI Mapping Engine</td></tr>
+<tr><td><span class="tag tag-factory">P1</span></td><td>SOAP Support Layer</td><td>WSDL parser. SOAP envelope builder. WS-Security handler. SOAPAction routing.</td><td>Protocol Registry</td></tr>
+<tr><td><span class="tag tag-fc">P2</span></td><td>Onboarding Portal UI</td><td>React wizard: factory registration → ERP connect → sample upload → AI mapping review → test → go-live.</td><td>Onboarding API</td></tr>
+<tr><td><span class="tag tag-fc">P2</span></td><td>WhatsApp Onboarding Flow</td><td>Guided onboarding via WhatsApp: "Send photo of your invoice" → AI processes → "We detected Tally. Correct?"</td><td>AI Mapping Engine + WhatsApp channel</td></tr>
+<tr><td><span class="tag tag-fc">P2</span></td><td>Certification Test Suite</td><td>Automated test runner per buyer type. Send test transactions. Validate responses. Generate cert report.</td><td>All target adapters</td></tr>
+</table>
+</div>
+
+<p class="footer">FactoryConnect Onboarding Configuration Engine v1.0 | Architecture specification for N×M factory-buyer provisioning with AI auto-mapping | April 2026</p>
+</body>
+</html>

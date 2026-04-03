@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FactoryConnect — Integration Specs Reference & Sales Order Flow</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f6f9; color: #1a1a2e; padding: 24px; max-width: 1400px; margin: 0 auto; }
+  h1 { font-size: 1.5rem; color: #0f3460; margin-bottom: 4px; }
+  h2 { font-size: 1.15rem; color: #0f3460; margin: 32px 0 12px; border-bottom: 2px solid #0f3460; padding-bottom: 6px; }
+  h3 { font-size: 0.95rem; color: #16213e; margin: 18px 0 8px; }
+  h4 { font-size: 0.88rem; color: #333; margin: 12px 0 6px; }
+  .subtitle { color: #555; font-size: 0.88rem; margin-bottom: 24px; }
+  .card { background: #fff; border-radius: 8px; padding: 20px 24px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.78rem; margin: 12px 0; }
+  th { background: #0f3460; color: #fff; padding: 8px 10px; text-align: left; font-size: 0.75rem; }
+  td { padding: 7px 10px; border-bottom: 1px solid #eee; vertical-align: top; }
+  tr:hover td { background: #f0f4ff; }
+  .tag { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.7rem; font-weight: 600; margin: 1px 2px; }
+  .tag-red { background: #ffe0e0; color: #c0392b; }
+  .tag-orange { background: #fff3cd; color: #856404; }
+  .tag-green { background: #d4edda; color: #155724; }
+  .tag-blue { background: #e8f0fe; color: #1a73e8; }
+  .tag-purple { background: #f3e5f5; color: #7b1fa2; }
+  .tag-teal { background: #e0f2f1; color: #00695c; }
+  .callout { background: #e8f0fe; border-left: 4px solid #1a73e8; padding: 14px 18px; margin: 14px 0; border-radius: 0 6px 6px 0; font-size: 0.84rem; }
+  .callout-red { background: #fce4ec; border-left-color: #c62828; }
+  .callout-green { background: #d4edda; border-left-color: #27ae60; }
+  .callout-warn { background: #fff3cd; border-left-color: #e67e22; }
+  .solution-box { background: #0f3460; color: #fff; border-radius: 8px; padding: 18px 22px; margin: 14px 0; }
+  .solution-box h3 { color: #82aaff; margin-top: 0; }
+  .solution-box h4 { color: #c3e88d; }
+  .solution-box p, .solution-box li { color: #e0e0e0; }
+  .solution-box code { background: #16213e; color: #c3e88d; }
+  pre { background: #1a1a2e; color: #e0e0e0; padding: 16px; border-radius: 6px; overflow-x: auto; font-size: 0.76rem; line-height: 1.55; margin: 10px 0; }
+  pre .comment { color: #546e7a; }
+  pre .key { color: #82aaff; }
+  pre .str { color: #c3e88d; }
+  code { background: #f0f0f0; padding: 2px 6px; border-radius: 3px; font-size: 0.78rem; }
+  p, li { font-size: 0.85rem; line-height: 1.6; }
+  ul, ol { margin: 6px 0 12px 20px; }
+  .flow-box { background: #16213e; color: #fff; border-radius: 8px; padding: 18px 22px; margin: 14px 0; font-family: 'Courier New', monospace; font-size: 0.76rem; line-height: 1.6; white-space: pre-wrap; overflow-x: auto; }
+  .section-header { background: linear-gradient(135deg, #0f3460, #16213e); color: #fff; padding: 14px 20px; border-radius: 8px 8px 0 0; font-weight: 700; font-size: 0.9rem; }
+  .section-body { background: #fff; padding: 16px 20px; border-radius: 0 0 8px 8px; border: 1px solid #e0e0e0; border-top: none; margin-bottom: 20px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.68rem; font-weight: 700; }
+  .badge-rest { background: #27ae60; color: #fff; }
+  .badge-xml { background: #e67e22; color: #fff; }
+  .badge-edi { background: #8e44ad; color: #fff; }
+  .badge-soap { background: #c0392b; color: #fff; }
+  .badge-odbc { background: #2c3e50; color: #fff; }
+  .badge-cxml { background: #2980b9; color: #fff; }
+  .rec-box { background: #e8f5e9; border: 2px solid #27ae60; border-radius: 8px; padding: 16px; margin: 12px 0; }
+  .rec-box h4 { color: #1b5e20; margin-top: 0; }
+  .footer { margin-top: 24px; font-size: 0.78rem; color: #888; text-align: center; }
+  .toc { background: #fff; padding: 16px 24px; border-radius: 8px; margin-bottom: 24px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+  .toc a { color: #0f3460; text-decoration: none; font-size: 0.84rem; }
+  .toc a:hover { text-decoration: underline; }
+  .toc ol { margin-left: 18px; }
+  .toc li { margin: 4px 0; }
+</style>
+</head>
+<body>
+
+<h1>FactoryConnect — Integration Specs Reference & Order-to-Cash Flow</h1>
+<p class="subtitle">Ground-truth documentation for every source ERP and target buyer system — APIs, versions, protocols, sales order flow, authentication, rate limits, and industry best-class recommendations | April 2026</p>
+
+<div class="toc">
+<strong>Contents</strong>
+<ol>
+<li><a href="#part1">Part 1: Source ERP Systems (Factory Side)</a> — Tally, Zoho, SAP B1, ERPNext, Busy, Marg</li>
+<li><a href="#part2">Part 2: Target Buyer Systems</a> — EDI X12, AS2, Ariba cXML, Coupa, Oracle Fusion, EDIFACT/OFTP2, SOAP/WS-Security</li>
+<li><a href="#part3">Part 3: Complete Order-to-Cash Flow</a> — Every API endpoint, every document, every step</li>
+<li><a href="#part4">Part 4: Industry Best-Class Recommendations</a> — Three-way matching, idempotency, error handling, timing SLAs</li>
+<li><a href="#part5">Part 5: Version Compatibility Matrix & Adapter Mapping</a></li>
+</ol>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2 id="part1">Part 1: Source ERP Systems (Factory Side)</h2>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<!-- TALLY PRIME -->
+<div class="section-header">1.1 Tally Prime <span class="badge badge-xml">XML/HTTP</span></div>
+<div class="section-body">
+<table>
+<tr><th style="width:22%">Attribute</th><th>Details</th></tr>
+<tr><td><strong>Current Version</strong></td><td>TallyPrime 7.0 (Dec 2025). Pre-7.0 used XML exclusively; v7.0+ adds native JSON.</td></tr>
+<tr><td><strong>Integration Protocol</strong></td><td>XML-over-HTTP POST to port 9000+ (configurable). No native REST API. TDL (Tally Definition Language) for custom exports.</td></tr>
+<tr><td><strong>Authentication</strong></td><td>JWT Bearer Tokens (session) and HMAC-SHA256 API Keys (automation). Rate limit: 100 req/min.</td></tr>
+<tr><td><strong>Sales Order/Invoice</strong></td><td>Voucher types: <code>Sales</code> (invoice mode), <code>Sales Order</code> (pre-transaction). XML <code>&lt;VOUCHER TYPE="Sales"&gt;</code> with <code>&lt;INVENTORYENTRIES&gt;</code> for line items.</td></tr>
+<tr><td><strong>Data Entities</strong></td><td>Ledgers, Stock Items, Vouchers (Sales/Purchase/Payment/Receipt/Journal), Groups, Godowns (warehouses), Cost Centres, GST data.</td></tr>
+<tr><td><strong>XML Structure</strong></td><td><code>&lt;ENVELOPE&gt;&lt;HEADER&gt;&lt;BODY&gt;</code> — supports Create, Alter, Delete, and TDL code execution within requests.</td></tr>
+<tr><td><strong>Database</strong></td><td>Proprietary file-based DB. ODBC available for read-heavy workloads. Primary tables: Voucher, trn_accounting, trn_inventory.</td></tr>
+<tr><td><strong>Platform</strong></td><td><span class="tag tag-red">Windows Only</span>. Local network first. No native cloud API. Remote users cannot import data.</td></tr>
+<tr><td><strong>FC Adapter Strategy</strong></td><td>Bridge agent (Windows service) installed on factory's network. Polls Tally XML export, pushes to FC via HTTPS/mTLS. Bridge handles Tally's local-network limitation.</td></tr>
+<tr><td><strong>Docs</strong></td><td><a href="https://help.tallysolutions.com/integration-with-tallyprime/">help.tallysolutions.com/integration-with-tallyprime</a>, <a href="https://developer.tallysolutions.com">developer.tallysolutions.com</a></td></tr>
+</table>
+
+<pre>
+<span class="comment">&lt;!-- Tally XML: Create Sales Voucher --&gt;</span>
+&lt;REQUEST ACTION="Create"&gt;
+  &lt;HEADER&gt;&lt;ID&gt;All Masters / Vouchers&lt;/ID&gt;&lt;/HEADER&gt;
+  &lt;BODY&gt;
+    &lt;VOUCHER TYPE="Sales" DATE="2026-04-02"&gt;
+      &lt;REFERENCE&gt;PO-REF-001&lt;/REFERENCE&gt;
+      &lt;NARRATION&gt;Sales Order from Buyer via FactoryConnect&lt;/NARRATION&gt;
+      &lt;INVENTORYENTRIES&gt;
+        &lt;INVENTORYENTRY&gt;
+          &lt;ITEM&gt;Auto Component A&lt;/ITEM&gt;
+          &lt;QUANTITY&gt;100&lt;/QUANTITY&gt;
+          &lt;RATE&gt;₹5000&lt;/RATE&gt;
+        &lt;/INVENTORYENTRY&gt;
+      &lt;/INVENTORYENTRIES&gt;
+    &lt;/VOUCHER&gt;
+  &lt;/BODY&gt;
+&lt;/REQUEST&gt;
+</pre>
+
+<div class="rec-box">
+<h4>FC Best-Class Recommendation for Tally</h4>
+<p><strong>Bridge Agent Pattern:</strong> Install a lightweight Go binary on the factory's Windows server. It runs as a Windows Service, polls Tally's XML export endpoint every 30s, transforms to FC Canonical Model, and pushes via mTLS to FC cloud. This is how SPS Commerce and TrueCommerce handle Tally-like on-prem ERPs. The bridge agent also receives inbound POs from FC and creates Sales Vouchers in Tally via XML POST. <strong>Critical:</strong> Always schema-fingerprint every response to detect Tally version drift (field renames between 3.x → 4.x → 7.0).</p>
+</div>
+</div>
+
+<!-- ZOHO BOOKS -->
+<div class="section-header">1.2 Zoho Books <span class="badge badge-rest">REST API v3</span></div>
+<div class="section-body">
+<table>
+<tr><th style="width:22%">Attribute</th><th>Details</th></tr>
+<tr><td><strong>Current Version</strong></td><td>API v3 (active). v2 being deprecated.</td></tr>
+<tr><td><strong>Base URL</strong></td><td><code>https://www.zohoapis.com/books/v3/</code> — every call requires <code>?organization_id=YOUR_ORG_ID</code></td></tr>
+<tr><td><strong>Authentication</strong></td><td>OAuth 2.0. Access token: 1 hour. Refresh token: long-lived. Header: <code>Authorization: Zoho-oauthtoken TOKEN</code></td></tr>
+<tr><td><strong>Rate Limits</strong></td><td><span class="tag tag-red">100 req/min</span> (strictest among accounting platforms). Daily: Free 1K, Standard 2K, Professional 5K, Premium/Elite/Ultimate 10K.</td></tr>
+<tr><td><strong>Webhooks</strong></td><td>Yes. Settings → Developer Space → Incoming Webhooks. HTTP POST on invoice/bill/PO events. HMAC verification available.</td></tr>
+<tr><td><strong>Sales Order API</strong></td><td><code>POST /salesorders</code> — JSON payload with customer_id, line_items, dates, terms. Can convert to invoice via separate <code>POST /invoices</code> call.</td></tr>
+<tr><td><strong>Key Modules</strong></td><td>Invoices, Bills, Purchase Orders, Sales Orders, Estimates, Credit Notes, Vendor Credits, Contacts, Items, Bank Transactions, Custom Modules.</td></tr>
+<tr><td><strong>India Edition</strong></td><td>GST-compliant: GSTIN (15-digit), HSN/SAC codes, automatic place-of-supply, GST tax rate selection. These fields are unique to India edition.</td></tr>
+<tr><td><strong>Data Format</strong></td><td>JSON only (no XML). ISO 8601 timestamps. PUT supports upserts via custom fields (v3 feature).</td></tr>
+<tr><td><strong>FC Adapter Strategy</strong></td><td>Direct REST integration. Webhook listener for real-time events. OAuth token auto-refresh (every 55 min). Batch requests to stay within 100 req/min.</td></tr>
+<tr><td><strong>Docs</strong></td><td><a href="https://www.zoho.com/books/api/v3/">zoho.com/books/api/v3</a>, <a href="https://www.zoho.com/books/api/v3/salesorders/">Sales Orders API</a></td></tr>
+</table>
+
+<pre>
+<span class="comment">// Zoho Books: Create Sales Order from incoming PO</span>
+POST https://www.zohoapis.com/books/v3/salesorders?organization_id=ORG123
+Authorization: Zoho-oauthtoken abc123xyz
+
+{
+  <span class="key">"customer_id"</span>: <span class="str">"460000000012345"</span>,
+  <span class="key">"date"</span>: <span class="str">"2026-04-02"</span>,
+  <span class="key">"salesorder_number"</span>: <span class="str">"SO-FC-001"</span>,
+  <span class="key">"reference_number"</span>: <span class="str">"PO-WALMART-850-001"</span>,  <span class="comment">// Link back to buyer PO</span>
+  <span class="key">"line_items"</span>: [
+    {
+      <span class="key">"item_id"</span>: <span class="str">"460000000054321"</span>,
+      <span class="key">"quantity"</span>: 100,
+      <span class="key">"rate"</span>: 5000.00,
+      <span class="key">"hsn_or_sac"</span>: <span class="str">"87089900"</span>  <span class="comment">// HSN code for auto components</span>
+    }
+  ],
+  <span class="key">"notes"</span>: <span class="str">"Auto-created by FactoryConnect from EDI 850"</span>
+}
+</pre>
+</div>
+
+<!-- SAP B1 -->
+<div class="section-header">1.3 SAP Business One <span class="badge badge-rest">Service Layer REST</span></div>
+<div class="section-body">
+<table>
+<tr><th style="width:22%">Attribute</th><th>Details</th></tr>
+<tr><td><strong>Current Version</strong></td><td>SAP B1 10.0 (FP2308, FP2402, FP2405). Service Layer introduced in 9.1 for HANA.</td></tr>
+<tr><td><strong>Base URL</strong></td><td><code>https://&lt;server&gt;:50000/b1s/v2/&lt;Entity&gt;</code> — OData 4.0 (OData 3.0 deprecated as of FP2405)</td></tr>
+<tr><td><strong>Authentication</strong></td><td>Session-based: <code>POST /Login</code> → returns B1SESSION + ROUTEID cookies. 30-min timeout. Must renew every ~25 min.</td></tr>
+<tr><td><strong>Sales Order Endpoint</strong></td><td><code>POST /b1s/v2/Orders</code> — JSON with CardCode, DocumentLines (ItemCode, Quantity, UnitPrice). Response includes DocEntry and DocNum.</td></tr>
+<tr><td><strong>Full Order Flow</strong></td><td><code>/Orders</code> (Sales Order) → <code>/DeliveryNotes</code> (Shipment) → <code>/Invoices</code> (Billing) → <code>/Orders(id)/Cancel</code></td></tr>
+<tr><td><strong>OData Support</strong></td><td><code>$filter</code>, <code>$select</code>, <code>$orderby</code>, <code>$top</code>, <code>$skip</code>, <code>$inlinecount</code>. URI limit: ~2000 chars recommended.</td></tr>
+<tr><td><strong>Batch Operations</strong></td><td><code>$batch</code> endpoint. Sequential (not parallel). Stops on first failure. Good for atomic multi-step transactions.</td></tr>
+<tr><td><strong>Webhooks</strong></td><td><span class="tag tag-red">No native webhooks</span>. Must implement polling with timestamp filters. Integration Framework (legacy) has event support but separate from Service Layer.</td></tr>
+<tr><td><strong>HANA vs SQL Server</strong></td><td>HANA: native Service Layer, calculation views, preferred. SQL Server: hybrid, views must follow B1SLQuery naming.</td></tr>
+<tr><td><strong>FC Adapter Strategy</strong></td><td>Direct REST. Session manager with auto-renewal (every 25 min). Poll for new documents using <code>$filter=UpdateDate gt '...'</code>. Batch for multi-document operations.</td></tr>
+<tr><td><strong>Docs</strong></td><td><a href="https://help.sap.com/doc/056f69366b5345a386bb8149f1700c19/10.0/en-US/Service%20Layer%20API%20Reference.html">SAP B1 Service Layer Reference</a></td></tr>
+</table>
+
+<pre>
+<span class="comment">// SAP B1: Create Sales Order via Service Layer</span>
+POST https://sapserver:50000/b1s/v2/Orders
+Cookie: B1SESSION=abc123; ROUTEID=node1
+
+{
+  <span class="key">"CardCode"</span>: <span class="str">"C20000"</span>,     <span class="comment">// Business Partner (Buyer)</span>
+  <span class="key">"DocDate"</span>: <span class="str">"2026-04-02"</span>,
+  <span class="key">"NumAtCard"</span>: <span class="str">"PO-WALMART-001"</span>,  <span class="comment">// Buyer's PO reference</span>
+  <span class="key">"DocumentLines"</span>: [
+    {
+      <span class="key">"ItemCode"</span>: <span class="str">"A1000"</span>,
+      <span class="key">"Quantity"</span>: 100,
+      <span class="key">"UnitPrice"</span>: 5000.00,
+      <span class="key">"WarehouseCode"</span>: <span class="str">"WH01"</span>
+    }
+  ]
+}
+<span class="comment">// Response: { "DocEntry": 1, "DocNum": 1001, "DocumentStatus": "O" }</span>
+</pre>
+</div>
+
+<!-- ERPNEXT -->
+<div class="section-header">1.4 ERPNext <span class="badge badge-rest">Frappe REST API</span></div>
+<div class="section-body">
+<table>
+<tr><th style="width:22%">Attribute</th><th>Details</th></tr>
+<tr><td><strong>Current Version</strong></td><td>v14 (stable), v15 (latest). Built on Frappe framework.</td></tr>
+<tr><td><strong>Base URL</strong></td><td><code>/api/resource/{DocType}</code> — e.g., <code>/api/resource/Sales Order</code></td></tr>
+<tr><td><strong>Authentication</strong></td><td>API Key + Secret (<code>Authorization: token api_key:api_secret</code>), Token auth, or OAuth 2.0. All requests run as authenticated user's permissions.</td></tr>
+<tr><td><strong>Rate Limits</strong></td><td>Fixed window. Configurable via <code>site_config.json</code>: <code>{ "rate_limit": { "limit": 600, "window": 3600 } }</code>. HTTP 429 when exceeded. Headers: X-RateLimit-Remaining.</td></tr>
+<tr><td><strong>Webhooks</strong></td><td>Yes. Fully supported. HTTP POST to external URLs on DocType events (create, update, submit, cancel).</td></tr>
+<tr><td><strong>Order-to-Cash</strong></td><td><code>Quotation → Sales Order → Delivery Note → Sales Invoice → Payment</code></td></tr>
+<tr><td><strong>v15 Breaking Change</strong></td><td>Custom fields in naming series: <code>ITEM-.custom_field.###</code> returns literal values in v15, not interpolated. Must add <code>custom_</code> prefix.</td></tr>
+<tr><td><strong>Data Format</strong></td><td>JSON. snake_case field names. Dates: YYYY-MM-DD. Nested arrays for child tables (items, taxes).</td></tr>
+<tr><td><strong>FC Adapter Strategy</strong></td><td>Direct REST + webhooks. Webhook listener for real-time. REST polling as fallback. Handle v14 vs v15 field name differences.</td></tr>
+<tr><td><strong>Docs</strong></td><td><a href="https://docs.frappe.io/framework/user/en/api/rest">Frappe REST API</a>, <a href="https://docs.erpnext.com/docs/user/manual/en/sales-order">ERPNext Sales Order</a></td></tr>
+</table>
+</div>
+
+<!-- BUSY & MARG -->
+<div class="section-header">1.5 Busy 21 <span class="badge badge-odbc">ODBC/SQL</span> &nbsp; + &nbsp; Marg ERP <span class="badge badge-rest">API Gateway</span></div>
+<div class="section-body">
+<div class="grid-2">
+<div>
+<h4>Busy 21</h4>
+<ul>
+<li><strong>No native API.</strong> Zero REST/SOAP endpoints.</li>
+<li><strong>Database:</strong> MS SQL Server (Client-Server mode) or MS Access (File Server mode)</li>
+<li><strong>Integration:</strong> Direct ODBC connection to MSSQL. Read data via SQL queries. Write requires application-layer proxy (RootFi connector).</li>
+<li><strong>Platform:</strong> <span class="tag tag-red">Windows Only</span>, .NET stack, single-user locking in basic editions</li>
+<li><strong>Export:</strong> Excel, CSV (limited). No webhooks, no real-time sync.</li>
+<li><strong>FC Strategy:</strong> ODBC bridge agent (Windows service) polls SQL tables for new vouchers/invoices. Transforms to canonical model. Push to FC cloud via mTLS. Writing back requires RootFi connector or Busy's file import.</li>
+</ul>
+</div>
+<div>
+<h4>Marg ERP 9.x</h4>
+<ul>
+<li><strong>API Gateway available:</strong> Orders, Bills, Stock Status, Outstanding, Collections, Master data.</li>
+<li><strong>GST/E-Invoice:</strong> JWT/JWS standard, SHA256-RSA for digital signatures. Full GST 2.0 compliance.</li>
+<li><strong>Database:</strong> Proprietary (not publicly documented).</li>
+<li><strong>API Docs:</strong> Limited public documentation. Contact: <code>apiintegration@margerp.com</code></li>
+<li><strong>Platform:</strong> Web + Desktop. More modern than Busy but less documented than ERPNext.</li>
+<li><strong>FC Strategy:</strong> Direct API Gateway integration. Request detailed endpoint documentation from Marg during onboarding. Fallback to Excel/CSV export if API is insufficient.</li>
+</ul>
+</div>
+</div>
+
+<div class="callout-warn callout">
+<strong>Key Insight for No-API ERPs (Busy, legacy Tally):</strong> FactoryConnect's bridge agent pattern is non-negotiable here. This is how IBM Sterling, SPS Commerce, and TrueCommerce handle on-prem ERPs with no cloud API. The bridge agent sits on the factory's Windows server, reads from the local database/file system, and pushes to the cloud connector. FactoryConnect must ship a <strong>lightweight Go binary</strong> (~5MB) that runs as a Windows Service — zero dependencies, auto-updates, heartbeat monitoring.
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2 id="part2">Part 2: Target Buyer Systems</h2>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<!-- EDI X12 -->
+<div class="section-header">2.1 EDI X12 <span class="badge badge-edi">EDI/AS2</span></div>
+<div class="section-body">
+<table>
+<tr><th style="width:22%">Attribute</th><th>Details</th></tr>
+<tr><td><strong>Versions in Use</strong></td><td>4010 (legacy, still common), 5010 (current standard, HIPAA-mandated for healthcare), 5020, 5030, 8020. <span class="tag tag-green">5010 is the target baseline.</span></td></tr>
+<tr><td><strong>Envelope Structure</strong></td><td>ISA/IEA (Interchange, fixed 106 chars) → GS/GE (Functional Group) → ST/SE (Transaction Set). Delimiters: <code>*</code> (element), <code>~</code> (segment), <code>:</code> (sub-element).</td></tr>
+<tr><td><strong>Core Transaction Sets</strong></td><td>850 (PO), 855 (PO Ack), 856 (ASN/Ship Notice), 810 (Invoice), 820 (Payment/Remittance), 860 (PO Change), 997 (Functional Ack), 999 (Implementation Ack).</td></tr>
+<tr><td><strong>ISA Qualifiers</strong></td><td>01=DUNS, 12=Phone, 14=DUNS+4, 20=EIN, ZZ=Mutually Defined. GS codes: PO=Purchase Order, IN=Invoice, SH=Ship Notice.</td></tr>
+<tr><td><strong>Validation Rules</strong></td><td>5 syntax rule types: R (Required), E (Exclusive), L (List Conditional), C (Conditional), P (Paired). Mandatory + conditional segments per implementation guide.</td></tr>
+<tr><td><strong>997 Acknowledgment</strong></td><td>Confirms receipt + syntactical correctness. AK5 status: A=Accepted, E=Accepted w/Errors, R=Rejected. One 997 per received functional group.</td></tr>
+<tr><td><strong>Buyer-Specific</strong></td><td>Walmart: AS2 mandatory, zero-tolerance errors, rigid shipping labels. Target: strict delivery timelines. Costco: three-way match (PO+Shipment+Invoice must align perfectly). Each buyer has custom qualifiers, loops, and code tables.</td></tr>
+</table>
+
+<h4>997 Functional Acknowledgment Structure</h4>
+<pre>
+ST*997*001*005010X231A1~      <span class="comment">// Transaction Set Header (997)</span>
+AK1*PO*1~                     <span class="comment">// Functional Group Header being acknowledged</span>
+AK2*850*000001*005010X219A1~  <span class="comment">// Transaction Set being acknowledged (850 PO)</span>
+AK5*A~                         <span class="comment">// Transaction Set Accepted</span>
+AK9*A*1*1*1~                   <span class="comment">// Functional Group Accepted (1 sent, 1 received, 1 accepted)</span>
+SE*5*001~                      <span class="comment">// Transaction Set Trailer</span>
+</pre>
+</div>
+
+<!-- AS2 -->
+<div class="section-header">2.2 AS2 Protocol (RFC 4130) <span class="badge badge-edi">AS2/S/MIME</span></div>
+<div class="section-body">
+<table>
+<tr><th style="width:22%">Attribute</th><th>Details</th></tr>
+<tr><td><strong>How It Works</strong></td><td>HTTP POST with S/MIME encryption + digital signature. Peer-to-peer, no intermediaries. Can carry X12, EDIFACT, XML, or any structured data.</td></tr>
+<tr><td><strong>Key Headers</strong></td><td><code>AS2-From</code>, <code>AS2-To</code>, <code>Message-ID</code> (globally unique), <code>Content-Type: application/edi-x12</code></td></tr>
+<tr><td><strong>Encryption</strong></td><td>AES-256 (recommended), AES-128, 3DES (legacy — FC will <strong>not</strong> support 3DES). S/MIME encrypts payload; TLS encrypts transport.</td></tr>
+<tr><td><strong>Signing</strong></td><td>SHA-256 (recommended minimum), SHA-384, SHA-512. SHA-1 deprecated but supported for legacy partners. RSA-2048+ keys.</td></tr>
+<tr><td><strong>MDN</strong></td><td>Synchronous (same HTTP response, fast) or Asynchronous (separate HTTP/SMTP, for large files). Signed MDN provides non-repudiation. AWS Transfer Family supports async MDN as of March 2026.</td></tr>
+<tr><td><strong>Certificates</strong></td><td>RSA 2048-bit minimum (CA-signed recommended for production). Key usage: Digital Signature + Data Encipherment. Some buyers mandate CA-signed.</td></tr>
+<tr><td><strong>Compression</strong></td><td>ZLIB/DEFLATE (RFC 5402). 60-80% compression for EDI documents. Optional, per-partner.</td></tr>
+<tr><td><strong>AWS Transfer Family</strong></td><td>Managed AS2 service. Drummond certified. Auto-upload to S3. CloudFormation support. Async MDN (March 2026). Certificate monitoring via DescribeCertificate API.</td></tr>
+</table>
+
+<div class="rec-box">
+<h4>FC Best-Class Recommendation for AS2</h4>
+<p><strong>Use AWS Transfer Family for AS2 transport</strong> (as identified in the Cloud Hosting Comparison). This gives us managed, Drummond-certified AS2 without building our own AS2 stack. FC handles the message creation (EDI segments) and AWS handles the transport (encryption, signing, MDN, delivery). <strong>Estimated cost:</strong> $0.10/message + transfer fees. For 500 factories × 10 msgs/day = ~$15K/year. Much cheaper than building and maintaining our own AS2 infrastructure.</p>
+</div>
+</div>
+
+<!-- SAP ARIBA cXML -->
+<div class="section-header">2.3 SAP Ariba / cXML <span class="badge badge-cxml">cXML/HTTPS</span></div>
+<div class="section-body">
+<table>
+<tr><th style="width:22%">Attribute</th><th>Details</th></tr>
+<tr><td><strong>Current Version</strong></td><td>cXML 1.2.069 (Feb 2026). Previous: 1.2.068 (Nov 2025). Spec at <a href="https://cxml.org">cxml.org</a>.</td></tr>
+<tr><td><strong>Authentication</strong></td><td>SharedSecret in cXML Header → Credential block. CredentialMac as alternative. Domain types: NetworkId, DUNS, AribaNetworkUserId.</td></tr>
+<tr><td><strong>ANID</strong></td><td>Ariba Network ID — unique identifier per company. Sent with every document. Suppliers must register on Ariba Network.</td></tr>
+<tr><td><strong>Key Documents</strong></td><td>OrderRequest (PO), OrderConfirmation (Ack), ShipNoticeRequest (ASN), InvoiceDetailRequest (Invoice), StatusUpdateRequest, PunchOutSetupRequest (catalog).</td></tr>
+<tr><td><strong>PunchOut</strong></td><td>Supplier catalog browsing inside buyer's procurement system. Session-based, time-limited. PunchOutSetupRequest → PunchOutOrderMessage.</td></tr>
+<tr><td><strong>Integration Methods</strong></td><td>1) cXML over HTTPS (recommended, real-time). 2) EDI via Ariba (AS2/VAN, batch). 3) CSV upload. 4) Ariba REST APIs (SAP API Hub).</td></tr>
+<tr><td><strong>Testing</strong></td><td>Separate test instance. Supplier onboarding: questionnaire → testing → certification → production. Ariba Ready certification available.</td></tr>
+<tr><td><strong>cXML vs EDI</strong></td><td>cXML: easier, web-friendly, flexible, human-readable, supports attachments. EDI: rigid, older, requires AS2/VAN, no attachments, higher upfront cost.</td></tr>
+</table>
+
+<pre>
+<span class="comment">&lt;!-- cXML OrderConfirmation (FC sends to Ariba on behalf of factory) --&gt;</span>
+&lt;cXML payloadID="FC-CONF-001@factoryconnect.in" timestamp="2026-04-02T10:30:00Z"&gt;
+  &lt;Header&gt;
+    &lt;From&gt;&lt;Credential domain="NetworkId"&gt;&lt;Identity&gt;FC-SUPPLIER-001&lt;/Identity&gt;&lt;/Credential&gt;&lt;/From&gt;
+    &lt;To&gt;&lt;Credential domain="NetworkId"&gt;&lt;Identity&gt;BUYER-ANID-123&lt;/Identity&gt;&lt;/Credential&gt;&lt;/To&gt;
+    &lt;Sender&gt;&lt;Credential domain="NetworkId"&gt;
+      &lt;Identity&gt;FACTORYCONNECT&lt;/Identity&gt;
+      &lt;SharedSecret&gt;[from Vault]&lt;/SharedSecret&gt;
+    &lt;/Credential&gt;&lt;/Sender&gt;
+  &lt;/Header&gt;
+  &lt;Request deploymentMode="production"&gt;
+    &lt;ConfirmationRequest&gt;
+      &lt;ConfirmationHeader confirmID="CONF-001" operation="new" type="accept"&gt;
+        &lt;OrderReference orderID="PO-BUYER-001"/&gt;
+      &lt;/ConfirmationHeader&gt;
+      &lt;ConfirmationItem lineNumber="1" quantity="100"&gt;
+        &lt;UnitOfMeasure&gt;EA&lt;/UnitOfMeasure&gt;
+        &lt;ConfirmationStatus type="accept" quantity="100" deliveryDate="2026-04-15"/&gt;
+      &lt;/ConfirmationItem&gt;
+    &lt;/ConfirmationRequest&gt;
+  &lt;/Request&gt;
+&lt;/cXML&gt;
+</pre>
+</div>
+
+<!-- COUPA -->
+<div class="section-header">2.4 Coupa <span class="badge badge-rest">REST API</span> + <span class="badge badge-cxml">cXML</span></div>
+<div class="section-body">
+<table>
+<tr><th style="width:22%">Attribute</th><th>Details</th></tr>
+<tr><td><strong>Base URL</strong></td><td><code>https://{instance}.coupahost.com/api/{resource}</code></td></tr>
+<tr><td><strong>Auth (API Key)</strong></td><td>40-char alphanumeric. Header: <code>X-COUPA-API-KEY: {key}</code></td></tr>
+<tr><td><strong>Auth (OAuth 2.0)</strong></td><td>Client Credentials grant. Token endpoint: <code>POST /oauth2/token</code>. Token lifetime: 24 hours. Header: <code>Authorization: Bearer {token}</code></td></tr>
+<tr><td><strong>Key Endpoints</strong></td><td><code>/purchase_orders</code>, <code>/invoices</code>, <code>/suppliers</code>, <code>/requisitions</code>, <code>/receipts</code> (inventory_transactions), <code>/contracts</code></td></tr>
+<tr><td><strong>Data Format</strong></td><td>XML (default) or JSON. Use <code>return_object=limited</code> for smaller responses.</td></tr>
+<tr><td><strong>cXML Support</strong></td><td>Coupa natively sends OrderRequest (cXML) and receives InvoiceDetailRequest (cXML). cXML error notifications sent to buyer admin email.</td></tr>
+<tr><td><strong>CSP (Supplier Portal)</strong></td><td>Web interface for suppliers: view POs, flip PO to invoice, upload catalogs, PunchOut setup, SFTP upload.</td></tr>
+<tr><td><strong>Rate Limits</strong></td><td>Not explicitly published. Implement exponential backoff. Batch preferred for large-scale.</td></tr>
+</table>
+</div>
+
+<!-- ORACLE FUSION -->
+<div class="section-header">2.5 Oracle Fusion Cloud Procurement <span class="badge badge-rest">REST API</span></div>
+<div class="section-body">
+<table>
+<tr><th style="width:22%">Attribute</th><th>Details</th></tr>
+<tr><td><strong>Base URL</strong></td><td><code>https://{instance}/fscmRestApi/resources/{version}/</code></td></tr>
+<tr><td><strong>Versions</strong></td><td>11.13.18.05, 24b, 25c, 25d, 26a (varies by module). Check release notes for version-specific endpoints.</td></tr>
+<tr><td><strong>Authentication</strong></td><td>OAuth 2.0 via OCI Identity Domain. Client Credentials (server-to-server) or Authorization Code (3-legged). Legacy: Basic Auth (not recommended).</td></tr>
+<tr><td><strong>Key Endpoints</strong></td><td><code>/PurchaseOrders</code>, <code>/draftPurchaseOrders</code>, <code>/purchaseRequisitions</code>, <code>/ReceivingReceiptTransactionRequests</code>, <code>/SupplierInvoices</code>, <code>/InvoiceMatchingReceiptQuantityTransactions</code></td></tr>
+<tr><td><strong>Pagination</strong></td><td>Max 500 records/call. Use <code>offset</code> + <code>limit</code> params. ETags for conflict detection.</td></tr>
+<tr><td><strong>Three-Way Match</strong></td><td>Built-in: PO + Receipt + Invoice auto-matching. Tolerance thresholds configurable. Flags discrepancies for manual review.</td></tr>
+</table>
+</div>
+
+<!-- EDIFACT + OFTP2 -->
+<div class="section-header">2.6 EDIFACT <span class="badge badge-edi">UN/EDIFACT</span> + OFTP2</div>
+<div class="section-body">
+<table>
+<tr><th style="width:22%">Attribute</th><th>Details</th></tr>
+<tr><td><strong>EDIFACT Versions</strong></td><td>D.96A (legacy), D.01B (widely used), D.19A, D.22A. Primarily Europe + Asia. Equivalent of X12 for non-US markets.</td></tr>
+<tr><td><strong>Key Messages</strong></td><td>ORDERS (PO), INVOIC (Invoice), DESADV (Despatch Advice = ASN), ORDRSP (Order Response = PO Ack), CONTRL (Ack), APERAK (Application Error).</td></tr>
+<tr><td><strong>Envelope</strong></td><td>UNA (Service String Advice) → UNB/UNZ (Interchange) → UNG/UNE (Group) → UNH/UNT (Message). Character sets: UNOA (basic), UNOB (Latin-1), UNOC (Latin-1 extended).</td></tr>
+<tr><td><strong>OFTP2 (RFC 5024)</strong></td><td>TCP-based (ports 3305/6619). TLS support. X.509 certificate exchange. EERP/NERP delivery confirmation. Mandatory for European automotive OEMs (Odette).</td></tr>
+<tr><td><strong>OFTP2 vs AS2</strong></td><td>OFTP2: European automotive standard, TCP-based, native cert exchange. AS2: HTTP-based, global standard, broader adoption. FC supports both.</td></tr>
+</table>
+</div>
+
+<!-- SOAP WS-Security -->
+<div class="section-header">2.7 SOAP WS-Security <span class="badge badge-soap">SOAP/WSDL</span></div>
+<div class="section-body">
+<table>
+<tr><th style="width:22%">Attribute</th><th>Details</th></tr>
+<tr><td><strong>Standard</strong></td><td>OASIS WS-Security 1.1. Layers security on SOAP messages via SOAP Header.</td></tr>
+<tr><td><strong>UsernameToken</strong></td><td>Username/password in SOAP Header with nonce + created timestamp. Password can be SHA-1 digest or plaintext over TLS.</td></tr>
+<tr><td><strong>X509Token</strong></td><td>BinarySecurityToken with X.509 certificate. Used for message-level signing and encryption.</td></tr>
+<tr><td><strong>SAML Token</strong></td><td>SAML assertions from IdP embedded in SOAP Header. Enterprise SSO integration.</td></tr>
+<tr><td><strong>XML-DSIG</strong></td><td>Message signing: canonicalize → hash → sign with private key → embed Signature element in SOAP Header.</td></tr>
+<tr><td><strong>XML-ENC</strong></td><td>Body encryption: hybrid approach — AES for data, RSA for key exchange. EncryptedData element replaces Body content.</td></tr>
+<tr><td><strong>Timestamp</strong></td><td><code>wsu:Timestamp</code> with Created and Expires. Default window: 5 minutes. Prevents replay attacks.</td></tr>
+<tr><td><strong>Legacy Systems</strong></td><td>SAP on-prem, Oracle on-prem, some government systems still use SOAP. NetSuite deprecating SOAP by 2028.</td></tr>
+</table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2 id="part3">Part 3: Complete Order-to-Cash Flow</h2>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<div class="card">
+<h3>The Universal Order-to-Cash Cycle (All Systems)</h3>
+<div class="flow-box">
+BUYER SIDE                              FACTORYCONNECT                           FACTORY SIDE
+═══════════                             ══════════════                           ════════════
+
+1. Buyer creates PO                     FC receives PO                           Factory receives Sales Order
+   ├─ EDI 850 (AS2)                     ├─ Parse & validate                      ├─ Tally: Sales Voucher (XML)
+   ├─ cXML OrderRequest (HTTPS)         ├─ Transform to canonical                ├─ Zoho: POST /salesorders
+   ├─ Coupa POST /purchase_orders       ├─ Route to factory's adapter            ├─ SAP B1: POST /b1s/v2/Orders
+   └─ Oracle POST /PurchaseOrders       └─ Create Sales Order in factory ERP     └─ ERPNext: POST /api/resource/Sales Order
+        │                                        │
+        ▼                                        ▼
+2. Buyer receives PO Ack               FC sends acknowledgment                   Factory confirms order
+   ├─ EDI 855 (AS2)                     ├─ Transform from canonical               ├─ Inventory check
+   ├─ cXML OrderConfirmation            ├─ Route to buyer's adapter               ├─ Price validation
+   ├─ Coupa: via CSP                    └─ Deliver in buyer format                ├─ Delivery date feasibility
+   └─ Oracle: auto-match                                                          └─ Accept / Reject / Partial
+        │                                        │
+        ▼                                        ▼
+3. Buyer receives Ship Notice           FC sends ASN                              Factory ships goods
+   ├─ EDI 856 (AS2)                     ├─ Transform from canonical               ├─ Tally: Delivery Note export
+   ├─ cXML ShipNoticeRequest            ├─ Include tracking, carton data          ├─ Zoho: manual (no shipping API)
+   ├─ Coupa: receipt notification       └─ SSCC-18 labels if EDI                  ├─ SAP B1: POST /DeliveryNotes
+   └─ Oracle: auto-receipt                                                        └─ ERPNext: POST /Delivery Note
+        │                                        │
+        ▼                                        ▼
+4. Buyer receives Invoice               FC sends invoice                          Factory creates invoice
+   ├─ EDI 810 (AS2)                     ├─ Transform from canonical               ├─ Tally: Sales Invoice voucher
+   ├─ cXML InvoiceDetailRequest         ├─ Three-way match validation             ├─ Zoho: POST /invoices
+   ├─ Coupa POST /invoices              ├─ Price re-verification                  ├─ SAP B1: POST /Invoices
+   └─ Oracle: auto-match                └─ Deliver in buyer format                └─ ERPNext: POST /Sales Invoice
+        │                                        │
+        ▼                                        ▼
+5. Buyer sends Payment                  FC tracks payment status                  Factory receives payment
+   ├─ EDI 820 (AS2)                     ├─ Match to invoice                       ├─ Update ERP payment status
+   ├─ Bank transfer                     ├─ Reconciliation                         ├─ Mark invoice as paid
+   └─ Wire / ACH                        └─ Notify factory                         └─ Update accounts receivable
+</div>
+</div>
+
+<div class="card">
+<h3>Document Type Mapping: All Systems</h3>
+<table>
+<thead>
+<tr><th>Business Event</th><th>EDI X12</th><th>Ariba cXML</th><th>Coupa</th><th>Oracle Fusion</th><th>EDIFACT</th><th>FC Canonical</th></tr>
+</thead>
+<tbody>
+<tr><td>Purchase Order</td><td>850</td><td>OrderRequest</td><td>POST /purchase_orders</td><td>POST /PurchaseOrders</td><td>ORDERS</td><td>Order entity</td></tr>
+<tr><td>PO Acknowledgment</td><td>855</td><td>OrderConfirmation</td><td>CSP / cXML</td><td>Auto-match</td><td>ORDRSP</td><td>OrderAck entity</td></tr>
+<tr><td>PO Change</td><td>860</td><td>OrderRequest (change)</td><td>PATCH /purchase_orders</td><td>PATCH /PurchaseOrders</td><td>ORDCHG</td><td>OrderChange entity</td></tr>
+<tr><td>Ship Notice (ASN)</td><td>856</td><td>ShipNoticeRequest</td><td>POST /receipts</td><td>POST /ReceiptRequests</td><td>DESADV</td><td>Shipment entity</td></tr>
+<tr><td>Invoice</td><td>810</td><td>InvoiceDetailRequest</td><td>POST /invoices</td><td>POST /SupplierInvoices</td><td>INVOIC</td><td>Invoice entity</td></tr>
+<tr><td>Payment</td><td>820</td><td>PaymentRemittance</td><td>—</td><td>—</td><td>REMADV</td><td>Payment entity</td></tr>
+<tr><td>Functional Ack</td><td>997</td><td>Response (Status 200)</td><td>HTTP 200</td><td>HTTP 200</td><td>CONTRL</td><td>Ack entity</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2 id="part4">Part 4: Industry Best-Class Recommendations</h2>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<div class="solution-box">
+<h3>Recommendation #1: Three-Way Matching (PO + Receipt + Invoice)</h3>
+<p>This is the #1 automation feature buyers care about. If FC automates three-way matching, it eliminates days of manual reconciliation.</p>
+<pre>
+<span class="comment">// Three-Way Match Engine (runs on every invoice received)</span>
+func threeWayMatch(invoice Invoice) MatchResult {
+    <span class="comment">// 1. Find the PO</span>
+    po := findPO(invoice.POReference)
+    if po == nil {
+        return MatchResult{Status: "REJECTED", Reason: "PO not found"}
+    }
+
+    <span class="comment">// 2. Find the receipt (Goods Receipt Note)</span>
+    receipt := findReceipt(po.PONumber)
+    if receipt == nil {
+        return MatchResult{Status: "HOLD", Reason: "No receipt yet — hold for delivery confirmation"}
+    }
+
+    <span class="comment">// 3. Line-by-line comparison</span>
+    for _, invoiceLine := range invoice.Lines {
+        poLine := findPOLine(po, invoiceLine.ItemCode)
+        receiptLine := findReceiptLine(receipt, invoiceLine.ItemCode)
+
+        <span class="comment">// Quantity check: invoice qty ≤ receipt qty ≤ PO qty</span>
+        qtyVariance := abs(invoiceLine.Qty - receiptLine.QtyReceived) / receiptLine.QtyReceived
+        if qtyVariance > 0.03 {  <span class="comment">// 3% tolerance (industry standard)</span>
+            return MatchResult{Status: "EXCEPTION", Line: invoiceLine.LineNum,
+                Reason: fmt.Sprintf("Qty variance %.1f%% exceeds 3%%", qtyVariance*100)}
+        }
+
+        <span class="comment">// Price check: invoice price matches PO price</span>
+        priceVariance := abs(invoiceLine.UnitPrice - poLine.UnitPrice) / poLine.UnitPrice
+        if priceVariance > 0.03 || abs(invoiceLine.UnitPrice - poLine.UnitPrice) > 100 {
+            return MatchResult{Status: "EXCEPTION", Line: invoiceLine.LineNum,
+                Reason: "Price variance exceeds tolerance (3% or $100)"}
+        }
+    }
+
+    return MatchResult{Status: "MATCHED", Action: "AUTO_APPROVE_FOR_PAYMENT"}
+}
+</pre>
+<p><strong>Industry Standard Tolerances:</strong> Quantity: 3%. Price: 3% or $100 (whichever is greater). Total: must match within tolerances. Missing line items trigger hold for manual review. This is how Oracle Fusion, SAP Ariba, and Coupa all handle it.</p>
+</div>
+
+<div class="solution-box">
+<h3>Recommendation #2: Idempotency on Every Mutation</h3>
+<p>In B2B EDI, messages get retransmitted (network timeouts, AS2 MDN failures, manual retries). Without idempotency, duplicate POs get created. This is non-negotiable.</p>
+<pre>
+<span class="comment">// Idempotency middleware — applied to every write endpoint</span>
+func idempotencyMiddleware(c *gin.Context) {
+    key := c.GetHeader("X-Idempotency-Key")
+    if key == "" {
+        key = c.GetHeader("Idempotency-Key")
+    }
+    if key == "" {
+        c.JSON(400, gin.H{"error": "Idempotency-Key header required for all mutations"})
+        c.Abort()
+        return
+    }
+
+    <span class="comment">// Check if we've already processed this key</span>
+    cached, err := redis.Get(ctx, "idempotency:"+key).Result()
+    if err == nil {
+        <span class="comment">// Already processed — return the same response</span>
+        c.Data(200, "application/json", []byte(cached))
+        c.Abort()
+        return
+    }
+
+    <span class="comment">// Acquire distributed lock to prevent concurrent processing</span>
+    lock := redis.SetNX(ctx, "idempotency-lock:"+key, "1", 30*time.Second)
+    if !lock.Val() {
+        c.JSON(409, gin.H{"error": "Request already in progress"})
+        c.Abort()
+        return
+    }
+
+    c.Next()  <span class="comment">// Process the request</span>
+
+    <span class="comment">// Cache the response for 7 days</span>
+    responseBody, _ := c.Get("response_body")
+    redis.Set(ctx, "idempotency:"+key, responseBody, 7*24*time.Hour)
+    redis.Del(ctx, "idempotency-lock:"+key)
+}
+</pre>
+<p><strong>Key format:</strong> UUID v4. <strong>TTL:</strong> 7 days. <strong>Conflict:</strong> Same key + different payload → HTTP 422. This follows Stripe's and Adyen's pattern — the gold standard for payment/order idempotency.</p>
+</div>
+
+<div class="solution-box">
+<h3>Recommendation #3: Cascade Document Dependencies</h3>
+<p>The #1 error in EDI implementations is sending documents out of order. An ASN (856) without a confirmed PO Ack (855) gets rejected. An invoice (810) without a receipt gets held.</p>
+<pre>
+<span class="comment">// Document dependency chain — enforced by routing engine</span>
+DOCUMENT DEPENDENCIES (enforced, not advisory):
+
+  EDI 850 (PO) received
+    ├── MUST send 997 (Functional Ack) within 1 hour
+    ├── MUST send 855 (PO Ack) within 24-48 hours
+    │   ├── BLOCKED: Cannot send 856 until 855 is confirmed by buyer
+    │   └── If buyer rejects 855 → resolve before proceeding
+    ├── MUST send 856 (ASN) before/on day of delivery
+    │   ├── BLOCKED: Cannot send 810 until 856 is delivered
+    │   └── Must include SSCC-18 labels if buyer requires
+    └── MUST send 810 (Invoice) after goods delivery
+        ├── Three-way match must pass (PO + Receipt + Invoice)
+        └── Price must match PO ± tolerance
+
+<span class="comment">// State machine per order (no skipping allowed)</span>
+PO_RECEIVED → PO_ACKNOWLEDGED → SHIPPED → INVOICED → PAID → COMPLETED
+                                                     ↘ DISPUTED (if match fails)
+</pre>
+</div>
+
+<div class="solution-box">
+<h3>Recommendation #4: Pre-Validation Gate (Before Touching ERP)</h3>
+<p>Never push an invalid PO into the factory's ERP. Validate everything in FC first.</p>
+<pre>
+<span class="comment">// 6-step validation before creating Sales Order in factory ERP</span>
+
+1. STRUCTURAL VALIDATION
+   ├─ PO number unique (not a duplicate)
+   ├─ PO date valid (not in past, not future beyond 1 year)
+   ├─ All mandatory fields present (buyer ID, items, quantities, prices)
+   └─ XML/JSON/EDI schema compliance
+
+2. MASTER DATA VALIDATION
+   ├─ Buyer exists in FC system and is active
+   ├─ Item codes exist in factory's catalog
+   ├─ Delivery address is valid
+   └─ Currency is supported
+
+3. BUSINESS LOGIC VALIDATION
+   ├─ Quantities within min/max order limits
+   ├─ Prices match agreed contract prices (from mapping config)
+   ├─ Total PO value within buyer's credit limit
+   ├─ Payment terms are acceptable
+   └─ Delivery date is achievable (lead time check)
+
+4. INVENTORY VALIDATION (if factory ERP supports real-time stock)
+   ├─ Stock available or backorder acceptable
+   ├─ Fulfillment ratio (can meet 50%+ of order?)
+   └─ Warehouse assignment
+
+5. COMPLIANCE VALIDATION
+   ├─ HSN/SAC codes valid (India GST)
+   ├─ CBAM data present if EU buyer
+   └─ Export documentation requirements met
+
+6. RESULT → Accept / Accept with Changes / Reject
+   ├─ ACCEPT: Create Sales Order in factory ERP
+   ├─ ACCEPT WITH CHANGES: Create with modifications, notify buyer
+   └─ REJECT: Send rejection reason to buyer
+</pre>
+</div>
+
+<div class="card">
+<h3>Recommendation #5: Timing SLAs (Per Document)</h3>
+<table>
+<thead>
+<tr><th>Document</th><th>From</th><th>To</th><th>Deadline</th><th>FC Implementation</th></tr>
+</thead>
+<tbody>
+<tr><td>997 (Functional Ack)</td><td>FC</td><td>Buyer</td><td>Immediate (≤1 hour)</td><td>Auto-generated by target adapter on receipt. No human involvement.</td></tr>
+<tr><td>855 (PO Ack)</td><td>Factory (via FC)</td><td>Buyer</td><td>24-48 hours</td><td>Factory approves in ERP → FC detects → generates 855 → delivers via target adapter.</td></tr>
+<tr><td>856 (ASN)</td><td>Factory (via FC)</td><td>Buyer</td><td>24 hours before delivery</td><td>Factory creates Delivery Note → FC transforms → delivers. <strong>Blocked until 855 confirmed.</strong></td></tr>
+<tr><td>810 (Invoice)</td><td>Factory (via FC)</td><td>Buyer</td><td>After goods delivery (per contract, typically 30 days)</td><td>Factory creates Invoice → FC runs three-way match → delivers. <strong>Blocked until receipt confirmed.</strong></td></tr>
+<tr><td>820 (Payment)</td><td>Buyer</td><td>Factory (via FC)</td><td>Per payment terms</td><td>FC receives → matches to invoice → updates factory ERP payment status.</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="card">
+<h3>Recommendation #6: Error Handling & Retry Strategy</h3>
+<table>
+<thead>
+<tr><th>Error Type</th><th>Example</th><th>Action</th><th>Retry</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Network failure</strong></td><td>AS2 connection timeout, HTTP 503</td><td>Exponential backoff: 1s → 2s → 4s → 8s → 16s</td><td>Up to 5 retries</td></tr>
+<tr><td><strong>Authentication failure</strong></td><td>OAuth token expired, AS2 cert rejected</td><td>Refresh token/cert. If fails, alert FC ops + factory.</td><td>1 retry after refresh</td></tr>
+<tr><td><strong>Validation failure</strong></td><td>Missing field, invalid item code</td><td>Do NOT retry. Alert factory with specific field errors.</td><td>No auto-retry</td></tr>
+<tr><td><strong>Business error</strong></td><td>Inventory unavailable, price mismatch</td><td>Hold and alert. Retry after 24-48 hours or manual resolution.</td><td>Delayed retry</td></tr>
+<tr><td><strong>Buyer rejection (997 R)</strong></td><td>EDI syntax error, missing segment</td><td>Parse AK3/AK4 error segments. Fix and retransmit.</td><td>After fix only</td></tr>
+<tr><td><strong>Three-way match fail</strong></td><td>Invoice qty > Receipt qty</td><td>Hold invoice. Alert factory. Do not deliver to buyer until resolved.</td><td>After resolution</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2 id="part5">Part 5: Version Compatibility Matrix & Adapter Mapping</h2>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<div class="card">
+<h3>Source → Target Adapter Routing Matrix</h3>
+<p>This is the complete N×M matrix showing which source adapters connect to which target adapters. The Canonical Model in the middle makes any combination possible.</p>
+
+<table>
+<thead>
+<tr><th>Source Adapter</th><th>→ X12 4010</th><th>→ X12 5010</th><th>→ Ariba cXML</th><th>→ Coupa REST</th><th>→ Oracle REST</th><th>→ EDIFACT D.01B</th><th>→ Generic REST</th><th>→ Generic SOAP</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>src-tally-3</strong></td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td><strong>src-tally-4</strong></td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td><strong>src-zoho-v3</strong></td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td><strong>src-sapb1-10</strong></td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td><strong>src-erpnext-14</strong></td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td><strong>src-busy-21</strong></td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td><strong>src-marg-9</strong></td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td><strong>src-whatsapp-v1</strong></td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td><strong>src-csv-v1</strong></td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+</tbody>
+</table>
+<p style="font-size:0.8rem; color:#666; margin-top:8px;">Every ✅ works because of the Canonical Model. Source adapters don't know about target adapters. They just produce Canonical Model entities. The routing engine + target adapter handles the rest.</p>
+</div>
+
+<div class="card">
+<h3>Version-Specific Challenges & Mitigations</h3>
+<table>
+<thead>
+<tr><th>System</th><th>Version Challenge</th><th>FC Mitigation</th></tr>
+</thead>
+<tbody>
+<tr><td>Tally Prime</td><td>v3.x → v4.x: Field renames in XML export. v7.0+: JSON introduced alongside XML.</td><td>Schema fingerprinting detects drift. Separate adapters for v3 and v4. v7+ adapter adds JSON path.</td></tr>
+<tr><td>Zoho Books</td><td>v2 → v3: OAuth scope changes, upsert support added. PUT behavior changed.</td><td>Adapter per API version. OAuth scope validation during onboarding.</td></tr>
+<tr><td>SAP B1</td><td>FP2308 → FP2405: OData 3.0 deprecated, OData 4.0 mandatory. URL paths changed.</td><td>Adapter detects Feature Pack during login. Routes to correct OData version endpoint.</td></tr>
+<tr><td>ERPNext</td><td>v14 → v15: Custom field naming series broken. <code>custom_</code> prefix required.</td><td>Version detection via <code>/api/method/frappe.utils.change_log.get_versions</code>. Adapter adjusts field names.</td></tr>
+<tr><td>EDI X12</td><td>4010 → 5010: Segment structure changes, new qualifiers, ICD-10 support.</td><td>Separate target adapters per version. Three-layer mapping handles buyer-specific quirks within same version.</td></tr>
+<tr><td>Ariba cXML</td><td>1.2.053 → 1.2.069: New elements added, deprecated elements removed.</td><td>Target adapter per cXML version. Backward compatibility mode for older buyers.</td></tr>
+<tr><td>Coupa</td><td>API releases (R31, R34): New endpoints, changed field requirements.</td><td>Adapter per API release. Version detection during onboarding OAuth setup.</td></tr>
+<tr><td>EDIFACT</td><td>D.01B → D.19A: New segment groups, changed code qualifiers.</td><td>Separate target adapters. UNOC character encoding support for non-Latin characters.</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="card">
+<h3>Integration Platform Benchmarks (What FC Should Match)</h3>
+<table>
+<thead>
+<tr><th>Platform</th><th>Strengths FC Should Emulate</th><th>FC Advantage</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>SPS Commerce</strong></td><td>100,000+ pre-built buyer connections. Auto-generates 997s. Full-service EDI.</td><td>FC focuses on Indian SME factories — a segment SPS doesn't serve. FC's AI mapping eliminates manual setup.</td></tr>
+<tr><td><strong>TrueCommerce</strong></td><td>End-to-end: EDI + ERP + eCommerce + marketplaces. Mid-market focus.</td><td>FC is India-first with native GST/GSTIN/HSN support. TrueCommerce has no India presence.</td></tr>
+<tr><td><strong>Cleo Integration Cloud</strong></td><td>Supply chain orchestration. EDI + API + file in single flow. Great error visibility.</td><td>FC's AI auto-mapping and WhatsApp ingestion are unique. Cleo requires manual connector setup.</td></tr>
+<tr><td><strong>IBM Sterling</strong></td><td>Enterprise-grade. ANSI X12, EDIFACT, TRADACOMS. Massive scale.</td><td>FC is 10x cheaper and simpler. IBM Sterling costs $200K+/year. FC targets Rs 5K-15K/month per factory.</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="rec-box">
+<h4>Summary: What Makes FC Industry Best-Class</h4>
+<ol>
+<li><strong>AI-Powered Auto-Mapping</strong> — No other platform auto-detects source fields, target formats, and generates mappings using AI. This is FC's moat.</li>
+<li><strong>India-First with Global Reach</strong> — Native GST/GSTIN/HSN/CBAM support. No competitor has this + global EDI.</li>
+<li><strong>WhatsApp/NLP for No-ERP Factories</strong> — Completely unique. No EDI platform supports factories that don't have an ERP.</li>
+<li><strong>Versioned Microservice Adapters</strong> — Independent scaling, independent deployment, independent lifecycle. IBM Sterling and SPS are monolithic.</li>
+<li><strong>Three-Way Matching Built-In</strong> — Most EDI platforms leave matching to the ERP. FC does it in the middleware, catching errors before they reach the buyer.</li>
+<li><strong>Pre-Validation Gate</strong> — Invalid data never touches the factory ERP or the buyer system. This prevents cascading failures.</li>
+<li><strong>Idempotency Everywhere</strong> — Every mutation carries an idempotency key. Duplicate messages are safely ignored. This follows Stripe/Adyen gold standard.</li>
+<li><strong>Bridge Agent for On-Prem</strong> — Lightweight Go binary handles Tally, Busy, Marg — systems with no cloud API. SPS Commerce charges $500+/month for this. FC includes it.</li>
+</ol>
+</div>
+
+<div class="footer">
+FactoryConnect — Integration Specs Reference & Order-to-Cash Flow | Research Document | April 2026<br>
+Sources: Official documentation from Tally Solutions, Zoho, SAP, Frappe/ERPNext, X12.org, cXML.org, Coupa, Oracle, IETF RFCs, AWS<br>
+Confidential — For Internal Strategy Use Only
+</div>
+
+</body>
+</html>

@@ -1,0 +1,14 @@
+# FactoryConnect — Caddy Reverse Proxy (Development)
+# In production, replace localhost with actual domain
+
+:80 {
+	# API
+	handle /api/* {
+		reverse_proxy localhost:3000
+	}
+
+	# Portal
+	handle {
+		reverse_proxy localhost:5173
+	}
+}

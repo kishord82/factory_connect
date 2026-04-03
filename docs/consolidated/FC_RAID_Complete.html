@@ -1,0 +1,2566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FactoryConnect — Complete RAID Register & Recommendations</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f6f9; color: #1a1a2e; }
+.sidebar { position: fixed; left: 0; top: 0; width: 280px; height: 100vh; background: #0f3460; color: #fff; padding: 20px 16px; overflow-y: auto; z-index: 100; }
+.sidebar h2 { font-size: 0.95rem; margin-bottom: 16px; color: #82aaff; }
+.sidebar a { color: #c3e88d; text-decoration: none; display: block; padding: 5px 8px; font-size: 0.78rem; border-radius: 4px; margin: 2px 0; line-height: 1.4; }
+.sidebar a:hover { background: rgba(255,255,255,0.1); }
+.sidebar .nav-section { color: #82aaff; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; margin: 14px 0 6px; letter-spacing: 0.5px; }
+.main { margin-left: 280px; padding: 28px 36px; max-width: 1100px; }
+h1 { font-size: 1.6rem; color: #0f3460; margin-bottom: 6px; }
+h2 { font-size: 1.2rem; color: #0f3460; margin: 36px 0 14px; border-bottom: 2px solid #0f3460; padding-bottom: 8px; }
+h3 { font-size: 1rem; color: #16213e; margin: 22px 0 10px; }
+h4 { font-size: 0.9rem; color: #333; margin: 14px 0 8px; }
+.subtitle { color: #555; font-size: 0.9rem; margin-bottom: 28px; }
+.card { background: #fff; border-radius: 8px; padding: 22px 26px; margin-bottom: 18px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin: 14px 0; }
+th { background: #0f3460; color: #fff; padding: 10px 12px; text-align: left; font-size: 0.8rem; }
+td { padding: 9px 12px; border-bottom: 1px solid #eee; vertical-align: top; }
+tr:hover td { background: #f0f4ff; }
+.tag { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.72rem; font-weight: 600; margin: 1px 2px; }
+.tag-red { background: #ffe0e0; color: #c0392b; }
+.tag-orange { background: #fff3cd; color: #856404; }
+.tag-green { background: #d4edda; color: #155724; }
+.tag-blue { background: #e8f0fe; color: #1a73e8; }
+.tag-purple { background: #f3e5f5; color: #7b1fa2; }
+.callout { background: #e8f0fe; border-left: 4px solid #1a73e8; padding: 14px 18px; margin: 14px 0; border-radius: 0 6px 6px 0; font-size: 0.86rem; }
+.callout-red { background: #fce4ec; border-left-color: #c62828; }
+.callout-green { background: #d4edda; border-left-color: #27ae60; }
+.callout-warn { background: #fff3cd; border-left-color: #e67e22; }
+pre { background: #1a1a2e; color: #e0e0e0; padding: 16px; border-radius: 6px; overflow-x: auto; font-size: 0.78rem; line-height: 1.6; margin: 10px 0; }
+code { background: #f0f0f0; padding: 2px 6px; border-radius: 3px; font-size: 0.82rem; }
+p, li { font-size: 0.88rem; line-height: 1.7; }
+ul, ol { margin: 8px 0 14px 22px; }
+.section-header { background: linear-gradient(135deg, #0f3460, #16213e); color: #fff; padding: 16px 22px; border-radius: 8px 8px 0 0; font-weight: 700; font-size: 0.95rem; }
+.section-body { background: #fff; padding: 18px 22px; border-radius: 0 0 8px 8px; border: 1px solid #e0e0e0; border-top: none; margin-bottom: 22px; }
+.solution-box { background: #0f3460; color: #fff; border-radius: 8px; padding: 20px 24px; margin: 16px 0; }
+.solution-box h3 { color: #82aaff; margin-top: 0; }
+.solution-box h4 { color: #c3e88d; }
+.solution-box p, .solution-box li { color: #e0e0e0; }
+.solution-box code { background: #16213e; color: #c3e88d; }
+.flow-box { background: #16213e; color: #fff; border-radius: 8px; padding: 18px 22px; margin: 14px 0; font-family: 'Courier New', monospace; font-size: 0.78rem; line-height: 1.7; white-space: pre-wrap; overflow-x: auto; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; }
+.badge-active { background: #27ae60; color: #fff; }
+.badge-deprecated { background: #e67e22; color: #fff; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 900px) { .sidebar { display: none; } .main { margin-left: 0; } .grid-2 { grid-template-columns: 1fr; } }
+.source-marker { background: #e8f0fe; border-left: 3px solid #1a73e8; padding: 6px 12px; margin: 24px 0 8px; font-size: 0.75rem; color: #555; border-radius: 0 4px 4px 0; }
+.r { color: #c0392b; font-weight: 700; }
+.a { color: #0f3460; font-weight: 700; }
+.c { color: #e67e22; font-weight: 600; }
+.i { color: #888; }
+.footer { margin-top: 32px; font-size: 0.78rem; color: #888; text-align: center; padding: 16px; border-top: 1px solid #ddd; }
+
+.grey-area { background: #f5f5f5; border-left: 4px solid #616161; padding: 14px 18px; margin: 14px 0; border-radius: 0 6px 6px 0; }
+.tag-critical { background: #ffe0e0; color: #c0392b; }
+.tag-high { background: #fff3cd; color: #856404; }
+.tag-medium { background: #d4edda; color: #155724; }
+.tag-low { background: #e8f0fe; color: #1a73e8; }
+
+</style>
+</head>
+<body>
+<div class="sidebar">
+<h2>FactoryConnect</h2>
+<div id="nav-content"></div>
+</div>
+<div class="main">
+<h1>FactoryConnect — Complete RAID Register & Recommendations</h1>
+<p class="subtitle">Consolidated RAID: 77 risk/assumption/issue/dependency items + 20 expert Q&A recommendations | April 2026</p>
+
+<div class="source-marker">Merged from: FC_RAID_Analysis.html (77 RAID items), FC_RAID_Recommendations.html (20 expert Q&A + recommendations)</div>
+
+<h2>Part 1: Complete RAID Register</h2>
+<div class="card">
+<p>This section contains the full RAID (Risks, Assumptions, Issues, Dependencies) analysis with all 77 items, their severity ratings, mitigation strategies, and ownership assignments.</p>
+</div>
+
+<h1>FactoryConnect — RAID Analysis</h1>
+<p class="subtitle"><span class="version-badge">v1.0</span>   Comprehensive Risks, Assumptions, Issues, and Dependencies analysis for expert consultation. Each item is structured for discussion with industry experts, GPT, Gemini, and domain specialists. | April 2026</p>
+<div class="callout-purple callout">
+<strong>How to Use This Document:</strong> Each RAID item includes an ID, severity, description, impact analysis, and suggested mitigation path. Take individual items (or category groups) to industry experts and other LLMs for solution validation. Items marked <span class="tag tag-critical">CRITICAL</span> need resolution before Phase 1 launch. Items marked <span class="tag tag-high">HIGH</span> need resolution before Phase 2.
+</div>
+<!-- EXECUTIVE SUMMARY -->
+<h2>Executive Summary</h2>
+<div class="grid-4">
+<div class="stat-box stat-red"><div class="num">24</div><div class="label">Risks Identified</div></div>
+<div class="stat-box stat-blue"><div class="num">18</div><div class="label">Assumptions Made</div></div>
+<div class="stat-box stat-orange"><div class="num">15</div><div class="label">Known Issues</div></div>
+<div class="stat-box stat-purple"><div class="num">20</div><div class="label">Dependencies</div></div>
+</div>
+<div class="card" style="margin-top: 16px;">
+<h4>Severity Distribution</h4>
+<table>
+<tr><th>Severity</th><th>Risks</th><th>Assumptions</th><th>Issues</th><th>Dependencies</th><th>Total</th></tr>
+<tr><td><span class="heat heat-critical"></span> Critical</td><td>5</td><td>3</td><td>4</td><td>3</td><td><strong>15</strong></td></tr>
+<tr><td><span class="heat heat-high"></span> High</td><td>8</td><td>6</td><td>5</td><td>7</td><td><strong>26</strong></td></tr>
+<tr><td><span class="heat heat-medium"></span> Medium</td><td>7</td><td>6</td><td>4</td><td>6</td><td><strong>23</strong></td></tr>
+<tr><td><span class="heat heat-low"></span> Low</td><td>4</td><td>3</td><td>2</td><td>4</td><td><strong>13</strong></td></tr>
+</table>
+</div>
+<!-- TABLE OF CONTENTS -->
+<div class="toc">
+<a href="#risks">Section 1: Risks (R) — 24 items</a>
+<a href="#r-tech">1.1 Technical Risks</a>
+<a href="#r-biz">1.2 Business Risks</a>
+<a href="#r-ops">1.3 Operational Risks</a>
+<a href="#r-sec">1.4 Security &amp; Compliance Risks</a>
+<a href="#assumptions">Section 2: Assumptions (A) — 18 items</a>
+<a href="#a-tech">2.1 Technical Assumptions</a>
+<a href="#a-biz">2.2 Business Assumptions</a>
+<a href="#a-market">2.3 Market Assumptions</a>
+<a href="#issues">Section 3: Issues (I) — 15 items</a>
+<a href="#i-known">3.1 Known Technical Issues</a>
+<a href="#i-arch">3.2 Architecture Gaps</a>
+<a href="#i-process">3.3 Process Issues</a>
+<a href="#dependencies">Section 4: Dependencies (D) — 20 items</a>
+<a href="#d-ext">4.1 External System Dependencies</a>
+<a href="#d-vendor">4.2 Vendor &amp; Cloud Dependencies</a>
+<a href="#d-human">4.3 Human &amp; Organizational Dependencies</a>
+<a href="#matrix">Section 5: Cross-Impact Matrix</a>
+<a href="#priority">Section 6: Priority Action Plan</a>
+<a href="#questions">Section 7: Expert Consultation Questions</a>
+</div>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- RISKS SECTION -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2 id="risks">Section 1: RISKS</h2>
+<p>Potential future events that could negatively impact the project if they materialize. Each risk is scored on Probability (1-5) × Impact (1-5) = Risk Score.</p>
+<!-- 1.1 TECHNICAL RISKS -->
+<div class="risk-header section-header" id="r-tech">1.1 Technical Risks</div>
+<div class="section-body">
+<table>
+<tr>
+<th style="width:6%">ID</th>
+<th style="width:7%">Severity</th>
+<th style="width:18%">Risk</th>
+<th style="width:8%">P × I</th>
+<th style="width:28%">Description &amp; Impact</th>
+<th style="width:33%">Mitigation Strategy</th>
+</tr>
+<tr>
+<td><strong>R-T01</strong></td>
+<td><span class="tag tag-critical">CRITICAL</span></td>
+<td><strong>ERP API Breaking Changes</strong></td>
+<td>4 × 5 = 20</td>
+<td>Source ERPs (Tally, Zoho, SAP B1, ERPNext) release new versions that break existing adapter integrations. TallyPrime 7.0 added JSON alongside XML — future versions may deprecate XML. Zoho Books moved from v2→v3 with breaking changes. SAP B1 is migrating OData 3→4 at FP2405. ERPNext v15 broke custom field naming conventions. <strong>Impact:</strong> Data flow stops for affected factories until adapter is updated. SLA breach, customer churn.</td>
+<td>
+<strong>1. Version Monitoring Service:</strong> Automated crawler checks ERP vendor changelogs/release notes weekly. Alerts on any mention of deprecation, breaking change, or new API version.<br/>
+<strong>2. Two-in-Production Pattern:</strong> Always run current and next version adapters simultaneously. New factories onboard to latest; existing connections migrate on schedule.<br/>
+<strong>3. Adapter Abstraction Layer:</strong> Each adapter implements a canonical interface. Internal logic changes don't ripple outward.<br/>
+<strong>4. 90-Day Migration Window:</strong> From detection of breaking change to full cutover, target 90 days.<br/>
+<span class="owner-tag">Owner: Engineering Lead</span>
+</td>
+</tr>
+<tr>
+<td><strong>R-T02</strong></td>
+<td><span class="tag tag-critical">CRITICAL</span></td>
+<td><strong>Buyer EDI Rejection Cascade</strong></td>
+<td>4 × 5 = 20</td>
+<td>Major buyers (Walmart, Target, Costco) have zero-tolerance EDI validation. A single malformed segment (wrong qualifier, missing element, bad date format) triggers 997 rejection. If FC produces even 2-3% rejection rate, buyers will blocklist the factory's ANID/ISA qualifier. <strong>Impact:</strong> Factory loses buyer relationship. FC loses customer and reputation. Potential legal liability.</td>
+<td>
+<strong>1. Pre-Flight Validation Engine:</strong> Every outbound EDI document passes through a multi-layer validator: structural (segment counts, delimiters), semantic (code values, date ranges), buyer-specific (Walmart Implementation Guide rules).<br/>
+<strong>2. Buyer-Specific Test Harness:</strong> Mock buyer endpoints that replicate exact validation rules. 100% of test cases must pass before production go-live.<br/>
+<strong>3. Shadow Mode:</strong> First 2 weeks of any new connection run in shadow mode — FC generates documents but doesn't send. Human review before switching to live.<br/>
+<strong>4. Rollback Circuit Breaker:</strong> If rejection rate exceeds 1% in any 1-hour window, circuit breaker halts outbound and alerts ops team.<br/>
+<span class="owner-tag">Owner: Integration Lead</span>
+</td>
+</tr>
+<tr>
+<td><strong>R-T03</strong></td>
+<td><span class="tag tag-critical">CRITICAL</span></td>
+<td><strong>Canonical Model Inadequacy</strong></td>
+<td>3 × 5 = 15</td>
+<td>The 6-entity canonical model (Product, Inventory, Order, Shipment, Invoice, Party) may not capture all required fields for every source/target combination. Industry-specific fields (textile lot numbers, pharma batch codes, automotive VIN-linked parts) may not fit the model. <strong>Impact:</strong> Data loss during translation. Factory can't fulfill buyer requirements. Must redesign core model — affects every adapter.</td>
+<td>
+<strong>1. Extension Fields:</strong> Canonical model includes a <code>custom_fields map[string]interface{}</code> for industry-specific data that passes through without transformation.<br/>
+<strong>2. Canonical Model Versioning:</strong> Model itself is versioned (v1, v2). Adapters declare which version they support. Backward-compatible additions don't break existing adapters.<br/>
+<strong>3. Pre-Launch Field Audit:</strong> Before onboarding any new industry vertical, audit all required fields against canonical model. Add to model before building adapters.<br/>
+<strong>4. Buyer Implementation Guide Review:</strong> Parse every buyer's implementation guide to extract required fields. Map each to canonical field or flag as gap.<br/>
+<span class="owner-tag">Owner: Architect</span>
+</td>
+</tr>
+<tr>
+<td><strong>R-T04</strong></td>
+<td><span class="tag tag-high">HIGH</span></td>
+<td><strong>AI Mapping Accuracy Below Threshold</strong></td>
+<td>3 × 4 = 12</td>
+<td>The AI mapping engine (Claude API) auto-maps source ERP fields to canonical model. If accuracy is below 90%, every onboarding requires extensive manual mapping review, destroying the "configuration over coding" value proposition. LLM hallucination could map wrong fields silently. <strong>Impact:</strong> Onboarding time increases 5-10x. Cost per customer rises. "Simple configuration" promise broken.</td>
+<td>
+<strong>1. Confidence Scoring:</strong> Every AI mapping includes a confidence score (0-1). Mappings below 0.85 are flagged for human review. Only auto-approve above 0.95.<br/>
+<strong>2. Mapping Templates:</strong> Pre-built mapping templates for common ERP+buyer combinations (Tally→Walmart EDI, Zoho→Ariba cXML). AI refines templates, doesn't start from scratch.<br/>
+<strong>3. Mapping Validation Suite:</strong> Test each mapping with real sample data before activation. Compare output to expected output for 10+ test documents.<br/>
+<strong>4. Feedback Loop:</strong> Every manual correction trains the model. After 50+ corrections per ERP type, accuracy should exceed 95%.<br/>
+<span class="owner-tag">Owner: AI Engineering Lead</span>
+</td>
+</tr>
+<tr>
+<td><strong>R-T05</strong></td>
+<td><span class="tag tag-high">HIGH</span></td>
+<td><strong>Rate Limiting Causes Data Delays</strong></td>
+<td>4 × 3 = 12</td>
+<td>Source ERPs have strict rate limits: Zoho 100 req/min (strictest), Tally 100 req/min, SAP B1 session-based with 30min timeout. A factory with 500+ orders/day could saturate the rate limit. <strong>Impact:</strong> Order processing delays. Buyer SLAs missed. Cascading backpressure through the system.</td>
+<td>
+<strong>1. Per-Connection Rate Limiter:</strong> Token bucket algorithm per connection, configured to 80% of ERP's stated limit. Never hit the hard limit.<br/>
+<strong>2. Batch Aggregation:</strong> Aggregate multiple small requests into batch calls where ERP supports it (Zoho batch API, SAP B1 batch OData).<br/>
+<strong>3. Webhook-First Strategy:</strong> For ERPs that support webhooks (Zoho, ERPNext), use push model instead of polling. Eliminates most polling requests.<br/>
+<strong>4. Prioritized Queue:</strong> When near rate limit, prioritize time-sensitive documents (PO Acknowledgments, ASNs) over less urgent (reports, inventory syncs).<br/>
+<span class="owner-tag">Owner: Platform Engineering</span>
+</td>
+</tr>
+<tr>
+<td><strong>R-T06</strong></td>
+<td><span class="tag tag-high">HIGH</span></td>
+<td><strong>Message Ordering &amp; Exactly-Once Delivery Failures</strong></td>
+<td>3 × 4 = 12</td>
+<td>Order-to-Cash flow has strict cascade dependencies: PO → PO Ack → ASN → Invoice → Payment. If messages arrive out of order or are duplicated (network retry), downstream documents reference non-existent predecessors. <strong>Impact:</strong> Buyer systems reject documents. Three-way match fails. Payment delayed.</td>
+<td>
+<strong>1. Idempotency Keys:</strong> UUID-based idempotency on every mutation. 7-day TTL in Redis. Duplicate detection at ingress.<br/>
+<strong>2. Cascade Dependency Engine:</strong> Each document type declares its prerequisites. Engine holds documents until prerequisites are confirmed delivered and acknowledged.<br/>
+<strong>3. Sequence Numbers:</strong> Per-connection monotonic sequence numbers. Receiver detects gaps and requests retransmission.<br/>
+<strong>4. Dead Letter Queue + Human Escalation:</strong> After 3 retries, move to DLQ. Alert ops team within 15 minutes. SLA: DLQ items resolved within 4 hours.<br/>
+<span class="owner-tag">Owner: Platform Engineering</span>
+</td>
+</tr>
+<tr>
+<td><strong>R-T07</strong></td>
+<td><span class="tag tag-high">HIGH</span></td>
+<td><strong>Bridge Agent Deployment &amp; Maintenance Burden</strong></td>
+<td>4 × 3 = 12</td>
+<td>Tally and Busy are Windows-only, requiring a bridge agent installed on factory's local network. Indian SME factories may have unreliable IT infrastructure: outdated Windows versions, no IT staff, intermittent internet, firewall restrictions. <strong>Impact:</strong> Onboarding cost is 3-5x higher for Tally/Busy factories. Support burden for on-premise agent issues.</td>
+<td>
+<strong>1. Auto-Updating Agent:</strong> MSI installer with Windows Service. Auto-updates via signed manifests. Rollback on failure.<br/>
+<strong>2. Heartbeat Monitoring:</strong> Agent sends heartbeat every 60 seconds. If missed for 5 minutes, alert FC ops + factory contact via WhatsApp.<br/>
+<strong>3. Offline Buffer:</strong> Agent buffers messages locally (SQLite) during internet outages. Syncs when connection restores. Buffer holds 72 hours of data.<br/>
+<strong>4. Remote Diagnostics:</strong> Agent exposes diagnostic endpoint (local only). FC support can request diagnostics via secure tunnel (Cloudflare Tunnel or Tailscale).<br/>
+<strong>5. Partner Network:</strong> Build relationships with local IT service providers in Indian industrial cities for on-site support.<br/>
+<span class="owner-tag">Owner: DevOps + Customer Success</span>
+</td>
+</tr>
+<tr>
+<td><strong>R-T08</strong></td>
+<td><span class="tag tag-high">HIGH</span></td>
+<td><strong>Multi-Tenant Data Isolation Breach</strong></td>
+<td>2 × 5 = 10</td>
+<td>As a multi-tenant SaaS, a bug in tenant isolation could expose Factory A's data (orders, invoices, pricing) to Factory B. Shared database with tenant_id filtering is vulnerable to missing WHERE clauses. <strong>Impact:</strong> Catastrophic — customer trust destroyed. Legal liability. Potential regulatory fines.</td>
+<td>
+<strong>1. Row-Level Security (RLS):</strong> PostgreSQL RLS policies enforced at database level. Even if application code misses tenant_id, database blocks cross-tenant access.<br/>
+<strong>2. Tenant Context Middleware:</strong> Every request sets tenant context at gateway level. Propagated via request headers. All DB queries inject tenant filter from context, not from user input.<br/>
+<strong>3. Automated Isolation Tests:</strong> CI pipeline includes tests that attempt cross-tenant access on every endpoint. Build fails if any succeed.<br/>
+<strong>4. Encryption at Rest per Tenant:</strong> Each tenant's sensitive data (credentials, mappings) encrypted with tenant-specific key derived from master key.<br/>
+<span class="owner-tag">Owner: Security Lead</span>
+</td>
+</tr>
+<tr>
+<td><strong>R-T09</strong></td>
+<td><span class="tag tag-medium">MEDIUM</span></td>
+<td><strong>Kubernetes Complexity Overhead</strong></td>
+<td>3 × 3 = 9</td>
+<td>Running 25+ adapter microservices on Kubernetes with HPA/KEDA requires significant DevOps expertise. Early-stage startup may not have dedicated SRE. Misconfigured HPA can lead to pod thrashing or under-provisioning. <strong>Impact:</strong> Operational instability. High infrastructure cost if auto-scaling is misconfigured.</td>
+<td>
+<strong>1. Managed Kubernetes:</strong> Use GKE Autopilot to offload node management, security patches, and scaling of the cluster itself.<br/>
+<strong>2. GitOps with ArgoCD:</strong> All K8s manifests in git. Changes via PR review. ArgoCD syncs automatically. Reduces manual kubectl errors.<br/>
+<strong>3. Progressive Rollout:</strong> Start with 5-8 adapters in Phase 1. Add complexity only as customer base grows. Don't deploy all 25 adapters day one.<br/>
+<strong>4. Infrastructure as Code:</strong> Terraform for all cloud resources. Pulumi for Kubernetes resources. Reproducible from scratch in &lt;2 hours.<br/>
+<span class="owner-tag">Owner: DevOps Lead</span>
+</td>
+</tr>
+<tr>
+<td><strong>R-T10</strong></td>
+<td><span class="tag tag-medium">MEDIUM</span></td>
+<td><strong>Database Schema Migration at Scale</strong></td>
+<td>3 × 3 = 9</td>
+<td>As the platform evolves, schema migrations must run across a multi-tenant database without downtime. Migrations that lock tables (ALTER TABLE ADD COLUMN with default) can block all tenant operations. <strong>Impact:</strong> Service outage during migration. Data inconsistency if migration partially fails.</td>
+<td>
+<strong>1. Online Schema Migration:</strong> Use <code>pg_repack</code> or GitHub's <code>gh-ost</code> pattern for zero-downtime ALTER TABLEs.<br/>
+<strong>2. Expand-Contract Pattern:</strong> Add new column → deploy code that writes to both → backfill → deploy code that reads from new → drop old column. Never destructive in one step.<br/>
+<strong>3. Migration Testing:</strong> Every migration tested against a production-sized dataset copy before deployment.<br/>
+<strong>4. Rollback Scripts:</strong> Every UP migration has a corresponding DOWN. Tested in CI.<br/>
+<span class="owner-tag">Owner: Database Lead</span>
+</td>
+</tr>
+<tr>
+<td><strong>R-T11</strong></td>
+<td><span class="tag tag-medium">MEDIUM</span></td>
+<td><strong>Redis as Single Point of Failure for Queues</strong></td>
+<td>3 × 3 = 9</td>
+<td>All inter-adapter routing goes through Redis queues. If Redis goes down, all message processing halts. Redis persistence (RDB/AOF) can lose recent data on crash. <strong>Impact:</strong> Complete message processing halt. Potential message loss.</td>
+<td>
+<strong>1. Redis Sentinel or Cluster:</strong> Minimum 3-node Redis Sentinel for automatic failover. Promote replica within seconds.<br/>
+<strong>2. AOF with fsync=everysec:</strong> At most 1 second of data loss on crash. Acceptable for queue messages that can be retried from source.<br/>
+<strong>3. Dual-Write to PostgreSQL:</strong> Every message enqueued to Redis is also recorded in PostgreSQL message_log. On Redis recovery, replay unprocessed messages from PostgreSQL.<br/>
+<strong>4. Consider NATS/Kafka Migration (Phase 3):</strong> If message volume exceeds 10K/min, evaluate migration to NATS JetStream or Kafka for stronger durability guarantees.<br/>
+<span class="owner-tag">Owner: Platform Engineering</span>
+</td>
+</tr>
+<tr>
+<td><strong>R-T12</strong></td>
+<td><span class="tag tag-medium">MEDIUM</span></td>
+<td><strong>Observability Blind Spots in Distributed Tracing</strong></td>
+<td>3 × 3 = 9</td>
+<td>A single order flows through 4-6 microservices (source adapter → routing → canonical transform → target adapter → acknowledgment). If tracing breaks at any hop, debugging production issues becomes guesswork. <strong>Impact:</strong> Slow incident resolution. MTTR increases. Customer frustration.</td>
+<td>
+<strong>1. OpenTelemetry SDK in Every Service:</strong> Mandatory. Trace ID propagated via W3C Trace Context headers. No exceptions.<br/>
+<strong>2. Correlation IDs:</strong> Every message carries <code>trace_id</code>, <code>connection_id</code>, <code>document_id</code>. Searchable in Jaeger and logs.<br/>
+<strong>3. Structured Logging:</strong> JSON logs with correlation IDs. Shipped to centralized logging (Loki or CloudWatch Logs).<br/>
+<strong>4. SLO Dashboards:</strong> Per-connection success rate, latency P95, error rate. Alert on SLO breach, not just errors.<br/>
+<span class="owner-tag">Owner: SRE</span>
+</td>
+</tr>
+<tr>
+<td><strong>R-T13</strong></td>
+<td><span class="tag tag-medium">MEDIUM</span></td>
+<td><strong>Go-to-Python Inter-Service Latency</strong></td>
+<td>2 × 3 = 6</td>
+<td>AI gateway runs Python/FastAPI while all other services run Go. Cross-language gRPC/HTTP calls between Go services and Python AI gateway add serialization overhead and potential version mismatch in protobuf schemas. <strong>Impact:</strong> Onboarding latency. Additional deployment complexity.</td>
+<td>
+<strong>1. Async AI Calls:</strong> AI mapping is not in the hot path. Onboarding runs asynchronously. Latency is acceptable for one-time mapping.<br/>
+<strong>2. Cache AI Results:</strong> Once a mapping is computed, cache it permanently. AI is called only during onboarding, not per-message.<br/>
+<strong>3. Shared Protobuf Contracts:</strong> Single proto file repo. CI generates Go and Python stubs. Version mismatch caught at build time.<br/>
+<span class="owner-tag">Owner: Engineering Lead</span>
+</td>
+</tr>
+<tr>
+<td><strong>R-T14</strong></td>
+<td><span class="tag tag-low">LOW</span></td>
+<td><strong>Go Module Dependency Vulnerabilities</strong></td>
+<td>2 × 2 = 4</td>
+<td>Go microservices depend on third-party modules (Gin, GORM, go-redis, etc.). Vulnerabilities in dependencies could expose the platform. <strong>Impact:</strong> Security vulnerability. Emergency patching required.</td>
+<td>
+<strong>1. Dependabot/Renovate:</strong> Automated PRs for dependency updates. Weekly cadence.<br/>
+<strong>2. govulncheck in CI:</strong> Go's official vulnerability checker runs on every build. Build fails on known CVEs.<br/>
+<strong>3. Minimal Dependencies:</strong> Prefer stdlib where possible. Audit any new dependency before adding.<br/>
+<span class="owner-tag">Owner: Engineering Lead</span>
+</td>
+</tr>
+</table>
+</div>
+<!-- 1.2 BUSINESS RISKS -->
+<div class="risk-header section-header" id="r-biz">1.2 Business Risks</div>
+<div class="section-body">
+<table>
+<tr>
+<th style="width:6%">ID</th>
+<th style="width:7%">Severity</th>
+<th style="width:18%">Risk</th>
+<th style="width:8%">P × I</th>
+<th style="width:28%">Description &amp; Impact</th>
+<th style="width:33%">Mitigation Strategy</th>
+</tr>
+<tr>
+<td><strong>R-B01</strong></td>
+<td><span class="tag tag-critical">CRITICAL</span></td>
+<td><strong>Buyer Cooperation Failure</strong></td>
+<td>4 × 5 = 20</td>
+<td>FC requires buyer-side cooperation for EDI testing, ANID registration (Ariba), supplier portal onboarding (Coupa CSP), and production go-live approval. Large buyers (Walmart, Target) have strict onboarding processes that take 3-6 months. Buyer IT teams may be unresponsive or require VAN (Value Added Network) intermediary. <strong>Impact:</strong> Cannot complete any connection without buyer participation. Time-to-value stretches to 6+ months. Customer loses patience.</td>
+<td>
+<strong>1. VAN Partnerships:</strong> Partner with established VANs (SPS Commerce, TrueCommerce) for buyer connectivity. Use their existing buyer relationships as bridge while FC builds direct connections.<br/>
+<strong>2. Buyer Success Team:</strong> Dedicated team that manages buyer-side onboarding. Speaks the buyer's language (EDI, cXML, compliance).<br/>
+<strong>3. Pre-Certified Buyers:</strong> Before selling to factories, pre-certify 10-20 high-demand buyers (Walmart, Amazon, Target). Factory signs up knowing buyer connection is ready.<br/>
+<strong>4. Buyer-Side Value Prop:</strong> Position FC as reducing buyer's supplier management cost. Provide buyer-facing materials showing FC handles compliance, reducing their support burden.<br/>
+<span class="owner-tag">Owner: CEO + Business Development</span>
+</td>
+</tr>
+<tr>
+<td><strong>R-B02</strong></td>
+<td><span class="tag tag-critical">CRITICAL</span></td>
+<td><strong>Competitor Incumbency (SPS Commerce, TrueCommerce)</strong></td>
+<td>4 × 4 = 16</td>
+<td>SPS Commerce ($500M+ revenue, 115K+ customers) and TrueCommerce are established players with existing buyer networks, VAN infrastructure, and enterprise sales teams. They already connect factories to buyers. FC is entering a market with entrenched competitors who have 10+ year head start. <strong>Impact:</strong> Difficult customer acquisition. Price pressure. Buyers may prefer established VANs.</td>
+<td>
+<strong>1. India-First Positioning:</strong> SPS/TrueCommerce don't focus on Indian SMEs. FC's India-specific ERP support (Tally, Busy, Marg) is a differentiation no competitor has.<br/>
+<strong>2. Price Disruption:</strong> Competitors charge $300-1000/month per connection. FC can price at ₹5000-15000/month with Indian cost structure.<br/>
+<strong>3. WhatsApp-First UX:</strong> Indian factory owners live on WhatsApp. No competitor offers WhatsApp-native interface for managing EDI connections.<br/>
+<strong>4. AI-Powered Onboarding:</strong> Competitors require weeks of manual mapping. FC's AI mapping reduces this to hours. Clear differentiation on onboarding speed.<br/>
+<span class="owner-tag">Owner: CEO + Product</span>
+</td>
+</tr>
+<tr>
+<td><strong>R-B03</strong></td>
+<td><span class="tag tag-high">HIGH</span></td>
+<td><strong>Customer Churn from Onboarding Complexity</strong></td>
+<td>3 × 4 = 12</td>
+<td>Indian SME factory owners are not tech-savvy. If onboarding requires technical knowledge (API keys, field mapping, EDI segment understanding), they'll abandon the process. Competitors like SPS Commerce provide white-glove onboarding. <strong>Impact:</strong> High CAC wasted. Negative word-of-mouth in tight-knit Indian manufacturing communities.</td>
+<td>
+<strong>1. Zero-Technical-Knowledge Onboarding:</strong> Factory owner provides: company name, ERP type, buyer name. FC handles everything else.<br/>
+<strong>2. WhatsApp Guided Flow:</strong> Step-by-step WhatsApp messages guide factory through connecting their ERP. Screenshots, videos, voice notes.<br/>
+<strong>3. On-Site Onboarding (Phase 1):</strong> For first 50 customers, FC team visits factory to set up connection. Builds case studies and refines self-serve flow.<br/>
+<strong>4. 30-Day Free Trial:</strong> Factory runs in shadow mode for 30 days. No risk. Sees documents flowing before committing.<br/>
+<span class="owner-tag">Owner: Product + Customer Success</span>
+</td>
+</tr>
+<tr>
+<td><strong>R-B04</strong></td>
+<td><span class="tag tag-high">HIGH</span></td>
+<td><strong>Pricing Model Mismatch</strong></td>
+<td>3 × 3 = 9</td>
+<td>Per-connection pricing may not work for factories with many buyers but low volume. Per-transaction pricing may not work for factories with few buyers but high volume. Getting pricing wrong means either leaving money on the table or pricing out customers. <strong>Impact:</strong> Revenue shortfall or customer acquisition failure.</td>
+<td>
+<strong>1. Tiered Pricing Model:</strong> Base platform fee + per-connection fee + volume-based transaction fee. Covers both scenarios.<br/>
+<strong>2. Price Discovery (Phase 1):</strong> First 50 customers get custom pricing. Use data to build optimal pricing model for Phase 2.<br/>
+<strong>3. Competitor Price Benchmarking:</strong> Continuously monitor SPS Commerce, TrueCommerce, Cleo pricing. Stay 40-60% below for India market.<br/>
+<span class="owner-tag">Owner: CEO + Finance</span>
+</td>
+</tr>
+<tr>
+<td><strong>R-B05</strong></td>
+<td><span class="tag tag-medium">MEDIUM</span></td>
+<td><strong>Revenue Concentration Risk</strong></td>
+<td>3 × 3 = 9</td>
+<td>If initial customers cluster in one industry (e.g., textile), FC becomes dependent on that industry's health. A downturn in that sector affects all revenue. <strong>Impact:</strong> Revenue instability. Difficult to raise funding with concentrated customer base.</td>
+<td>
+<strong>1. Multi-Vertical Strategy:</strong> Target 3+ verticals in Phase 1: textiles, auto parts, pharmaceuticals.<br/>
+<strong>2. No Single Customer &gt;15% Revenue:</strong> Set internal policy. Diversify early.<br/>
+<strong>3. Vertical-Specific Features:</strong> Build vertical-specific templates that attract diverse industries.<br/>
+<span class="owner-tag">Owner: Sales</span>
+</td>
+</tr>
+<tr>
+<td><strong>R-B06</strong></td>
+<td><span class="tag tag-low">LOW</span></td>
+<td><strong>ERP Vendor Becomes Competitor</strong></td>
+<td>2 × 4 = 8</td>
+<td>Tally, Zoho, or SAP could build their own buyer integration feature, making FC redundant for their ERP users. Zoho already has integrations marketplace. <strong>Impact:</strong> Loss of a source ERP segment.</td>
+<td>
+<strong>1. Multi-ERP Value Prop:</strong> FC's value is connecting ANY ERP to ANY buyer. Single-ERP solutions can't match this.<br/>
+<strong>2. Build Switching Costs:</strong> FC stores mapping history, connection config, and performance data. Migrating away means rebuilding all of this.<br/>
+<strong>3. Partnership Over Competition:</strong> Position FC as a partner that extends the ERP's value. Explore marketplace listing with Tally/Zoho.<br/>
+<span class="owner-tag">Owner: CEO</span>
+</td>
+</tr>
+</table>
+</div>
+<!-- 1.3 OPERATIONAL RISKS -->
+<div class="risk-header section-header" id="r-ops">1.3 Operational Risks</div>
+<div class="section-body">
+<table>
+<tr>
+<th style="width:6%">ID</th>
+<th style="width:7%">Severity</th>
+<th style="width:18%">Risk</th>
+<th style="width:8%">P × I</th>
+<th style="width:28%">Description &amp; Impact</th>
+<th style="width:33%">Mitigation Strategy</th>
+</tr>
+<tr>
+<td><strong>R-O01</strong></td>
+<td><span class="tag tag-high">HIGH</span></td>
+<td><strong>Small Team, Wide Surface Area</strong></td>
+<td>4 × 3 = 12</td>
+<td>FC requires expertise in Go microservices, Python ML, Kubernetes, EDI standards, 6+ ERP APIs, security, and DevOps. Early-stage startup may have 3-5 engineers. No single person can cover all areas. <strong>Impact:</strong> Knowledge silos. Bus factor = 1 for critical components. Slow incident response.</td>
+<td>
+<strong>1. Phased Hiring:</strong> Phase 1: 2 Go backend + 1 DevOps + 1 EDI specialist. Phase 2: add AI engineer + 2 more backend.<br/>
+<strong>2. Document Everything:</strong> Runbooks for every operational procedure. Architecture Decision Records for every design choice.<br/>
+<strong>3. Pair Programming Rotation:</strong> No single-owner components. Every service has primary + secondary owner.<br/>
+<strong>4. AI-Assisted Development:</strong> Leverage Claude/GPT for code review, documentation, and boilerplate generation to amplify small team output.<br/>
+<span class="owner-tag">Owner: CEO</span>
+</td>
+</tr>
+<tr>
+<td><strong>R-O02</strong></td>
+<td><span class="tag tag-high">HIGH</span></td>
+<td><strong>24/7 Operations Requirement</strong></td>
+<td>4 × 3 = 12</td>
+<td>Global buyers operate across time zones. EDI documents must be processed within SLA windows (typically 1-4 hours). A failure at 2am IST for a US buyer still needs response. <strong>Impact:</strong> SLA breach. Buyer relationship damage. Team burnout from off-hours alerts.</td>
+<td>
+<strong>1. Automated Recovery:</strong> Design for self-healing. Circuit breakers auto-recover. Dead letter queue items have automated retry with exponential backoff.<br/>
+<strong>2. PagerDuty Escalation:</strong> Tiered alerting: P1 (data loss/outage) → page immediately. P2 (degraded) → page within 30 min. P3 (non-critical) → next business day.<br/>
+<strong>3. India + USA Team Coverage:</strong> Leverage dual-market presence for natural timezone coverage.<br/>
+<strong>4. Outsourced NOC (Phase 2):</strong> Partner with managed services provider for first-responder triage. Escalate to engineering only when automated recovery fails.<br/>
+<span class="owner-tag">Owner: Engineering Lead + CEO</span>
+</td>
+</tr>
+<tr>
+<td><strong>R-O03</strong></td>
+<td><span class="tag tag-medium">MEDIUM</span></td>
+<td><strong>Infrastructure Cost Overrun</strong></td>
+<td>3 × 3 = 9</td>
+<td>Kubernetes cluster, managed PostgreSQL, Redis, monitoring stack, AI API calls — infrastructure costs can spiral quickly. At $3-5K/month before revenue, runway pressure is real. <strong>Impact:</strong> Cash burn exceeds projections. Must cut features or scale down.</td>
+<td>
+<strong>1. KEDA Scale-to-Zero:</strong> Low-traffic adapters scale to zero pods. Only pay for compute when messages are flowing.<br/>
+<strong>2. Spot/Preemptible Instances:</strong> Non-critical workloads (analytics, AI mapping) on spot instances. 60-70% cost reduction.<br/>
+<strong>3. Cost Monitoring:</strong> GCP billing alerts at 80% of monthly budget. Per-service cost attribution via labels.<br/>
+<strong>4. Right-Size from Day 1:</strong> Start with smallest viable instance sizes. Scale up based on actual load, not projected.<br/>
+<span class="owner-tag">Owner: DevOps + Finance</span>
+</td>
+</tr>
+<tr>
+<td><strong>R-O04</strong></td>
+<td><span class="tag tag-low">LOW</span></td>
+<td><strong>Vendor Lock-in (GCP)</strong></td>
+<td>2 × 3 = 6</td>
+<td>Using GKE, Cloud SQL, Memorystore ties FC to GCP. Moving to AWS or Azure later would require significant migration effort. <strong>Impact:</strong> Reduced negotiating leverage with cloud provider. Migration cost if pricing becomes unfavorable.</td>
+<td>
+<strong>1. Kubernetes Portability:</strong> K8s workloads are cloud-agnostic. Only managed services (Cloud SQL, Memorystore) are GCP-specific.<br/>
+<strong>2. Abstraction Layer:</strong> Database access through repository pattern. Cache access through interface. Swappable backends.<br/>
+<strong>3. Terraform Multi-Provider:</strong> Infrastructure code organized for multi-cloud. GCP-specific modules isolated.<br/>
+<span class="owner-tag">Owner: Architect</span>
+</td>
+</tr>
+</table>
+</div>
+<!-- 1.4 SECURITY & COMPLIANCE RISKS -->
+<div class="risk-header section-header" id="r-sec">1.4 Security &amp; Compliance Risks</div>
+<div class="section-body">
+<table>
+<tr>
+<th style="width:6%">ID</th>
+<th style="width:7%">Severity</th>
+<th style="width:18%">Risk</th>
+<th style="width:8%">P × I</th>
+<th style="width:28%">Description &amp; Impact</th>
+<th style="width:33%">Mitigation Strategy</th>
+</tr>
+<tr>
+<td><strong>R-S01</strong></td>
+<td><span class="tag tag-high">HIGH</span></td>
+<td><strong>AS2 Certificate Management Failures</strong></td>
+<td>3 × 4 = 12</td>
+<td>AS2 transport (used by Walmart, Target, and most large US buyers) requires S/MIME encryption with RSA-2048+ certificates. Certificates expire. Certificate rotation with 500+ buyer connections is operationally complex. A single expired cert = all documents to that buyer fail. <strong>Impact:</strong> Silent data delivery failures. Buyer relationship damage.</td>
+<td>
+<strong>1. Certificate Inventory Database:</strong> Track every certificate: issuer, expiry date, key size, associated connections. Alert 90/60/30 days before expiry.<br/>
+<strong>2. Automated Renewal:</strong> For FC-owned certs, use Let's Encrypt or Sectigo with auto-renewal. For buyer-provided certs, automated reminder workflow.<br/>
+<strong>3. Certificate Health Check:</strong> Daily job validates every active certificate. Alerts on approaching expiry, weak key sizes, or revocation.<br/>
+<strong>4. Mutual Authentication Testing:</strong> Monthly automated test that establishes mTLS/AS2 connection to every buyer endpoint. Catches issues before they affect production.<br/>
+<span class="owner-tag">Owner: Security Lead</span>
+</td>
+</tr>
+<tr>
+<td><strong>R-S02</strong></td>
+<td><span class="tag tag-high">HIGH</span></td>
+<td><strong>Data Residency &amp; GDPR/DPDP Compliance</strong></td>
+<td>3 × 4 = 12</td>
+<td>Indian factories' data must comply with India's Digital Personal Data Protection Act (DPDP 2023). EU buyers may require GDPR compliance. Data residency requirements may mandate data stays in specific regions. FC processes business data (orders, invoices) that may contain personal data (contact names, addresses). <strong>Impact:</strong> Regulatory fines. Cannot serve EU buyers. Legal liability.</td>
+<td>
+<strong>1. Data Classification:</strong> Classify all data fields: public, confidential, personal, sensitive. Apply appropriate controls per classification.<br/>
+<strong>2. Regional Deployment Capability:</strong> Architecture supports deploying in GCP Mumbai (asia-south1) for India, GCP Belgium (europe-west1) for EU. Data stays in region.<br/>
+<strong>3. Data Processing Agreement Templates:</strong> Standard DPA for factories. GDPR-compliant DPA for EU buyers.<br/>
+<strong>4. Legal Review (Phase 2):</strong> Engage data privacy lawyer for DPDP and GDPR compliance audit before EU buyer onboarding.<br/>
+<span class="owner-tag">Owner: CEO + Legal</span>
+</td>
+</tr>
+<tr>
+<td><strong>R-S03</strong></td>
+<td><span class="tag tag-medium">MEDIUM</span></td>
+<td><strong>Credential Storage for Factory ERPs</strong></td>
+<td>3 × 4 = 12</td>
+<td>FC must store factory's ERP credentials (API keys, OAuth tokens, ODBC passwords) to poll data. If FC's credential store is breached, attacker has access to hundreds of factory ERP systems. <strong>Impact:</strong> Mass breach of customer systems. Existential threat to company.</td>
+<td>
+<strong>1. HashiCorp Vault (Production):</strong> All credentials in Vault with auto-seal, audit logging, and lease-based access. No credentials in environment variables or config files in production.<br/>
+<strong>2. Least-Privilege Credentials:</strong> Factory provides read-only API keys. FC never needs write access to factory ERP (except for status updates, which use separate limited-scope credentials).<br/>
+<strong>3. Credential Rotation Policy:</strong> Automated 90-day rotation for OAuth tokens. Alert on credentials older than 90 days.<br/>
+<strong>4. Network Isolation:</strong> Vault in private subnet. Access only from service accounts via mTLS. No internet exposure.<br/>
+<span class="owner-tag">Owner: Security Lead</span>
+</td>
+</tr>
+<tr>
+<td><strong>R-S04</strong></td>
+<td><span class="tag tag-medium">MEDIUM</span></td>
+<td><strong>SOC 2 Type II Requirement from Enterprise Buyers</strong></td>
+<td>3 × 3 = 9</td>
+<td>Enterprise buyers (Walmart, Amazon Vendor Central) may require SOC 2 Type II certification before approving FC as a supplier integration platform. SOC 2 audit takes 6-12 months and costs $50-150K. <strong>Impact:</strong> Blocked from enterprise buyer onboarding. Limits addressable market to mid-market buyers.</td>
+<td>
+<strong>1. SOC 2 Readiness (Phase 1):</strong> Implement SOC 2-aligned controls from day one (access controls, audit logging, encryption, incident response). Don't defer security to later.<br/>
+<strong>2. SOC 2 Type I First:</strong> Type I (point-in-time) is faster and cheaper. Achievable in 3-4 months. Satisfies many buyers while working toward Type II.<br/>
+<strong>3. Vanta/Drata:</strong> Use compliance automation platforms to continuously monitor SOC 2 controls. Reduces audit cost and preparation time by 60%.<br/>
+<span class="owner-tag">Owner: CEO + Security Lead</span>
+</td>
+</tr>
+</table>
+</div>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- ASSUMPTIONS SECTION -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2 id="assumptions">Section 2: ASSUMPTIONS</h2>
+<p>Beliefs taken as true for planning purposes. If invalidated, architecture or business model may need revision. Each assumption includes a validation method and a contingency plan.</p>
+<!-- 2.1 TECHNICAL ASSUMPTIONS -->
+<div class="assumption-header section-header" id="a-tech">2.1 Technical Assumptions</div>
+<div class="section-body">
+<table>
+<tr>
+<th style="width:6%">ID</th>
+<th style="width:7%">Severity</th>
+<th style="width:18%">Assumption</th>
+<th style="width:30%">What We're Assuming &amp; Why</th>
+<th style="width:18%">Validation Method</th>
+<th style="width:21%">Contingency if Invalid</th>
+</tr>
+<tr>
+<td><strong>A-T01</strong></td>
+<td><span class="tag tag-critical">CRITICAL</span></td>
+<td><strong>Tally XML API Will Remain Available</strong></td>
+<td>Tally's XML-over-HTTP interface (port 9000) is FC's primary integration point for India's most popular ERP. TallyPrime 7.0 added JSON but didn't deprecate XML. We assume XML will remain available for 3+ years. If Tally removes XML or moves to a proprietary cloud-only API, FC's largest source adapter becomes useless.</td>
+<td>Monitor Tally developer portal quarterly. Track TallyPrime release notes. Attend Tally partner conferences. Build relationship with Tally integration team.</td>
+<td>Build JSON adapter as parallel path. If XML deprecated, migrate factories to JSON within 90 days using Two-in-Production pattern. If Tally goes cloud-only, build cloud API adapter.</td>
+</tr>
+<tr>
+<td><strong>A-T02</strong></td>
+<td><span class="tag tag-critical">CRITICAL</span></td>
+<td><strong>Canonical Model Covers 90%+ of Use Cases</strong></td>
+<td>The 6-entity canonical model (Product, Inventory, Order, Shipment, Invoice, Party) covers the standard Order-to-Cash flow. We assume this covers 90%+ of real-world factory-to-buyer data exchange. Untested with industry-specific flows (pharma, automotive, defense).</td>
+<td>Onboard 5+ factories from 3+ different industries. Track % of fields that fit canonical model vs. need custom_fields extension. Target: &gt;90% canonical coverage.</td>
+<td>If canonical model covers only 70-80%, add industry-specific entity extensions (PharmaProduct, AutoPart). Each extension is a superset of base entity. Adds complexity but preserves core architecture.</td>
+</tr>
+<tr>
+<td><strong>A-T03</strong></td>
+<td><span class="tag tag-critical">CRITICAL</span></td>
+<td><strong>EDI X12 4010 is Sufficient for Most US Buyers</strong></td>
+<td>EDI X12 version 4010 (released 1997) is still the most widely used version. We build 4010 first and assume it covers 80%+ of US buyer requirements. Some buyers may mandate 5010 or 5020.</td>
+<td>Survey first 20 target buyers for their EDI version requirements. Track buyer implementation guides to determine version distribution.</td>
+<td>Build 5010 adapter in Phase 2. Architecture already supports versioned adapters. Buyer connections can be routed to version-specific adapters.</td>
+</tr>
+<tr>
+<td><strong>A-T04</strong></td>
+<td><span class="tag tag-high">HIGH</span></td>
+<td><strong>Zoho/SAP B1/ERPNext APIs Won't Change Rate Limits Downward</strong></td>
+<td>Current rate limits: Zoho 100 req/min, SAP B1 session-based, ERPNext no hard limit. We've designed around these limits. If vendors tighten limits (e.g., Zoho drops to 50 req/min), high-volume factories hit bottlenecks.</td>
+<td>Monitor vendor changelog monthly. Track actual API response headers for rate limit changes (X-RateLimit headers). Alert on any degradation.</td>
+<td>Implement aggressive caching + webhook-first strategy. Reduce polling frequency. Batch requests. If extreme, negotiate higher limits with vendor (paid API tier).</td>
+</tr>
+<tr>
+<td><strong>A-T05</strong></td>
+<td><span class="tag tag-high">HIGH</span></td>
+<td><strong>Claude API Remains Cost-Effective for AI Mapping</strong></td>
+<td>AI mapping engine uses Claude API for field mapping and auto-configuration. We assume Claude API pricing remains stable (~$3/MTok input, $15/MTok output for Opus) and availability remains high (99.9%+).</td>
+<td>Track Claude API cost per onboarding. Monitor Anthropic pricing announcements. Benchmark against GPT-4, Gemini quarterly.</td>
+<td>Build abstraction layer that supports multiple LLM providers. If Claude pricing doubles, switch to most cost-effective provider. AI mapping is called only during onboarding, not per-message — cost impact is bounded.</td>
+</tr>
+<tr>
+<td><strong>A-T06</strong></td>
+<td><span class="tag tag-high">HIGH</span></td>
+<td><strong>GKE Autopilot Handles Our Scaling Pattern</strong></td>
+<td>We assume GKE Autopilot can handle the "many small pods scaling independently" pattern (25+ deployments, KEDA scale-to-zero, HPA). Autopilot manages nodes automatically but has constraints on pod configurations.</td>
+<td>Load test with k6 simulating 100 concurrent connections across 15 adapter types. Verify HPA/KEDA behavior under Autopilot constraints.</td>
+<td>Fall back to GKE Standard with managed node pools. More operational overhead but full control over node configuration and scheduling.</td>
+</tr>
+<tr>
+<td><strong>A-T07</strong></td>
+<td><span class="tag tag-medium">MEDIUM</span></td>
+<td><strong>Redis Can Handle Queue Volume at Scale</strong></td>
+<td>All inter-adapter message routing goes through Redis Streams/Lists. We assume Redis can handle 10K+ messages/min with acceptable latency (&lt;10ms). Beyond that, we'd need Kafka or NATS.</td>
+<td>Load test Redis Cluster with simulated production traffic pattern. Measure latency at P50, P95, P99 at various throughput levels.</td>
+<td>Migrate to NATS JetStream or Kafka for message routing. Redis continues as cache layer. Migration path designed into architecture (queue interface abstraction).</td>
+</tr>
+<tr>
+<td><strong>A-T08</strong></td>
+<td><span class="tag tag-medium">MEDIUM</span></td>
+<td><strong>Three-Way Matching Tolerances Are Universal</strong></td>
+<td>We've set default tolerances: 3% quantity, 3%/$100 price variance. Assumption: these work for most buyer-factory pairs. Some buyers may have zero tolerance or different thresholds.</td>
+<td>Collect actual tolerance requirements from first 20 buyer connections. Compare to our defaults.</td>
+<td>Make tolerances configurable per-connection in the Three-Layer Mapping (Connection Override level). Already architecturally supported.</td>
+</tr>
+<tr>
+<td><strong>A-T09</strong></td>
+<td><span class="tag tag-medium">MEDIUM</span></td>
+<td><strong>Go + Gin is the Right Tech Stack</strong></td>
+<td>We chose Go for all microservices due to performance, goroutine concurrency, and small binary sizes. Assumption: Go ecosystem has mature libraries for EDI parsing, XML processing, cXML generation, and AS2 signing.</td>
+<td>Build proof-of-concept EDI 850 parser, AS2 signer, and cXML generator in Go. Verify library maturity.</td>
+<td>If Go EDI libraries are immature, build EDI parsing in Java (established EDI ecosystem with Smooks, BOTS) and call via gRPC. Or contribute to Go EDI open-source projects.</td>
+</tr>
+<tr>
+<td><strong>A-T10</strong></td>
+<td><span class="tag tag-medium">MEDIUM</span></td>
+<td><strong>Busy 21 ODBC Access is Reliable</strong></td>
+<td>Busy 21 has no API — only ODBC to MS SQL Server. We assume ODBC read access to Busy's database tables is documented, stable, and doesn't corrupt data. Busy may change internal schema without notice.</td>
+<td>Set up Busy 21 trial. Map all database tables for sales order flow. Test ODBC read performance. Verify schema documentation.</td>
+<td>If ODBC is unreliable, offer Busy factories a CSV/Excel upload workflow. FC ingests CSV, transforms to canonical model. Manual but functional until Busy adds API.</td>
+</tr>
+</table>
+</div>
+<!-- 2.2 BUSINESS ASSUMPTIONS -->
+<div class="assumption-header section-header" id="a-biz">2.2 Business Assumptions</div>
+<div class="section-body">
+<table>
+<tr>
+<th style="width:6%">ID</th>
+<th style="width:7%">Severity</th>
+<th style="width:18%">Assumption</th>
+<th style="width:30%">What We're Assuming &amp; Why</th>
+<th style="width:18%">Validation Method</th>
+<th style="width:21%">Contingency if Invalid</th>
+</tr>
+<tr>
+<td><strong>A-B01</strong></td>
+<td><span class="tag tag-high">HIGH</span></td>
+<td><strong>Indian SME Factories Will Pay for Integration SaaS</strong></td>
+<td>Indian SME factories currently manage buyer communication manually (email, phone, Excel). We assume they'll pay ₹5000-15000/month for automated integration. Many Indian SMEs resist SaaS subscription models, preferring one-time purchases.</td>
+<td>Pre-sell to 10 factories before building. Get signed LOIs or deposits. Track conversion rate from interest to payment.</td>
+<td>Offer freemium tier (1 buyer connection free, pay for additional). Or per-transaction pricing that feels less like subscription. Or annual payment with discount.</td>
+</tr>
+<tr>
+<td><strong>A-B02</strong></td>
+<td><span class="tag tag-high">HIGH</span></td>
+<td><strong>Factories Have Stable Internet for Cloud Integration</strong></td>
+<td>FC is cloud-based. Source adapters connect to factory ERPs via internet (or bridge agent). We assume factories in Indian industrial cities (Tiruppur, Ludhiana, Surat, Coimbatore) have reliable broadband. Many factory areas have intermittent connectivity.</td>
+<td>Survey internet connectivity in 5 target industrial cities. Test latency and uptime from factory locations to GCP Mumbai.</td>
+<td>Bridge agent with 72-hour offline buffer mitigates intermittent connectivity. For extreme cases, offer 4G cellular backup or satellite (Starlink becoming available in India).</td>
+</tr>
+<tr>
+<td><strong>A-B03</strong></td>
+<td><span class="tag tag-high">HIGH</span></td>
+<td><strong>Buyers Will Accept FC as Integration Partner</strong></td>
+<td>When a factory says "I'll send EDI through FactoryConnect," the buyer must approve FC as a VAN/integration partner. We assume buyers will accept a new, unknown platform. Some buyers only work with established VANs (SPS Commerce, OpenText).</td>
+<td>Approach 5 buyer procurement teams. Ask about requirements for approving a new integration partner. Identify which buyers are flexible vs. locked to specific VANs.</td>
+<td>Partner with established VAN (SPS Commerce, TrueCommerce) as intermediary. FC generates the EDI, sends to VAN, VAN delivers to buyer. FC is invisible to buyer. Reduces margin but enables access.</td>
+</tr>
+<tr>
+<td><strong>A-B04</strong></td>
+<td><span class="tag tag-medium">MEDIUM</span></td>
+<td><strong>Market Size Justifies Investment</strong></td>
+<td>India has 63M+ MSMEs, ~500K export. We assume TAM of $200M+ for factory integration SaaS. But actual serviceable market may be much smaller (only factories with buyer compliance pressure).</td>
+<td>Bottom-up analysis: count factories exporting to EDI-mandating buyers. Survey 100 factories on buyer integration pain points.</td>
+<td>If SAM is small, expand to non-EDI use cases: e-invoicing (India's GST mandate), marketplace integration (Amazon Seller, Flipkart), or domestic B2B integration.</td>
+</tr>
+<tr>
+<td><strong>A-B05</strong></td>
+<td><span class="tag tag-medium">MEDIUM</span></td>
+<td><strong>WhatsApp Channel is Sufficient for Factory Communication</strong></td>
+<td>FC uses WhatsApp as primary channel for factory owners to manage connections, view status, approve documents. We assume factory owners prefer WhatsApp over web portal or email.</td>
+<td>User interviews with 20 factory owners. A/B test WhatsApp vs. web portal for key workflows (order status, approval).</td>
+<td>Build web portal as parallel channel. Let factory choose preferred channel. WhatsApp for notifications, web for detailed management.</td>
+</tr>
+<tr>
+<td><strong>A-B06</strong></td>
+<td><span class="tag tag-medium">MEDIUM</span></td>
+<td><strong>AI Mapping Reduces Onboarding from Weeks to Hours</strong></td>
+<td>Key differentiator: AI auto-maps ERP fields to canonical model. We assume this reduces onboarding from 2-4 weeks (competitors) to 2-4 hours. Unproven at scale with real-world ERP data.</td>
+<td>Run AI mapping on real Tally, Zoho, SAP B1 exports from 10 factories. Measure accuracy and time-to-complete with human-in-the-loop.</td>
+<td>If AI mapping accuracy is only 70-80%, create pre-built templates for top 20 ERP+buyer combinations. AI fills gaps in templates rather than mapping from scratch. Still faster than manual.</td>
+</tr>
+<tr>
+<td><strong>A-B07</strong></td>
+<td><span class="tag tag-low">LOW</span></td>
+<td><strong>India Regulatory Environment Remains Favorable</strong></td>
+<td>India's Digital India initiative, GST e-invoicing mandate, and ONDC push suggest government supports digital integration. We assume no adverse regulation that would hinder cloud-based B2B integration.</td>
+<td>Monitor India MEITY, DPIIT, and CBIC policy announcements quarterly.</td>
+<td>If data localization mandates tighten, ensure GCP Mumbai deployment satisfies all requirements. If government builds competing platform (like GSTN for tax), pivot to complement rather than compete.</td>
+</tr>
+<tr>
+<td><strong>A-B08</strong></td>
+<td><span class="tag tag-low">LOW</span></td>
+<td><strong>USD-INR Exchange Rate Doesn't Crater Margins</strong></td>
+<td>FC earns in INR from Indian factories but pays cloud costs in USD. If INR depreciates significantly, costs rise while revenue stays flat. Current rate ~₹84/USD.</td>
+<td>Model P&amp;L at ₹80, ₹85, ₹90, ₹95/USD. Determine breakeven exchange rate.</td>
+<td>Price premium tier in USD for factories exporting to US buyers. Or negotiate INR billing with GCP (available through Indian entity).</td>
+</tr>
+</table>
+</div>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- ISSUES SECTION -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2 id="issues">Section 3: ISSUES</h2>
+<p>Known problems that exist today and must be addressed. Unlike risks (future events), issues are current realities.</p>
+<!-- 3.1 KNOWN TECHNICAL ISSUES -->
+<div class="issue-header section-header" id="i-known">3.1 Known Technical Issues</div>
+<div class="section-body">
+<table>
+<tr>
+<th style="width:6%">ID</th>
+<th style="width:7%">Severity</th>
+<th style="width:18%">Issue</th>
+<th style="width:32%">Description &amp; Current State</th>
+<th style="width:37%">Resolution Path</th>
+</tr>
+<tr>
+<td><strong>I-T01</strong></td>
+<td><span class="tag tag-critical">CRITICAL</span></td>
+<td><strong>Busy 21 Has No API</strong></td>
+<td>Busy 21 (popular Indian accounting ERP) has zero API support. The only programmatic access is ODBC to its MS SQL Server backend. Busy's database schema is undocumented. Read-only ODBC access is fragile — schema changes in Busy updates can break queries without warning. Busy is Windows-only. <strong>Current State:</strong> No Busy adapter exists. Cannot serve Busy-using factories.</td>
+<td>
+<strong>Phase 1:</strong> ODBC bridge agent on factory's Windows machine. Read sales orders, invoices from Busy's SQL tables. Map to canonical model. <strong>Risk:</strong> Schema may change.<br/>
+<strong>Phase 2:</strong> CSV/Excel upload as fallback. Factory exports from Busy, uploads to FC via WhatsApp or web portal. FC parses and transforms.<br/>
+<strong>Phase 3:</strong> Engage Busy Software for partnership. Request API access or documented integration points.<br/>
+<strong>Expert Question:</strong> Has anyone built a reliable Busy 21 integration? What tables are stable across versions?
+  </td>
+</tr>
+<tr>
+<td><strong>I-T02</strong></td>
+<td><span class="tag tag-critical">CRITICAL</span></td>
+<td><strong>Tally is Windows-Only — No Cloud API</strong></td>
+<td>Tally Prime runs only on Windows. Its XML API is accessible only on the local network (port 9000). No cloud-hosted API. No mobile access. Factory must keep a Windows machine running for FC to poll data. TallyPrime on Cloud (Tally's own hosting) may eventually offer cloud API, but timeline unknown. <strong>Current State:</strong> Bridge agent architecture designed but not built.</td>
+<td>
+<strong>Phase 1:</strong> Windows bridge agent (MSI installer, runs as Windows Service). Polls Tally XML, pushes to FC cloud via HTTPS/mTLS. Auto-update capability. 72-hour offline buffer.<br/>
+<strong>Phase 2:</strong> If TallyPrime 8.0 adds cloud API, build cloud adapter alongside bridge. Offer migration path to factories.<br/>
+<strong>Phase 3:</strong> Explore TallyPrime on Cloud partnership. If Tally opens cloud API, bridge agent becomes optional.<br/>
+<strong>Expert Question:</strong> What's the most reliable pattern for bridge agents connecting Windows desktop apps to cloud SaaS?
+  </td>
+</tr>
+<tr>
+<td><strong>I-T03</strong></td>
+<td><span class="tag tag-critical">CRITICAL</span></td>
+<td><strong>No Go EDI Parser Library</strong></td>
+<td>Go does not have a mature, production-grade EDI X12 parser/generator library. Python has <code>bots</code>, Java has <code>Smooks</code> and <code>JEDI</code>, but Go's EDI ecosystem is nascent. The few open-source Go EDI libraries are unmaintained or don't support all transaction sets (850, 855, 856, 810, 997). <strong>Current State:</strong> Must build or adapt EDI parser.</td>
+<td>
+<strong>Option A:</strong> Build FC's own Go EDI library. Start with 5 transaction sets (850, 855, 856, 810, 997). Test against 10+ buyer implementation guides. Open-source it for community validation.<br/>
+<strong>Option B:</strong> Embed a Python EDI parser (bots) as a sidecar or gRPC service. Go adapter calls Python for parse/generate. Adds latency but leverages proven library.<br/>
+<strong>Option C:</strong> Use Stedi's EDI API (cloud service) for parse/generate. Adds external dependency and per-transaction cost but is production-grade.<br/>
+<strong>Expert Question:</strong> For a Go-based EDI platform, is it better to build a parser from scratch, wrap a Python library, or use a commercial EDI API?
+  </td>
+</tr>
+<tr>
+<td><strong>I-T04</strong></td>
+<td><span class="tag tag-critical">CRITICAL</span></td>
+<td><strong>Buyer-Specific EDI Variations Are Massive</strong></td>
+<td>EDI X12 is a "standard" but every buyer has their own Implementation Guide that modifies the standard. Walmart's 850 is different from Target's 850 which is different from Costco's 850. Different qualifiers, different segments required/optional, different date formats, different code values. There are hundreds of buyer-specific implementations. <strong>Current State:</strong> No buyer implementation guides collected yet.</td>
+<td>
+<strong>Phase 1:</strong> Collect implementation guides from 10 target buyers. Build buyer-specific validation rules in the Three-Layer Mapping (Buyer Template level).<br/>
+<strong>Phase 2:</strong> Build an Implementation Guide Parser that auto-generates validation rules from buyer's IG PDF. AI-assisted extraction of segment requirements.<br/>
+<strong>Phase 3:</strong> Community-contributed buyer templates. Factories that successfully connect to a buyer contribute their template for others.<br/>
+<strong>Expert Question:</strong> How do platforms like SPS Commerce manage 10,000+ buyer-specific EDI implementations? What's their template architecture?
+  </td>
+</tr>
+<tr>
+<td><strong>I-T05</strong></td>
+<td><span class="tag tag-high">HIGH</span></td>
+<td><strong>Marg ERP Documentation Gap</strong></td>
+<td>Marg ERP has an API Gateway but documentation is extremely limited. JWT/JWS authentication for e-invoicing is documented but sales order / inventory APIs are poorly documented or nonexistent. Marg is popular in Indian pharmaceutical and FMCG sectors. <strong>Current State:</strong> Cannot reliably design Marg adapter without more documentation.</td>
+<td>
+<strong>Phase 1:</strong> Contact Marg ERP integration team directly. Request API documentation and sandbox access. Attend Marg partner events.<br/>
+<strong>Phase 2:</strong> If documentation unavailable, reverse-engineer Marg's e-invoicing API patterns. Build adapter from observed behavior.<br/>
+<strong>Fallback:</strong> CSV/Excel upload for Marg factories until API documentation improves.<br/>
+<strong>Expert Question:</strong> Has anyone successfully integrated with Marg ERP's API Gateway beyond e-invoicing?
+  </td>
+</tr>
+<tr>
+<td><strong>I-T06</strong></td>
+<td><span class="tag tag-high">HIGH</span></td>
+<td><strong>SAP B1 OData 3 → OData 4 Migration</strong></td>
+<td>SAP Business One Service Layer is migrating from OData v3 to OData v4 starting with Feature Pack FP2405. OData 4 has different syntax ($filter, $expand, type casting). Factories on older SAP B1 versions will stay on OData 3. Factories that upgrade will need OData 4. <strong>Current State:</strong> Must support both OData versions simultaneously.</td>
+<td>
+<strong>Solution:</strong> This is exactly why we built versioned adapters. <code>src-sapb1-odata3</code> and <code>src-sapb1-odata4</code> run as separate containers. Routing engine directs each factory to the correct adapter based on their SAP B1 version. Two-in-Production pattern.<br/>
+<strong>Timeline:</strong> Build OData 3 adapter first (most existing installations). OData 4 adapter in Phase 2.<br/>
+<strong>Expert Question:</strong> What are the practical breaking changes between SAP B1 OData 3 and 4 for sales order/invoice operations?
+  </td>
+</tr>
+<tr>
+<td><strong>I-T07</strong></td>
+<td><span class="tag tag-high">HIGH</span></td>
+<td><strong>ERPNext v15 Custom Field Breaking Changes</strong></td>
+<td>ERPNext v15 changed custom field naming conventions (prefix changes, field type restrictions). Factories running v14 and v15 have different field structures for the same logical data. <strong>Current State:</strong> Must detect ERPNext version and adapt field mapping accordingly.</td>
+<td>
+<strong>Solution:</strong> Versioned adapters: <code>src-erpnext-v14</code> and <code>src-erpnext-v15</code>. Onboarding flow detects ERPNext version via <code>/api/method/frappe.client.get_list</code> version endpoint. Auto-routes to correct adapter.<br/>
+<strong>Expert Question:</strong> Are there other ERPNext v14→v15 breaking changes beyond custom fields that affect sales order/invoice integration?
+  </td>
+</tr>
+<tr>
+<td><strong>I-T08</strong></td>
+<td><span class="tag tag-high">HIGH</span></td>
+<td><strong>No-ERP Factories (Paper/Excel Only)</strong></td>
+<td>Some Indian SME factories don't use any ERP at all. They manage orders in paper notebooks or Excel spreadsheets. These factories still need buyer integration (their buyers still demand EDI). <strong>Current State:</strong> No solution for no-ERP factories in current architecture.</td>
+<td>
+<strong>Phase 1:</strong> WhatsApp-based data entry. Factory sends order details via WhatsApp. FC's AI parses WhatsApp messages into canonical model. Human-in-the-loop verification.<br/>
+<strong>Phase 2:</strong> Lightweight web form for order/invoice entry. Factory fills form, FC generates EDI.<br/>
+<strong>Phase 3:</strong> FC becomes a mini-ERP for no-ERP factories. Order management + buyer integration in one. Premium tier pricing.<br/>
+<strong>Expert Question:</strong> What % of Indian export factories operate without any ERP? Is this a significant enough segment to build for?
+  </td>
+</tr>
+</table>
+</div>
+<!-- 3.2 ARCHITECTURE GAPS -->
+<div class="issue-header section-header" id="i-arch">3.2 Architecture Gaps</div>
+<div class="section-body">
+<table>
+<tr>
+<th style="width:6%">ID</th>
+<th style="width:7%">Severity</th>
+<th style="width:18%">Issue</th>
+<th style="width:32%">Description</th>
+<th style="width:37%">Resolution Path</th>
+</tr>
+<tr>
+<td><strong>I-A01</strong></td>
+<td><span class="tag tag-high">HIGH</span></td>
+<td><strong>No Disaster Recovery Plan</strong></td>
+<td>Architecture describes single-region deployment (GCP Mumbai). No cross-region failover, no backup region, no RTO/RPO defined. A GCP Mumbai regional outage would take FC completely offline. <strong>For a SaaS platform handling mission-critical buyer communications, this is unacceptable.</strong></td>
+<td>
+<strong>Phase 1:</strong> Define RTO (Recovery Time Objective) and RPO (Recovery Point Objective). Target: RTO=1 hour, RPO=5 minutes.<br/>
+<strong>Phase 2:</strong> PostgreSQL cross-region read replica in GCP Singapore. Redis backup to GCS. Daily full backup + continuous WAL archiving.<br/>
+<strong>Phase 3:</strong> Active-passive multi-region. GCP Mumbai primary, GCP Singapore standby. DNS failover via Cloud DNS health checks.<br/>
+<strong>Expert Question:</strong> For a B2B integration SaaS, what RTO/RPO do enterprise buyers typically require in their vendor agreements?
+  </td>
+</tr>
+<tr>
+<td><strong>I-A02</strong></td>
+<td><span class="tag tag-medium">MEDIUM</span></td>
+<td><strong>No API Versioning Strategy for FC's Own API</strong></td>
+<td>FC exposes APIs to factories (onboarding, status, configuration). No versioning strategy defined. Breaking changes to FC's own API would disrupt factory integrations. <strong>Current State:</strong> API design not started.</td>
+<td>
+<strong>Standard:</strong> URL-versioned APIs: <code>/api/v1/connections</code>, <code>/api/v2/connections</code>. Maintain backward compatibility for 12 months after deprecation notice. Semantic versioning for all API changes.<br/>
+<strong>Tools:</strong> OpenAPI 3.0 spec for every endpoint. Generated client SDKs (Go, Python, JS). Breaking change detection in CI.
+  </td>
+</tr>
+<tr>
+<td><strong>I-A03</strong></td>
+<td><span class="tag tag-medium">MEDIUM</span></td>
+<td><strong>No Load Testing Framework</strong></td>
+<td>Architecture references performance targets (10K msg/min, sub-10ms queue latency) but no load testing framework exists to validate these targets. <strong>Current State:</strong> Performance claims are theoretical.</td>
+<td>
+<strong>Phase 1:</strong> Build k6 load test suite that simulates realistic traffic: N factories sending orders, M buyers receiving EDI. Test at 2x, 5x, 10x expected load.<br/>
+<strong>Phase 2:</strong> Automated performance regression tests in CI. Any PR that degrades P95 latency by &gt;10% is flagged.
+  </td>
+</tr>
+<tr>
+<td><strong>I-A04</strong></td>
+<td><span class="tag tag-medium">MEDIUM</span></td>
+<td><strong>No Billing &amp; Metering System</strong></td>
+<td>SaaS product needs usage metering (messages processed, connections active), billing (subscription + usage-based), invoicing, and payment collection. None of this is designed yet. <strong>Current State:</strong> No billing architecture.</td>
+<td>
+<strong>Phase 1:</strong> Manual billing via Razorpay/Stripe for first 50 customers. Usage tracking in PostgreSQL.<br/>
+<strong>Phase 2:</strong> Integrate with billing platform (Chargebee, Zoho Subscriptions, or Stripe Billing). Automated usage metering → invoice generation → payment collection.<br/>
+<strong>Phase 3:</strong> Self-serve billing portal. Factories view usage, download invoices, manage subscription.
+  </td>
+</tr>
+</table>
+</div>
+<!-- 3.3 PROCESS ISSUES -->
+<div class="issue-header section-header" id="i-process">3.3 Process Issues</div>
+<div class="section-body">
+<table>
+<tr>
+<th style="width:6%">ID</th>
+<th style="width:7%">Severity</th>
+<th style="width:18%">Issue</th>
+<th style="width:32%">Description</th>
+<th style="width:37%">Resolution Path</th>
+</tr>
+<tr>
+<td><strong>I-P01</strong></td>
+<td><span class="tag tag-high">HIGH</span></td>
+<td><strong>No EDI Certification Process</strong></td>
+<td>Before going live with a buyer, FC must pass the buyer's EDI certification testing. This involves sending test transactions, receiving test 997s, and iterating until all test cases pass. No process defined for managing certifications across multiple buyers. <strong>Current State:</strong> Certification workflow not designed.</td>
+<td>
+<strong>Phase 1:</strong> Build certification management module: test case tracking, pass/fail status, buyer feedback log, re-test scheduling. Assign certification owner per buyer.<br/>
+<strong>Phase 2:</strong> Automated certification test runner. Pre-load buyer test cases. Run automatically, report results, flag failures for human review.<br/>
+<strong>Expert Question:</strong> What's the typical EDI certification cycle time? How many rounds of testing before buyer approves?
+  </td>
+</tr>
+<tr>
+<td><strong>I-P02</strong></td>
+<td><span class="tag tag-medium">MEDIUM</span></td>
+<td><strong>No Customer Support Playbook</strong></td>
+<td>Factory owners will have questions: "Why was my invoice rejected?", "How do I add a new buyer?", "My Tally connection is down." No support tiers, SLAs, or escalation paths defined. <strong>Current State:</strong> No support process.</td>
+<td>
+<strong>Phase 1:</strong> WhatsApp-based support. CEO + engineering handle directly. Build FAQ from first 50 support requests.<br/>
+<strong>Phase 2:</strong> Tiered support: L1 (FAQ bot + junior support), L2 (technical support), L3 (engineering escalation). SLAs: P1=1hr, P2=4hr, P3=24hr.<br/>
+<strong>Phase 3:</strong> Self-serve portal with connection health dashboard, error explanations, and guided troubleshooting.
+  </td>
+</tr>
+<tr>
+<td><strong>I-P03</strong></td>
+<td><span class="tag tag-low">LOW</span></td>
+<td><strong>No Change Management Process</strong></td>
+<td>When FC needs to update an adapter (new ERP version support), there's no formal change management process. Who approves? How are affected factories notified? What's the rollback plan? <strong>Current State:</strong> Informal/ad-hoc.</td>
+<td>
+<strong>Phase 1:</strong> Lightweight CAB (Change Advisory Board): CEO + Engineering Lead approve changes. Pre-change checklist: impact assessment, rollback plan, notification list.<br/>
+<strong>Phase 2:</strong> Formalize into RFC (Request for Change) process. Required for any change affecting production connections.
+  </td>
+</tr>
+</table>
+</div>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- DEPENDENCIES SECTION -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2 id="dependencies">Section 4: DEPENDENCIES</h2>
+<p>External factors that FC depends on but does not control. Failure of any dependency can block progress.</p>
+<!-- 4.1 EXTERNAL SYSTEM DEPENDENCIES -->
+<div class="dependency-header section-header" id="d-ext">4.1 External System Dependencies</div>
+<div class="section-body">
+<table>
+<tr>
+<th style="width:6%">ID</th>
+<th style="width:7%">Severity</th>
+<th style="width:18%">Dependency</th>
+<th style="width:8%">Type</th>
+<th style="width:28%">Description &amp; Impact if Unavailable</th>
+<th style="width:33%">Mitigation &amp; Alternatives</th>
+</tr>
+<tr>
+<td><strong>D-E01</strong></td>
+<td><span class="tag tag-critical">CRITICAL</span></td>
+<td><strong>Buyer EDI Endpoints &amp; VAN Networks</strong></td>
+<td>External</td>
+<td>FC delivers EDI documents to buyer endpoints (AS2, SFTP, VAN mailbox). If buyer's endpoint is down, documents queue up. If VAN (SPS Commerce network, IBM Sterling) has outage, hundreds of connections affected. FC has zero control over buyer uptime. <strong>Impact:</strong> Document delivery failure. SLA breach for all connections to that buyer.</td>
+<td>
+<strong>1. Retry with Exponential Backoff:</strong> Automatic retry for 24 hours before alerting factory.<br/>
+<strong>2. Multi-Path Delivery:</strong> Where buyer supports it, configure primary (AS2) and fallback (SFTP) delivery paths.<br/>
+<strong>3. VAN Status Monitoring:</strong> Subscribe to SPS Commerce, TrueCommerce, OpenText status pages. Proactive notification to affected factories when VAN is down.<br/>
+<strong>4. Document Buffering:</strong> Guaranteed delivery — once FC accepts a document, it will deliver it even if buyer endpoint is temporarily down.
+  </td>
+</tr>
+<tr>
+<td><strong>D-E02</strong></td>
+<td><span class="tag tag-critical">CRITICAL</span></td>
+<td><strong>Source ERP API Availability</strong></td>
+<td>External</td>
+<td>FC depends on Tally, Zoho, SAP B1, ERPNext, Busy, and Marg APIs being available and responsive. Each has different uptime guarantees. Tally (local only, depends on factory's Windows machine being on). Zoho (99.9% SLA). SAP B1 (on-premise, depends on factory's infrastructure). <strong>Impact:</strong> Cannot poll new data from factory ERP. Order processing delayed.</td>
+<td>
+<strong>1. Webhook-First (where available):</strong> Zoho and ERPNext support webhooks. Reduces polling dependency.<br/>
+<strong>2. Bridge Agent Buffering:</strong> For on-premise ERPs (Tally, SAP B1, Busy), bridge agent caches locally during ERP downtime.<br/>
+<strong>3. Health Monitoring per Connection:</strong> Track ERP response time and availability per factory. Alert factory owner via WhatsApp when their ERP appears unresponsive.<br/>
+<strong>4. Graceful Degradation:</strong> Queue incoming buyer documents (POs) even if factory ERP is down. Deliver when ERP comes back online.
+  </td>
+</tr>
+<tr>
+<td><strong>D-E03</strong></td>
+<td><span class="tag tag-critical">CRITICAL</span></td>
+<td><strong>AWS Transfer Family (AS2)</strong></td>
+<td>Vendor</td>
+<td>FC uses AWS Transfer Family for AS2 transport (the standard for B2B document exchange with large US buyers). This is a managed service dependency. If AWS Transfer Family has an outage or pricing change, FC's primary delivery mechanism for US buyers is affected. <strong>Impact:</strong> Cannot deliver documents to AS2 buyers.</td>
+<td>
+<strong>1. Self-Hosted AS2 Server:</strong> Build capability to run open-source AS2 server (OpenAS2 or Mendelson) as fallback on FC's own infrastructure.<br/>
+<strong>2. SFTP Fallback:</strong> Many buyers accept SFTP as alternative to AS2. Configure SFTP delivery path for critical buyers.<br/>
+<strong>3. Multi-Region AWS:</strong> Deploy Transfer Family in 2 AWS regions (us-east-1 + us-west-2). Failover if primary region has issues.
+  </td>
+</tr>
+<tr>
+<td><strong>D-E04</strong></td>
+<td><span class="tag tag-high">HIGH</span></td>
+<td><strong>Ariba Network (ANID Registration)</strong></td>
+<td>External</td>
+<td>To connect with SAP Ariba buyers, each factory needs an ANID (Ariba Network ID). Registration process is controlled by SAP Ariba. Approval timeline varies: 2-15 business days. FC cannot accelerate this. <strong>Impact:</strong> Delays Ariba buyer onboarding. Factory waiting for ANID before connection goes live.</td>
+<td>
+<strong>1. Pre-Registration Workflow:</strong> Start ANID registration at the beginning of onboarding, before adapter configuration. Parallelize.<br/>
+<strong>2. Ariba Partnership:</strong> Explore SAP Partner Center of Expertise (PCoE) for expedited registrations.<br/>
+<strong>3. Set Expectations:</strong> Clearly communicate 2-15 day ANID wait to factory during onboarding. Show other connections progressing meanwhile.
+  </td>
+</tr>
+<tr>
+<td><strong>D-E05</strong></td>
+<td><span class="tag tag-high">HIGH</span></td>
+<td><strong>Coupa Supplier Portal (CSP) API Changes</strong></td>
+<td>External</td>
+<td>Coupa's REST + cXML APIs are dual-supported but Coupa occasionally changes API behavior between releases. Coupa CSP updates are forced (SaaS — buyer controls version). Factory's Coupa connection may break after buyer-side Coupa upgrade. <strong>Impact:</strong> Silent failures after Coupa release cycles.</td>
+<td>
+<strong>1. Coupa Release Calendar Monitoring:</strong> Subscribe to Coupa release notes. Test adapter against sandbox before each Coupa release goes live.<br/>
+<strong>2. Buyer Notification:</strong> Alert buyer's IT team before their Coupa upgrade to coordinate testing with FC.<br/>
+<strong>3. Dual Protocol Support:</strong> If REST fails, fall back to cXML (or vice versa).
+  </td>
+</tr>
+<tr>
+<td><strong>D-E06</strong></td>
+<td><span class="tag tag-high">HIGH</span></td>
+<td><strong>Oracle Fusion REST API Pagination Changes</strong></td>
+<td>External</td>
+<td>Oracle Fusion uses offset-based pagination with 500-record limit. Oracle periodically changes API behavior. The <code>hasMore</code> flag behavior has changed between Oracle Cloud versions. <strong>Impact:</strong> Data fetch incomplete. Missing orders or invoices.</td>
+<td>
+<strong>1. Pagination Verification:</strong> After every fetch cycle, verify record count against Oracle's total count header. Alert on mismatch.<br/>
+<strong>2. Oracle MOS Monitoring:</strong> Subscribe to Oracle My Oracle Support for API change notifications.<br/>
+<strong>3. Reconciliation Job:</strong> Daily reconciliation compares FC's record of orders/invoices with Oracle's count. Flags discrepancies.
+  </td>
+</tr>
+<tr>
+<td><strong>D-E07</strong></td>
+<td><span class="tag tag-medium">MEDIUM</span></td>
+<td><strong>OFTP2 for European Automotive Buyers</strong></td>
+<td>External</td>
+<td>European automotive buyers (VW, BMW, Bosch) mandate OFTP2 (Odette File Transfer Protocol 2) for document exchange. OFTP2 requires specialized software and certificates from Odette International. <strong>Impact:</strong> Cannot serve EU automotive export factories without OFTP2 support.</td>
+<td>
+<strong>1. Phase 3 Feature:</strong> OFTP2 adapter planned for Phase 3 (EU market expansion). Not needed for Phase 1 (India + US focus).<br/>
+<strong>2. Partner with OFTP2 Provider:</strong> Companies like Axway, SEEBURGER offer managed OFTP2 endpoints. Partner for initial EU connections.<br/>
+<strong>3. Odette Membership:</strong> Join Odette International to access OFTP2 testing network and certificates.
+  </td>
+</tr>
+</table>
+</div>
+<!-- 4.2 VENDOR & CLOUD DEPENDENCIES -->
+<div class="dependency-header section-header" id="d-vendor">4.2 Vendor &amp; Cloud Dependencies</div>
+<div class="section-body">
+<table>
+<tr>
+<th style="width:6%">ID</th>
+<th style="width:7%">Severity</th>
+<th style="width:18%">Dependency</th>
+<th style="width:8%">Type</th>
+<th style="width:28%">Description &amp; Impact</th>
+<th style="width:33%">Mitigation</th>
+</tr>
+<tr>
+<td><strong>D-V01</strong></td>
+<td><span class="tag tag-high">HIGH</span></td>
+<td><strong>GCP (Google Cloud Platform)</strong></td>
+<td>Cloud</td>
+<td>All infrastructure runs on GCP: GKE (Kubernetes), Cloud SQL (PostgreSQL), Memorystore (Redis), Cloud Storage, Cloud DNS. GCP Mumbai region (asia-south1) is single region. <strong>Impact:</strong> GCP regional outage = FC completely offline.</td>
+<td>
+<strong>1. Multi-Zone within Mumbai:</strong> Deploy across all 3 availability zones in asia-south1. Survives single AZ failure.<br/>
+<strong>2. Cross-Region Backups:</strong> Database backups replicated to GCP Singapore (asia-southeast1). 15-minute backup interval.<br/>
+<strong>3. Phase 3 Multi-Region:</strong> Active-passive in Mumbai + Singapore. Automated DNS failover.<br/>
+<strong>4. Cloud Credits:</strong> Apply for Google for Startups program ($100K-350K in credits). Reduces cash burn.
+  </td>
+</tr>
+<tr>
+<td><strong>D-V02</strong></td>
+<td><span class="tag tag-high">HIGH</span></td>
+<td><strong>Anthropic Claude API</strong></td>
+<td>AI Provider</td>
+<td>AI mapping engine depends on Claude API for field mapping, anomaly detection, and auto-configuration suggestions. If Claude API is unavailable or rate-limited, onboarding flow stalls. <strong>Impact:</strong> Cannot onboard new factories during Claude outage.</td>
+<td>
+<strong>1. AI Abstraction Layer:</strong> Support multiple LLM backends (Claude, GPT-4, Gemini). Fallback chain if primary is unavailable.<br/>
+<strong>2. Cached Mappings:</strong> Once a mapping is computed, it's cached permanently. AI is only needed during initial onboarding, not per-message processing. Outage doesn't affect running connections.<br/>
+<strong>3. Manual Mapping Fallback:</strong> If AI is unavailable, present pre-built mapping templates for manual selection. Slower but functional.
+  </td>
+</tr>
+<tr>
+<td><strong>D-V03</strong></td>
+<td><span class="tag tag-high">HIGH</span></td>
+<td><strong>HashiCorp Vault</strong></td>
+<td>Security</td>
+<td>All credentials (ERP API keys, buyer certificates, OAuth tokens) stored in Vault. If Vault is unavailable, no service can access credentials. <strong>Impact:</strong> All connections fail simultaneously.</td>
+<td>
+<strong>1. Vault HA Cluster:</strong> 3-node Vault cluster with Raft storage. Automatic leader election. Survives single node failure.<br/>
+<strong>2. Credential Caching:</strong> Services cache credentials in memory with short TTL (5 minutes). Survives brief Vault blips.<br/>
+<strong>3. Emergency Credentials:</strong> Break-glass procedure with encrypted credential backup. Manual process for extreme scenarios.
+  </td>
+</tr>
+<tr>
+<td><strong>D-V04</strong></td>
+<td><span class="tag tag-medium">MEDIUM</span></td>
+<td><strong>WhatsApp Business API (Meta)</strong></td>
+<td>Channel</td>
+<td>Primary channel for factory communication. Depends on Meta's WhatsApp Business API. Meta can change pricing, rate limits, or template approval policies. <strong>Impact:</strong> Cannot communicate with factories via preferred channel.</td>
+<td>
+<strong>1. Multi-Channel Architecture:</strong> WhatsApp + Email + SMS + Web Portal. Any channel can substitute for any other.<br/>
+<strong>2. WhatsApp BSP Partnership:</strong> Use established BSP (Gupshup, Twilio, Interakt) for WhatsApp access. BSP handles Meta relationship.<br/>
+<strong>3. Template Pre-Approval:</strong> Get all message templates approved well before launch. Maintain approved template library.
+  </td>
+</tr>
+<tr>
+<td><strong>D-V05</strong></td>
+<td><span class="tag tag-medium">MEDIUM</span></td>
+<td><strong>Docker Hub / Container Registry</strong></td>
+<td>DevOps</td>
+<td>All adapter images stored in container registry. If registry is down during deployment, cannot update adapters. <strong>Impact:</strong> Deployment blocked.</td>
+<td>
+<strong>1. GCR/Artifact Registry:</strong> Use Google Artifact Registry (same cloud provider). Lower latency, better availability for GKE pulls.<br/>
+<strong>2. Image Caching:</strong> Kubernetes nodes cache pulled images. Running workloads unaffected by registry outage. Only new deployments blocked.
+  </td>
+</tr>
+<tr>
+<td><strong>D-V06</strong></td>
+<td><span class="tag tag-medium">MEDIUM</span></td>
+<td><strong>Let's Encrypt / Certificate Authorities</strong></td>
+<td>Security</td>
+<td>TLS certificates for FC's endpoints and mTLS with factories depend on certificate authorities. If CA has outage during renewal, certificates could expire. <strong>Impact:</strong> HTTPS endpoints become untrusted. mTLS connections fail.</td>
+<td>
+<strong>1. Multi-CA Strategy:</strong> Let's Encrypt primary, ZeroSSL/Sectigo fallback. Automated failover in cert-manager.<br/>
+<strong>2. Long-Lived Certs for mTLS:</strong> Internal mTLS certificates with 1-year validity (renewed at 6 months). Not dependent on real-time CA availability.<br/>
+<strong>3. Certificate Monitoring:</strong> Daily check of all certificate expiry dates. Alert 30 days before any expiry.
+  </td>
+</tr>
+</table>
+</div>
+<!-- 4.3 HUMAN & ORGANIZATIONAL DEPENDENCIES -->
+<div class="dependency-header section-header" id="d-human">4.3 Human &amp; Organizational Dependencies</div>
+<div class="section-body">
+<table>
+<tr>
+<th style="width:6%">ID</th>
+<th style="width:7%">Severity</th>
+<th style="width:18%">Dependency</th>
+<th style="width:8%">Type</th>
+<th style="width:28%">Description &amp; Impact</th>
+<th style="width:33%">Mitigation</th>
+</tr>
+<tr>
+<td><strong>D-H01</strong></td>
+<td><span class="tag tag-high">HIGH</span></td>
+<td><strong>EDI Domain Expertise</strong></td>
+<td>Talent</td>
+<td>EDI X12 is a specialized domain. Understanding ISA/GS/ST envelopes, 997 acknowledgments, buyer implementation guides, and VAN routing requires years of experience. Finding engineers with both EDI expertise and modern software skills (Go, K8s) is extremely difficult. <strong>Impact:</strong> Cannot build production-grade EDI adapters without domain expertise.</td>
+<td>
+<strong>1. Hire or Contract EDI Specialist:</strong> At least one team member must have 5+ years EDI experience. Contract if full-time too expensive initially.<br/>
+<strong>2. Stedi as Accelerator:</strong> Use Stedi's EDI tools and guides as knowledge base. Their documentation is the best freely available EDI resource.<br/>
+<strong>3. EDI Training Program:</strong> Invest 2-3 months upfront for engineering team to deep-learn EDI X12 standards. Build internal knowledge base.
+  </td>
+</tr>
+<tr>
+<td><strong>D-H02</strong></td>
+<td><span class="tag tag-high">HIGH</span></td>
+<td><strong>Buyer IT Team Cooperation</strong></td>
+<td>External</td>
+<td>Every buyer connection requires buyer's IT team to: provide implementation guide, set up AS2/SFTP credentials, run certification tests, approve go-live. Buyer IT teams are notoriously slow and unresponsive for small supplier requests. <strong>Impact:</strong> Onboarding bottleneck. Factory is ready but waiting on buyer for months.</td>
+<td>
+<strong>1. Buyer Success Manager:</strong> Dedicated person who manages buyer-side relationships. Follows up, escalates, navigates buyer organizations.<br/>
+<strong>2. Factory Leverage:</strong> Coach factory to use their commercial relationship ("we're a $10M supplier, please prioritize our EDI setup").<br/>
+<strong>3. Pre-Built Buyer Connections:</strong> For top 20 buyers, pre-negotiate and pre-certify. Factory connects to an already-certified path.
+  </td>
+</tr>
+<tr>
+<td><strong>D-H03</strong></td>
+<td><span class="tag tag-high">HIGH</span></td>
+<td><strong>Founding Engineering Team</strong></td>
+<td>Talent</td>
+<td>FC needs Go engineers, DevOps/SRE, EDI specialist, and Python/ML engineer. All in India (Phase 1 team). Indian tech talent market is competitive. Senior Go engineers with B2B integration experience are rare. <strong>Impact:</strong> Delayed development timeline. Lower quality if hiring bar drops.</td>
+<td>
+<strong>1. Competitive Compensation:</strong> Offer equity + market-rate salary. Target ₹25-40 LPA for senior Go engineers.<br/>
+<strong>2. Remote-First:</strong> Don't restrict to one city. Hire across India.<br/>
+<strong>3. AI Amplification:</strong> Smaller team with AI coding assistance (Claude, Copilot) can match output of larger team. Design for AI-augmented development from day one.<br/>
+<strong>4. Contractor Bridge:</strong> Use contractors for initial development while recruiting full-time team.
+  </td>
+</tr>
+<tr>
+<td><strong>D-H04</strong></td>
+<td><span class="tag tag-medium">MEDIUM</span></td>
+<td><strong>Factory Owner Technical Literacy</strong></td>
+<td>Customer</td>
+<td>Factory owners must perform minimal technical steps: install bridge agent (Tally/Busy), provide API credentials (Zoho/SAP B1), approve configurations. Many Indian SME owners have limited technical skills. <strong>Impact:</strong> Onboarding failure rate. High support volume.</td>
+<td>
+<strong>1. On-Site Onboarding (Phase 1):</strong> FC team visits factory for first 50 installations. Zero technical effort from factory owner.<br/>
+<strong>2. WhatsApp Video Guide:</strong> Screen recording tutorials in Hindi, Tamil, Gujarati, Telugu for each ERP.<br/>
+<strong>3. Partner Channel:</strong> Train local IT service providers to perform FC installations as a service.
+  </td>
+</tr>
+<tr>
+<td><strong>D-H05</strong></td>
+<td><span class="tag tag-medium">MEDIUM</span></td>
+<td><strong>Legal Counsel for Data Privacy</strong></td>
+<td>External</td>
+<td>DPDP Act (India), GDPR (EU), and buyer data handling requirements need legal review. Standard DPA templates, data processing agreements, and compliance documentation require legal counsel. <strong>Impact:</strong> Regulatory risk if compliance gaps exist.</td>
+<td>
+<strong>1. Phase 1:</strong> Template-based DPAs from legal startup packages (Razorpay's legal templates, LegalZoom India).<br/>
+<strong>2. Phase 2:</strong> Engage data privacy lawyer for comprehensive review before EU buyer onboarding or SOC 2 certification.
+  </td>
+</tr>
+<tr>
+<td><strong>D-H06</strong></td>
+<td><span class="tag tag-medium">MEDIUM</span></td>
+<td><strong>Industry Association Relationships</strong></td>
+<td>Network</td>
+<td>Selling to Indian factories is relationship-driven. Industry associations (FIEO, CII, FICCI, textile/pharma chambers) are gatekeepers to factory networks. Without association endorsement, customer acquisition is slow and expensive. <strong>Impact:</strong> Higher CAC. Slower growth.</td>
+<td>
+<strong>1. Association Membership:</strong> Join FIEO (Federation of Indian Export Organisations) and relevant industry chambers.<br/>
+<strong>2. Speaking + Workshops:</strong> Present at association events. Offer free workshops on "Digital Integration for Exporters."<br/>
+<strong>3. Pilot with Association Members:</strong> Offer discounted pilot to 5-10 association members. Build case studies for broader rollout.
+  </td>
+</tr>
+<tr>
+<td><strong>D-H07</strong></td>
+<td><span class="tag tag-low">LOW</span></td>
+<td><strong>Open Source Community Contributions</strong></td>
+<td>Community</td>
+<td>If FC open-sources its Go EDI library or adapter framework, community contributions could accelerate development. But managing open source requires dedicated effort. <strong>Impact:</strong> Without community, FC must build and maintain everything internally.</td>
+<td>
+<strong>1. Phase 2:</strong> Open source EDI parser and canonical model library after they're production-proven.<br/>
+<strong>2. Contributor Guidelines:</strong> Clear contribution process, code review standards, CLA (Contributor License Agreement).<br/>
+<strong>3. Sponsorship:</strong> Sponsor EDI/integration-related open source projects to build community goodwill.
+  </td>
+</tr>
+</table>
+</div>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- CROSS-IMPACT MATRIX -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2 id="matrix">Section 5: Cross-Impact Matrix</h2>
+<p>How RAID items connect to each other. An issue can trigger a risk; a failed assumption can create a new dependency.</p>
+<div class="card">
+<table>
+<tr>
+<th>Chain</th>
+<th>Trigger</th>
+<th>Leads To</th>
+<th>Combined Impact</th>
+<th>Preventive Action</th>
+</tr>
+<tr>
+<td><strong>Chain 1</strong></td>
+<td>A-T01 (Tally XML deprecated) +<br/>I-T02 (Tally Windows-only)</td>
+<td>R-T01 (ERP breaking changes) → R-B03 (customer churn)</td>
+<td>Tally factories (50%+ of Indian market) all affected simultaneously. Mass churn event.</td>
+<td>Build JSON adapter proactively. Don't wait for XML deprecation. Start relationship with Tally integration team now.</td>
+</tr>
+<tr>
+<td><strong>Chain 2</strong></td>
+<td>I-T03 (No Go EDI library) +<br/>I-T04 (Buyer EDI variations)</td>
+<td>R-T02 (EDI rejection cascade) → R-B01 (buyer cooperation failure)</td>
+<td>Homegrown EDI parser + untested buyer variations = high rejection rate. Buyers blocklist FC.</td>
+<td>Invest heavily in EDI parser quality. Use Stedi or commercial library. Build buyer test harness before going live.</td>
+</tr>
+<tr>
+<td><strong>Chain 3</strong></td>
+<td>D-H01 (No EDI expertise) +<br/>D-H03 (Team hiring)</td>
+<td>I-T04 (Buyer variations unhandled) → R-T02 (EDI rejections)</td>
+<td>Without EDI specialist, team doesn't know what they don't know. Buyer-specific rules missed. Rejections in production.</td>
+<td>Hire EDI specialist before building any target adapter. This is the most critical hire.</td>
+</tr>
+<tr>
+<td><strong>Chain 4</strong></td>
+<td>A-B01 (Factories will pay for SaaS) invalidated</td>
+<td>R-B04 (Pricing mismatch) → R-O03 (Cost overrun)</td>
+<td>No revenue + ongoing infrastructure cost = runway exhaustion.</td>
+<td>Pre-sell before building. Get LOIs/deposits. Validate willingness to pay before committing to infrastructure.</td>
+</tr>
+<tr>
+<td><strong>Chain 5</strong></td>
+<td>D-E01 (Buyer endpoint down) +<br/>R-T06 (Message ordering failure)</td>
+<td>I-T04 (Buyer rejects documents) → R-B01 (Buyer cooperation failure)</td>
+<td>Buyer endpoint outage causes message reordering. When endpoint recovers, documents arrive out of sequence. Buyer rejects entire batch.</td>
+<td>Cascade dependency engine must hold all documents for a connection during buyer outage. Release in correct order when endpoint recovers.</td>
+</tr>
+<tr>
+<td><strong>Chain 6</strong></td>
+<td>R-T08 (Multi-tenant data breach)</td>
+<td>R-S04 (SOC 2 failure) → R-B02 (Competitor advantage)</td>
+<td>Data breach → SOC 2 audit failure → buyers refuse to certify FC → competitors (SPS, TrueCommerce) absorb market.</td>
+<td>Implement PostgreSQL RLS from day one. Automated tenant isolation tests in CI. Security audit before first customer.</td>
+</tr>
+<tr>
+<td><strong>Chain 7</strong></td>
+<td>A-T02 (Canonical model inadequate) invalidated</td>
+<td>R-T03 (Model redesign needed) → R-O01 (Small team overwhelmed)</td>
+<td>Canonical model rework affects every adapter, every mapping, every test. Small team cannot handle simultaneous redesign of core abstraction.</td>
+<td>Validate canonical model against 5+ real factories across 3+ industries before building adapters. Add extension fields early.</td>
+</tr>
+</table>
+</div>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- PRIORITY ACTION PLAN -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2 id="priority">Section 6: Priority Action Plan</h2>
+<p>Top 15 actions ranked by urgency and impact. Actions that must happen before Phase 1 development begins.</p>
+<div class="card">
+<table>
+<tr>
+<th style="width:4%">#</th>
+<th style="width:26%">Action</th>
+<th style="width:12%">Addresses</th>
+<th style="width:10%">Timeline</th>
+<th style="width:10%">Owner</th>
+<th style="width:38%">Success Criteria</th>
+</tr>
+<tr>
+<td>1</td>
+<td><strong>Hire or Contract EDI Specialist</strong></td>
+<td>D-H01, I-T03, I-T04</td>
+<td>Month 1</td>
+<td>CEO</td>
+<td>Person with 5+ years EDI X12 experience on team. Can review buyer implementation guides and identify gaps in FC's approach.</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>Pre-Sell to 10 Factories</strong></td>
+<td>A-B01, A-B04, R-B04</td>
+<td>Month 1-2</td>
+<td>CEO</td>
+<td>10 signed LOIs or deposits from Indian export factories. Validates willingness to pay and price point.</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>Validate Canonical Model with Real Data</strong></td>
+<td>A-T02, R-T03</td>
+<td>Month 1-2</td>
+<td>Architect</td>
+<td>Map real sales order/invoice data from 5 factories (Tally, Zoho, SAP B1) to canonical model. Document coverage % and gaps.</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>Build Go EDI Parser PoC</strong></td>
+<td>I-T03, A-T09</td>
+<td>Month 1-2</td>
+<td>Engineering</td>
+<td>Parse and generate 850, 855, 856, 810, 997 transaction sets. Validate against 3 buyer implementation guides. Decide build vs. buy.</td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>Collect 10 Buyer Implementation Guides</strong></td>
+<td>I-T04, R-T02</td>
+<td>Month 1-3</td>
+<td>Business Dev</td>
+<td>Obtain implementation guides from Walmart, Amazon, Target, Costco, + 6 others. Catalog variation points.</td>
+</tr>
+<tr>
+<td>6</td>
+<td><strong>Contact Buyer IT Teams for 5 Target Buyers</strong></td>
+<td>A-B03, D-H02, R-B01</td>
+<td>Month 2-3</td>
+<td>CEO</td>
+<td>Get response from 5 buyer procurement/IT teams on requirements for approving FC as integration partner. Identify blockers.</td>
+</tr>
+<tr>
+<td>7</td>
+<td><strong>Implement PostgreSQL Row-Level Security</strong></td>
+<td>R-T08, R-S04</td>
+<td>Month 2</td>
+<td>Database Lead</td>
+<td>RLS policies on all tenant-scoped tables. Automated tests verify cross-tenant access is blocked.</td>
+</tr>
+<tr>
+<td>8</td>
+<td><strong>Build Bridge Agent PoC for Tally</strong></td>
+<td>I-T02, R-T07, A-T01</td>
+<td>Month 2-3</td>
+<td>Engineering</td>
+<td>Windows service that polls Tally XML, pushes to FC cloud. Handles offline buffering. Test on 3 different Windows versions.</td>
+</tr>
+<tr>
+<td>9</td>
+<td><strong>Set Up Vault HA Cluster</strong></td>
+<td>D-V03, R-S03</td>
+<td>Month 2</td>
+<td>DevOps</td>
+<td>3-node Vault cluster with Raft. Auto-unseal. Audit logging. All credentials migrated from env vars to Vault.</td>
+</tr>
+<tr>
+<td>10</td>
+<td><strong>Define RTO/RPO and Backup Strategy</strong></td>
+<td>I-A01, D-V01</td>
+<td>Month 2</td>
+<td>Architect</td>
+<td>Published RTO (1hr) and RPO (5min) targets. Automated PostgreSQL backup with cross-region replication. Tested restore procedure.</td>
+</tr>
+<tr>
+<td>11</td>
+<td><strong>Build Pre-Flight EDI Validator</strong></td>
+<td>R-T02, I-T04</td>
+<td>Month 3-4</td>
+<td>EDI Specialist</td>
+<td>Validate every outbound EDI document before sending. Buyer-specific rules engine. Target: &lt;0.5% rejection rate.</td>
+</tr>
+<tr>
+<td>12</td>
+<td><strong>AI Mapping Accuracy Benchmark</strong></td>
+<td>R-T04, A-B06</td>
+<td>Month 3</td>
+<td>AI Engineering</td>
+<td>Run AI mapping on 10 real factory datasets. Measure accuracy. Target: &gt;90% fields correctly mapped without human intervention.</td>
+</tr>
+<tr>
+<td>13</td>
+<td><strong>Load Testing Framework</strong></td>
+<td>I-A03, A-T07, R-T11</td>
+<td>Month 3-4</td>
+<td>Platform Eng</td>
+<td>k6 test suite simulating 100 concurrent connections. Verify Redis handles 10K msg/min. Measure P95 latency under load.</td>
+</tr>
+<tr>
+<td>14</td>
+<td><strong>SOC 2 Readiness Assessment</strong></td>
+<td>R-S04</td>
+<td>Month 3</td>
+<td>Security Lead</td>
+<td>Gap analysis against SOC 2 Type I controls. Remediation plan. Target Type I certification by Month 9.</td>
+</tr>
+<tr>
+<td>15</td>
+<td><strong>Billing &amp; Metering System Design</strong></td>
+<td>I-A04</td>
+<td>Month 4</td>
+<td>Product</td>
+<td>Billing architecture finalized. Metering events defined. Integration with Razorpay/Stripe scoped. Manual billing operational for early customers.</td>
+</tr>
+</table>
+</div>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- EXPERT CONSULTATION QUESTIONS -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2 id="questions">Section 7: Expert Consultation Questions</h2>
+<p>Structured questions to take to industry experts, GPT, Gemini, and domain specialists. Organized by domain.</p>
+<div class="card">
+<h3>EDI &amp; B2B Integration Experts</h3>
+<div class="expert-box">
+<strong>Q1 (from R-T02, I-T04):</strong> We're building a multi-tenant SaaS that generates EDI X12 documents (850, 855, 856, 810, 997) for hundreds of buyer-specific implementations. What architecture pattern do platforms like SPS Commerce use to manage 10,000+ buyer-specific EDI variations? Is it template-based, rule-engine-based, or something else?
+</div>
+<div class="expert-box">
+<strong>Q2 (from I-T03):</strong> For a Go-based EDI platform, should we build our own EDI X12 parser from scratch, wrap an existing Python/Java library via gRPC, or use a commercial EDI API like Stedi? What are the trade-offs in production at scale?
+</div>
+<div class="expert-box">
+<strong>Q3 (from D-E03):</strong> We plan to use AWS Transfer Family for AS2 transport. What are the operational pitfalls? Is self-hosted OpenAS2 a viable production alternative? What do successful B2B platforms use?
+</div>
+<div class="expert-box">
+<strong>Q4 (from I-P01):</strong> What's the typical EDI certification cycle time with major US retailers (Walmart, Target, Amazon Vendor Central)? How many rounds of testing before approval? Is there a way to accelerate this for a new VAN/platform?
+</div>
+<div class="expert-box">
+<strong>Q5 (from R-B01):</strong> We're a new integration platform. How do we get major buyers to accept us as a VAN/integration partner? Do we need GS1 registration? VAN accreditation? What's the minimum credibility bar?
+</div>
+</div>
+<div class="card">
+<h3>Indian ERP &amp; Manufacturing Experts</h3>
+<div class="expert-box">
+<strong>Q6 (from I-T01, A-T10):</strong> Has anyone built a reliable programmatic integration with Busy 21? What database tables are stable across versions for sales orders and invoices? Is ODBC the only option, or are there undocumented APIs?
+</div>
+<div class="expert-box">
+<strong>Q7 (from A-T01):</strong> What is Tally Solutions' roadmap for TallyPrime's integration API? Will XML-over-HTTP remain supported long-term? Is there a partner program for integration vendors? What changed between TallyPrime 6.x and 7.0?
+</div>
+<div class="expert-box">
+<strong>Q8 (from I-T05):</strong> Has anyone successfully integrated with Marg ERP's API Gateway beyond e-invoicing? What APIs are available for sales orders, purchase orders, and inventory? Is the documentation available on request?
+</div>
+<div class="expert-box">
+<strong>Q9 (from I-T08):</strong> What percentage of Indian export factories operate without any ERP? For the textile hubs (Tiruppur, Surat, Ludhiana), is Excel/paper still common for order management? What's the adoption rate of digital tools?
+</div>
+<div class="expert-box">
+<strong>Q10 (from A-B01):</strong> What's the willingness-to-pay for SaaS integration tools among Indian SME exporters? Is subscription pricing viable, or do they prefer one-time purchase / per-transaction models? What price point would be attractive?
+</div>
+</div>
+<div class="card">
+<h3>Cloud Architecture &amp; Platform Experts</h3>
+<div class="expert-box">
+<strong>Q11 (from R-T09, A-T06):</strong> We're running 25+ microservices on GKE Autopilot with HPA and KEDA (scale-to-zero). Is this a proven pattern at this scale? What are the pitfalls of many small deployments on Autopilot vs. GKE Standard?
+</div>
+<div class="expert-box">
+<strong>Q12 (from R-T11, A-T07):</strong> We use Redis Streams for inter-service message routing. At what throughput should we consider migrating to Kafka or NATS JetStream? What are the operational trade-offs for a small team?
+</div>
+<div class="expert-box">
+<strong>Q13 (from R-T03):</strong> We designed a 6-entity canonical data model (Product, Inventory, Order, Shipment, Invoice, Party) to translate between N source ERPs and M target buyer systems. How do established integration platforms (MuleSoft, Boomi, IBM Sterling) handle the canonical model problem? Do they use a fixed model or dynamic schema?
+</div>
+<div class="expert-box">
+<strong>Q14 (from I-A01):</strong> For a B2B integration SaaS handling mission-critical buyer communications, what RTO and RPO do enterprise buyers typically require? Is active-passive multi-region sufficient, or do they demand active-active?
+</div>
+</div>
+<div class="card">
+<h3>Security &amp; Compliance Experts</h3>
+<div class="expert-box">
+<strong>Q15 (from R-S01):</strong> We'll manage AS2 certificates for hundreds of buyer connections. What's the best practice for certificate lifecycle management at scale? Automated renewal, monitoring, and rotation?
+</div>
+<div class="expert-box">
+<strong>Q16 (from R-S02):</strong> Our platform processes business data from Indian factories (orders, invoices, contact information) and delivers to global buyers. What's the minimal compliance posture for: India DPDP Act, GDPR (EU buyers), CCPA (US buyers)? What should we implement from day one?
+</div>
+<div class="expert-box">
+<strong>Q17 (from R-S04):</strong> We're targeting SOC 2 Type I within 9 months of launch. Is this realistic for a startup? What are the most commonly failed controls for first-time audit? Which compliance automation tool (Vanta, Drata, Secureframe) is best for an early-stage startup?
+</div>
+</div>
+<div class="card">
+<h3>Business &amp; GTM Experts</h3>
+<div class="expert-box">
+<strong>Q18 (from R-B02):</strong> SPS Commerce ($500M revenue, 115K customers) dominates the EDI integration space. What's the viable niche strategy for a startup entering this market? Where are their weaknesses? Is India-first a defensible wedge?
+</div>
+<div class="expert-box">
+<strong>Q19 (from A-B03, R-B01):</strong> Should we partner with an established VAN (SPS Commerce, TrueCommerce) initially for buyer connectivity, or try to build direct relationships from day one? What's the partnership model — reseller, white-label, or API?
+</div>
+<div class="expert-box">
+<strong>Q20 (from D-H06):</strong> What's the most effective go-to-market for B2B SaaS in Indian manufacturing? Direct sales, channel partners, industry associations, government programs? What's the typical sales cycle for SME SaaS in India?
+</div>
+</div>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- FOOTER -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<div class="callout-green callout" style="margin-top: 32px;">
+<strong>Living Document:</strong> This RAID analysis should be reviewed and updated monthly. As risks materialize (or don't), assumptions are validated (or invalidated), issues are resolved, and dependencies change — this document evolves. Every RAID review meeting should produce updated mitigations and re-scored severities.
+</div>
+<div class="footer">
+FactoryConnect RAID Analysis v1.0  |  Generated April 2026  |  24 Risks • 18 Assumptions • 15 Issues • 20 Dependencies • 20 Expert Questions  |  Next Review: May 2026
+</div>
+
+
+<h2>Part 2: Expert Review — 20 Questions & Recommendations</h2>
+<div class="card">
+<p>Detailed expert-level recommendations addressing the 20 most critical questions raised during RAID analysis, with actionable resolution strategies.</p>
+</div>
+
+<h1>FactoryConnect — RAID Recommendations &amp; Expert Answers</h1>
+<p class="subtitle"><span class="version-badge">v1.0</span>   Detailed recommendations for all 20 expert questions + resolution plans for every critical/high RAID item. Based on current research (April 2026). Share with GPT, Gemini, and industry experts for cross-validation. | April 2026</p>
+<div class="callout-purple callout">
+<strong>How to Use This Document:</strong> Each answer includes: (1) Research-backed recommendation with specific tools/vendors/pricing, (2) A verdict box with our recommended path, (3) Key questions to validate with other LLMs/experts, (4) Sources. Share individual sections with domain experts for targeted feedback.
+</div>
+<!-- TOC -->
+<div class="toc">
+<a href="#part1">Part 1: EDI &amp; B2B Integration (Q1-Q5)</a>
+<a href="#q1">Q1: Buyer-Specific EDI Variation Architecture</a>
+<a href="#q2">Q2: Go EDI Parser — Build vs Buy</a>
+<a href="#q3">Q3: AS2 Transport — AWS vs Self-Hosted</a>
+<a href="#q4">Q4: EDI Certification Cycle Times</a>
+<a href="#q5">Q5: Getting Buyer Acceptance as New Platform</a>
+<a href="#part2">Part 2: Indian ERP &amp; Manufacturing (Q6-Q10)</a>
+<a href="#q6">Q6: Busy 21 Integration</a>
+<a href="#q7">Q7: Tally Prime API Roadmap</a>
+<a href="#q8">Q8: Marg ERP API Gateway</a>
+<a href="#q9">Q9: No-ERP Factory Percentage</a>
+<a href="#q10">Q10: Indian SME Willingness to Pay for SaaS</a>
+<a href="#part3">Part 3: Cloud Architecture (Q11-Q14)</a>
+<a href="#q11">Q11: GKE Autopilot + KEDA at Scale</a>
+<a href="#q12">Q12: Redis vs NATS vs Kafka</a>
+<a href="#q13">Q13: Canonical Model Patterns</a>
+<a href="#q14">Q14: RTO/RPO Requirements</a>
+<a href="#part4">Part 4: Security &amp; Compliance (Q15-Q17)</a>
+<a href="#q15">Q15: AS2 Certificate Lifecycle at Scale</a>
+<a href="#q16">Q16: DPDP + GDPR + CCPA Minimum Posture</a>
+<a href="#q17">Q17: SOC 2 Type I for Startups</a>
+<a href="#part5">Part 5: Business &amp; GTM (Q18-Q20)</a>
+<a href="#q18">Q18: Competing with SPS Commerce</a>
+<a href="#q19">Q19: VAN Partnership vs Direct</a>
+<a href="#q20">Q20: Go-to-Market in Indian Manufacturing</a>
+<a href="#critical">Part 6: Critical RAID Resolution Plans</a>
+</div>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2 id="part1">Part 1: EDI &amp; B2B Integration Expert Answers</h2>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- Q1 -->
+<div class="q-header section-header" id="q1">Q1: How do platforms like SPS Commerce manage 10,000+ buyer-specific EDI variations?</div>
+<div class="section-body">
+<p><strong>Addresses:</strong> R-T02 (EDI Rejection Cascade), I-T04 (Buyer EDI Variations)</p>
+<h4>How SPS Commerce Does It</h4>
+<p>SPS Commerce uses a <strong>One-to-Many Canonical Mapping Model</strong>. Each supplier's internal data maps to a single SPS canonical format, then SPS maintains individual per-buyer mapping profiles that transform canonical → buyer-specific EDI. They manage <strong>9,000+ map changes per year</strong> across their customer base. Their competitive moat is literally the library of buyer-specific maps accumulated over 20+ years.</p>
+<h4>The Architecture Pattern</h4>
+<pre>
+Factory ERP Data
+      ↓
+[Source Adapter]  — Tally XML / Zoho REST / SAP OData
+      ↓
+FC Canonical Model  — 6 entities (Product, Order, Invoice...)
+      ↓
+[Buyer Profile Engine]  — Three-Layer Mapping
+      │
+      ├─ Layer 1: Base EDI Spec (X12 4010 standard segments)
+      ├─ Layer 2: Buyer Template (Walmart-specific rules)
+      └─ Layer 3: Connection Override (this specific factory→Walmart)
+      ↓
+[Target Adapter]  — EDI X12 / cXML / EDIFACT
+      ↓
+Buyer Endpoint
+</pre>
+<h4>FC's Three-Layer Architecture (Already Designed) Is Correct</h4>
+<p>FC's existing Three-Layer Mapping architecture matches what SPS uses internally. The key execution detail is how buyer templates are <strong>populated and maintained</strong>:</p>
+<div class="solution-box">
+<h3>Recommended Implementation</h3>
+<h4>1. Buyer Template Database Schema</h4>
+<pre>
+CREATE TABLE buyer_templates (
+  id              UUID PRIMARY KEY,
+  buyer_name      TEXT NOT NULL,           -- "Walmart", "Target", "Costco"
+  edi_version     TEXT NOT NULL,           -- "4010", "5010"
+  transaction_set TEXT NOT NULL,           -- "850", "856", "810"
+  template_rules  JSONB NOT NULL,          -- segment requirements, qualifiers, code values
+  validation_rules JSONB NOT NULL,         -- buyer-specific validation (zero-tolerance fields)
+  last_verified   TIMESTAMP,              -- when we last verified against buyer's IG
+  ig_version      TEXT,                    -- buyer's Implementation Guide version
+  created_at      TIMESTAMP DEFAULT NOW()
+);
+
+-- Example: Walmart 850 template
+-- template_rules contains:
+-- { "required_segments": ["ISA","GS","ST","BEG","DTM","N1","PO1","CTT","SE"],
+--   "beg_purpose_code": "00",
+--   "dtm_qualifier": "002",
+--   "n1_qualifiers": ["ST","BT","VN"],
+--   "po1_unit_codes": ["EA","CA","PK"],
+--   "cumulative_qty": true }
+</pre>
+<h4>2. Pre-Flight Validation Engine</h4>
+<p>Before any EDI document is sent to a buyer, it passes through a 3-stage validator:</p>
+<ul>
+<li><strong>Stage 1 — Structural:</strong> Segment counts, delimiters, envelope integrity (ISA/GS/ST match)</li>
+<li><strong>Stage 2 — Semantic:</strong> Code values exist in X12 codelist, dates are valid, quantities are positive</li>
+<li><strong>Stage 3 — Buyer-Specific:</strong> All required segments per buyer template present, qualifiers match buyer's IG, conditional rules satisfied</li>
+</ul>
+<h4>3. Template Acquisition Strategy</h4>
+<ul>
+<li><strong>Phase 1 (Manual):</strong> Obtain Implementation Guides (IGs) from 10 target buyers. Manually extract rules into template_rules JSONB. Budget 2-3 days per buyer template.</li>
+<li><strong>Phase 2 (AI-Assisted):</strong> Build IG Parser — Claude/GPT reads buyer IG PDF, extracts segment requirements, generates template_rules JSON. Human verifies. Reduces to 4-6 hours per template.</li>
+<li><strong>Phase 3 (Community):</strong> Templates contributed by factories that pass certification. Verified, versioned, shared across FC customers connecting to same buyer.</li>
+</ul>
+</div>
+<div class="verdict">
+<strong>Verdict:</strong> FC's Three-Layer Mapping is architecturally correct. Execution priority: Acquire 10 buyer IGs immediately (Walmart, Amazon, Target, Costco, Home Depot, Kroger, Macy's, JCPenney, Best Buy, Lowe's). Build template extraction pipeline. This is the moat — whoever has the most accurate buyer templates wins.
+</div>
+<div class="expert-prompt">
+<strong>Cross-validate with GPT/Gemini:</strong> "For a B2B integration SaaS generating EDI X12 for hundreds of buyer-specific implementations, is a JSONB-based buyer template rules engine (with structural + semantic + buyer-specific validation layers) the right pattern? Or should we use a formal rules engine like Drools/OPA? What's the performance trade-off at 10K+ documents/day?"
+</div>
+</div>
+<!-- Q2 -->
+<div class="q-header section-header" id="q2">Q2: Go EDI Parser — Build vs Wrap Python vs Commercial API?</div>
+<div class="section-body">
+<p><strong>Addresses:</strong> I-T03 (No Go EDI Library), A-T09 (Go Tech Stack Choice)</p>
+<h4>Research Findings</h4>
+<table class="decision-matrix">
+<tr>
+<th>Approach</th>
+<th>X12 Support</th>
+<th>Prod-Ready</th>
+<th>Time to Market</th>
+<th>Ops Overhead</th>
+<th>Cost</th>
+<th>Long-Term</th>
+</tr>
+<tr>
+<td><strong>Build Go Library</strong></td>
+<td class="neutral">Must build</td>
+<td class="lose">6+ months</td>
+<td class="lose">Slow</td>
+<td class="win">Lowest</td>
+<td class="win">$0 + eng time</td>
+<td class="win">Full control</td>
+</tr>
+<tr>
+<td><strong>Python Bots (gRPC)</strong></td>
+<td class="win">850/855/856/810/997</td>
+<td class="win">Proven</td>
+<td class="win">2-3 weeks</td>
+<td class="neutral">Medium</td>
+<td class="win">$0 + eng time</td>
+<td class="neutral">Python dependency</td>
+</tr>
+<tr>
+<td><strong>Stedi API</strong></td>
+<td class="lose">Healthcare focus</td>
+<td class="win">Yes</td>
+<td class="win">1 week</td>
+<td class="win">None</td>
+<td class="lose">Per-transaction</td>
+<td class="lose">Not suited for retail EDI</td>
+</tr>
+<tr>
+<td><strong>Go omniparser</strong></td>
+<td class="neutral">Schema-based</td>
+<td class="neutral">Active (Feb 2025)</td>
+<td class="neutral">4-6 weeks</td>
+<td class="win">Low</td>
+<td class="win">$0</td>
+<td class="neutral">Requires custom schemas</td>
+</tr>
+<tr>
+<td><strong>Hybrid: Go core + Python Bots validation</strong></td>
+<td class="win">Full</td>
+<td class="win">Yes</td>
+<td class="neutral">4-6 weeks</td>
+<td class="neutral">Medium</td>
+<td class="win">$0</td>
+<td class="win">Best of both</td>
+</tr>
+</table>
+<div class="solution-box">
+<h3>Recommended Path: Hybrid Approach</h3>
+<h4>Phase 1 (Month 1-3): Python Bots as EDI Engine via gRPC</h4>
+<p>Deploy Python Bots EDI translator as a gRPC sidecar service. All Go target adapters call the Python EDI service for parse/generate operations. This gives you <strong>immediate, proven X12 support</strong> for 850, 855, 856, 810, 997.</p>
+<h4>Phase 2 (Month 4-8): Build Go EDI Core Library</h4>
+<p>While Python Bots handles production, build a native Go EDI library for the 5 core transaction sets. Use Python Bots as <strong>validation oracle</strong> — generate same document with both engines, diff output, fix Go library until 100% match.</p>
+<h4>Phase 3 (Month 9+): Sunset Python Sidecar</h4>
+<p>Once Go library is validated against 10+ buyer IGs and handles 100% of test cases, switch production traffic to Go. Keep Python Bots as regression test oracle.</p>
+<h4>Architecture</h4>
+<pre>
+Go Target Adapter (tgt-x12-4010)
+    │
+    ├── Phase 1: gRPC call → Python Bots sidecar
+    │                         (Docker container, same pod)
+    │                         Latency: ~5-10ms per call
+    │
+    └── Phase 2+: Native Go EDI library
+                  (in-process, ~0.1ms per call)
+                  + Python Bots for validation in CI only
+</pre>
+<h4>Key Libraries</h4>
+<ul>
+<li><strong>Python Bots:</strong> <code>pip install bots</code> — Django-based, X12/EDIFACT, active development (v4.0)</li>
+<li><strong>Go omniparser:</strong> <code>github.com/jf-tech/omniparser</code> — Schema-driven ETL, EDI support, last updated Feb 2025. Good foundation for building Go EDI schemas.</li>
+<li><strong>Stedi:</strong> Skip. Healthcare-focused. Not suitable for retail/supply chain EDI.</li>
+</ul>
+</div>
+<div class="verdict">
+<strong>Verdict:</strong> Start with Python Bots gRPC sidecar for immediate production capability. Build native Go library in parallel. This is the pragmatic engineering choice — ship with proven tech, replace with optimized tech. Don't let "build it in Go" delay your first buyer connection by 6 months.
+</div>
+<div class="expert-prompt">
+<strong>Cross-validate with GPT/Gemini:</strong> "We're building a Go-based EDI platform. Our plan: start with Python Bots EDI library as a gRPC sidecar, then build native Go EDI parser alongside. Is this hybrid approach common in B2B integration platforms? Should we consider Orderful or Cleo's API as commercial alternatives instead?"
+</div>
+</div>
+<!-- Q3 -->
+<div class="q-header section-header" id="q3">Q3: AS2 Transport — AWS Transfer Family vs Self-Hosted</div>
+<div class="section-body">
+<p><strong>Addresses:</strong> D-E03 (AWS Transfer Family Dependency)</p>
+<h4>AWS Transfer Family AS2 — Current State</h4>
+<table>
+<tr><th>Aspect</th><th>Detail</th></tr>
+<tr><td><strong>Pricing</strong></td><td>$0.30/hour per server (~$216/month) + $0.01/message. For 50K msgs/month = ~$716/month.</td></tr>
+<tr><td><strong>Limitation 1</strong></td><td>No HTTPS endpoints — must handle TLS termination separately</td></tr>
+<tr><td><strong>Limitation 2</strong></td><td>No workflow triggers from AS2 messages — can't auto-process on receipt</td></tr>
+<tr><td><strong>Limitation 3</strong></td><td>No multiple attachments per message (AS2 v1.2 feature unsupported)</td></tr>
+<tr><td><strong>Limitation 4</strong></td><td>Self-signed certs for outbound only; inbound requires CA-signed</td></tr>
+<tr><td><strong>Limitation 5</strong></td><td>TCP keep-alive not supported; timeout at 350 seconds</td></tr>
+</table>
+<h4>OpenAS2 (Self-Hosted) — Current State</h4>
+<table>
+<tr><th>Aspect</th><th>Detail</th></tr>
+<tr><td><strong>Language</strong></td><td>Java 11+ (stable, well-maintained)</td></tr>
+<tr><td><strong>Capacity</strong></td><td>High-volume capable with parallel per-partner processing</td></tr>
+<tr><td><strong>Health Checks</strong></td><td>Built-in health check module (v2.4.0+) for load balancer integration</td></tr>
+<tr><td><strong>Memory</strong></td><td>384MB for files ≤50MB, 2GB for ≤300MB, 4-8GB for ≤750MB</td></tr>
+<tr><td><strong>Weakness</strong></td><td>No UI — CLI only. Configuration is XML file-based. Requires Java/DevOps expertise.</td></tr>
+<tr><td><strong>Cost</strong></td><td>$0 (open source) + hosting (~$50-100/month on a VM)</td></tr>
+</table>
+<div class="solution-box">
+<h3>Recommended Path: Dual Strategy</h3>
+<h4>Phase 1: AWS Transfer Family (Quick Start)</h4>
+<p>Use AWS Transfer Family for first 10-20 buyer AS2 connections. Managed service = fewer ops headaches while team is small. Accept the limitations. Budget ~$700-1000/month.</p>
+<h4>Phase 2: OpenAS2 Self-Hosted (Scale)</h4>
+<p>When buyer connections exceed 30+ or AWS limitations become blocking, deploy OpenAS2 on GKE as a Kubernetes deployment. Containerize with health checks. Cost drops to ~$100/month. Full control over certificate management, message flow, and protocol extensions.</p>
+<h4>Phase 3: SFTP Fallback for All Buyers</h4>
+<p>Configure SFTP delivery as secondary path for every buyer that supports it. When AS2 fails, automatic failover to SFTP. Most large buyers accept both AS2 and SFTP.</p>
+</div>
+<div class="verdict">
+<strong>Verdict:</strong> Start with AWS Transfer Family for simplicity. Budget migration to self-hosted OpenAS2 at 30+ connections. The $216/month server cost becomes the floor, not the ceiling, as you scale. Maintain SFTP as universal fallback.
+</div>
+</div>
+<!-- Q4 -->
+<div class="q-header section-header" id="q4">Q4: EDI Certification Cycle Times with US Retailers</div>
+<div class="section-body">
+<p><strong>Addresses:</strong> I-P01 (No EDI Certification Process), D-H02 (Buyer IT Cooperation)</p>
+<h4>Research-Backed Timelines</h4>
+<table>
+<tr><th>Retailer</th><th>Typical Timeline</th><th>Test Rounds</th><th>Key Requirements</th></tr>
+<tr><td><strong>Walmart</strong></td><td>8-14 weeks (legacy) / 1-3 weeks (modern platform)</td><td>2-3 major rounds + sub-iterations</td><td>Must complete testing within 6 weeks or removed from testing program. Zero-tolerance validation. AS2 mandatory.</td></tr>
+<tr><td><strong>Target</strong></td><td>6-10 weeks</td><td>2-3 rounds</td><td>Target Plus is invite-only for marketplace. B2B wholesale requires full EDI certification.</td></tr>
+<tr><td><strong>Amazon Vendor Central</strong></td><td>4-8 weeks</td><td>2 rounds typical</td><td>EDI or API integration. Vendor Central onboarding includes EDI setup.</td></tr>
+<tr><td><strong>Costco</strong></td><td>6-12 weeks</td><td>2-3 rounds</td><td>GS1-128 (SSCC-18) on all shipping cartons. Strict three-way match. Zero quantity tolerance.</td></tr>
+<tr><td><strong>Generic US Buyer</strong></td><td>4-8 weeks</td><td>2 rounds</td><td>Varies widely. Some accept SPS Commerce pre-certification.</td></tr>
+</table>
+<h4>The 5-Step Certification Process</h4>
+<p>1. <strong>Kickoff/Mapping</strong> (2-4 weeks): Obtain buyer's Implementation Guide. Map data fields. Build buyer template.<br/>
+2. <strong>Unit Testing</strong> (1-2 weeks): Internal validation. Generate test documents. Validate against buyer template rules.<br/>
+3. <strong>Integration Testing</strong> (2-4 weeks): Exchange test data with buyer's testing environment. Fix issues. Resubmit.<br/>
+4. <strong>Certification Testing</strong> (1-2 weeks): Formal compliance validation by buyer's EDI team.<br/>
+5. <strong>Cutover</strong> (1 week): Production go-live. Shadow mode first, then live.</p>
+<div class="solution-box">
+<h3>FC Certification Acceleration Strategy</h3>
+<ul>
+<li><strong>Pre-Built Test Harness:</strong> For each target buyer, build a mock buyer endpoint that replicates their exact validation rules. Run 100% of test cases internally before submitting to buyer. Reduces buyer-side rounds from 3 to 1-2.</li>
+<li><strong>Parallel Certification:</strong> Certify with 3-5 buyers simultaneously. Don't serialize. Each buyer certification is independent.</li>
+<li><strong>Shadow Mode (2 weeks):</strong> Before formal testing, run FC in shadow mode with factory's existing EDI. Compare FC output to existing output. Fix discrepancies before entering buyer's test cycle.</li>
+<li><strong>Certification Tracker:</strong> Build a dashboard tracking certification status per buyer: test cases submitted, pass/fail, open issues, next action, due date.</li>
+</ul>
+</div>
+<div class="verdict">
+<strong>Verdict:</strong> Budget 8-12 weeks per buyer for first certification. After 5+ certifications, internal process matures and timeline drops to 4-6 weeks. The critical investment is building accurate buyer test harnesses — this is what SPS Commerce has spent 20 years accumulating.
+</div>
+</div>
+<!-- Q5 -->
+<div class="q-header section-header" id="q5">Q5: Getting Buyer Acceptance as a New Platform</div>
+<div class="section-body">
+<p><strong>Addresses:</strong> R-B01 (Buyer Cooperation Failure), A-B03 (Buyers Will Accept FC)</p>
+<h4>The Hard Truth</h4>
+<p><strong>There is no "VAN partner" shortcut.</strong> There is no single accreditation body that certifies you as a VAN. Each buyer approves integration partners individually based on their own criteria. SPS Commerce's dominance comes from 20+ years of accumulated buyer relationships, not from a certificate on the wall.</p>
+<h4>What Buyers Actually Require</h4>
+<table>
+<tr><th>Requirement</th><th>Detail</th><th>FC Status</th></tr>
+<tr><td><strong>GS1 Company Prefix</strong></td><td>Needed for ISA qualifier in EDI envelopes. $250-$2,100/year based on revenue.</td><td><span class="tag tag-orange">Not started</span></td></tr>
+<tr><td><strong>AS2 Endpoint</strong></td><td>Production AS2 server with valid certificates, static IP.</td><td><span class="tag tag-orange">Planned</span></td></tr>
+<tr><td><strong>EDI Test Completion</strong></td><td>Pass buyer's certification test cases.</td><td><span class="tag tag-orange">Planned</span></td></tr>
+<tr><td><strong>Compliance History</strong></td><td>Buyers check rejection rates. New platforms have no track record.</td><td><span class="tag tag-red">Gap</span></td></tr>
+<tr><td><strong>SOC 2 (Enterprise)</strong></td><td>Required by Walmart, Amazon, Target for vendor integration platforms.</td><td><span class="tag tag-orange">Phase 2</span></td></tr>
+</table>
+<div class="solution-box">
+<h3>Three-Phase Buyer Acceptance Strategy</h3>
+<h4>Phase 1: VAN Partnership Bridge (Month 1-6)</h4>
+<p>Partner with an established VAN (TrueCommerce or Cleo) as a <strong>technology partner</strong>. FC generates the EDI, sends to VAN's infrastructure, VAN delivers to buyer. Buyer sees TrueCommerce/Cleo — not FC. FC is invisible to buyer initially.</p>
+<ul>
+<li><strong>TrueCommerce xChange Program:</strong> Apply as ISV Partner. Build on their platform. They have 300+ partners. They handle buyer relationships.</li>
+<li><strong>Cleo Integration Cloud:</strong> Apply as Technology Partner. Build connectors on CIC platform. Leverage their Walmart/Target/Amazon certifications.</li>
+<li><strong>Cost:</strong> Estimated $5K-15K/month for partnership + per-transaction fees</li>
+<li><strong>Benefit:</strong> Day-one access to buyer networks without 12+ months of independent certification</li>
+</ul>
+<h4>Phase 2: Direct Certification (Month 6-18)</h4>
+<p>While VAN partnership handles delivery, build direct buyer relationships in parallel. Start with mid-market buyers (less strict requirements). Certify 5-10 buyers directly. Build compliance track record.</p>
+<h4>Phase 3: FC as Independent VAN (Month 18+)</h4>
+<p>With 10+ direct certifications, SOC 2 Type II, and 12+ months of compliance history, approach enterprise buyers (Walmart, Target) for direct integration. Use track record as proof of capability.</p>
+</div>
+<div class="verdict">
+<strong>Verdict:</strong> Don't try to build direct buyer relationships from day one — it'll take 12-18 months and burn cash. Partner with TrueCommerce or Cleo as a technology partner to get day-one buyer access. Build direct relationships in parallel. This is the single most important strategic decision for FC's go-to-market.
+</div>
+<div class="expert-prompt">
+<strong>Cross-validate with GPT/Gemini:</strong> "We're building an EDI integration SaaS for Indian factories. Should we partner with TrueCommerce or Cleo as a technology partner for buyer connectivity, or invest 12-18 months in direct buyer certification? What are the typical terms for technology partnership with these VAN providers?"
+</div>
+</div>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2 id="part2">Part 2: Indian ERP &amp; Manufacturing Expert Answers</h2>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- Q6 -->
+<div class="q-header section-header" id="q6">Q6: Busy 21 Integration</div>
+<div class="section-body">
+<p><strong>Addresses:</strong> I-T01 (Busy Has No API), A-T10 (ODBC Reliability)</p>
+<h4>Research Findings</h4>
+<p><strong>No public database schema documentation exists.</strong> Busy 21 treats its internal schema as proprietary. The only published integration path is Busy Recom (a desktop integration tool). ODBC access exists but schema details require direct engagement with Busy Software.</p>
+<h4>What's Available</h4>
+<ul>
+<li><strong>Busy Recom:</strong> Desktop integration utility for CRM/ERP connectivity. Limited documentation.</li>
+<li><strong>ODBC:</strong> Read access to MS SQL Server backend confirmed. Table names and relationships undocumented publicly.</li>
+<li><strong>Partner Program:</strong> Referral Partner (one-time dividend) and Strategic Partner (ongoing revenue). Strategic partners get training and technical access.</li>
+</ul>
+<div class="solution-box">
+<h3>Recommended Strategy for Busy Integration</h3>
+<h4>Immediate Action: Become Busy Strategic Partner</h4>
+<p>Apply for Busy's Strategic Partner/Reseller program. This gets you:</p>
+<ul>
+<li>Access to technical documentation (schema, ODBC details)</li>
+<li>Direct line to Busy engineering team</li>
+<li>Training on Busy internals</li>
+<li>Branded collateral for selling to Busy customers</li>
+</ul>
+<h4>Parallel Path 1: ODBC Bridge Agent</h4>
+<p>Install bridge agent on factory's Windows machine. Agent connects via ODBC to Busy's SQL Server. Map known tables (likely: VoucherMaster, VoucherDetail, ItemMaster, PartyMaster). Buffer locally, push to FC cloud.</p>
+<h4>Parallel Path 2: CSV/Excel Upload</h4>
+<p>Busy supports export to Excel/CSV natively. Factory exports sales order report from Busy → uploads to FC via WhatsApp → FC parses and transforms. Zero integration required. Works immediately.</p>
+<h4>Parallel Path 3: Busy Feature Request</h4>
+<p>As a Strategic Partner, formally request REST API from Busy product team. Position FC as driving demand for Busy API. If 50+ factories request API through FC, Busy has business case to build it.</p>
+</div>
+<div class="verdict">
+<strong>Verdict:</strong> CSV/Excel upload for day one (zero risk, works immediately). Apply for Strategic Partner program for ODBC schema access. Long-term: push Busy to build a proper API. Don't bet the product on reverse-engineering an undocumented schema.
+</div>
+</div>
+<!-- Q7 -->
+<div class="q-header section-header" id="q7">Q7: Tally Prime API Roadmap</div>
+<div class="section-body">
+<p><strong>Addresses:</strong> A-T01 (Tally XML Will Remain), I-T02 (Tally Windows-Only), R-T07 (Bridge Agent Burden)</p>
+<h4>Research Findings (April 2026)</h4>
+<p><strong>TallyPrime 7.0 (December 2025) was a major integration upgrade:</strong></p>
+<ul>
+<li><strong>Native JSON support</strong> as first-class feature alongside XML</li>
+<li>New <strong>Tally Connector</strong> for seamless JSON request/response exchange</li>
+<li>REST API capabilities for external system integration</li>
+<li>Enhanced authentication for third-party integrations</li>
+<li>25-40% performance improvement across bulk data operations</li>
+<li><strong>No TallyPrime 8.0 announced.</strong> 7.0 is current as of April 2026.</li>
+</ul>
+<p><strong>Partner Ecosystem:</strong></p>
+<ul>
+<li>Tiered certification: 3-Star (SMB automation) and 5-Star (enterprise solutions)</li>
+<li>Active partner ecosystem: NoBrokerHood, eCom2Tally, Abound, Tally Alert, and dozens more</li>
+<li>Third-party integration platforms already exist: API2Books, newaccesstechnologies, Welfare Infotech</li>
+</ul>
+<div class="solution-box">
+<h3>Revised Tally Strategy Based on New Information</h3>
+<h4>Critical Update: Build JSON Adapter, Not Just XML</h4>
+<p>TallyPrime 7.0's native JSON support changes the strategy. <strong>Build the Tally adapter with JSON as primary protocol</strong>, XML as fallback for pre-7.0 installations.</p>
+<h4>Adapter Versions</h4>
+<ul>
+<li><code>src-tally-json-70</code>: Primary. Uses Tally Connector + REST. JSON request/response. For TallyPrime 7.0+.</li>
+<li><code>src-tally-xml-60</code>: Fallback. XML-over-HTTP port 9000. For TallyPrime 6.x and earlier.</li>
+</ul>
+<h4>Bridge Agent Still Required</h4>
+<p>Even with JSON support, TallyPrime remains Windows-only and local-network. Bridge agent is still needed to push data to FC cloud. But JSON makes the bridge agent simpler (standard REST calls vs. XML envelope construction).</p>
+<h4>Partner Program Application</h4>
+<p>Apply for Tally 5-Star Certified Partner status. This provides:</p>
+<ul>
+<li>Early access to TallyPrime release candidates</li>
+<li>Direct engineering support for integration issues</li>
+<li>Co-marketing with Tally (huge distribution channel in India)</li>
+<li>Advance notice of API deprecations or changes</li>
+</ul>
+</div>
+<div class="verdict">
+<strong>Verdict:</strong> TallyPrime 7.0 JSON support is excellent news. Build JSON-first adapter. Apply for 5-Star partnership immediately — this is both a technical and distribution play. Tally's ecosystem is the fastest path to Indian factory customer acquisition.
+</div>
+</div>
+<!-- Q8 -->
+<div class="q-header section-header" id="q8">Q8: Marg ERP API Gateway</div>
+<div class="section-body">
+<p><strong>Addresses:</strong> I-T05 (Marg Documentation Gap)</p>
+<h4>Research Findings — Better Than Expected</h4>
+<p>Marg ERP has <strong>more APIs than initially documented</strong> in our architecture:</p>
+<ul>
+<li><strong>Stock API:</strong> View current stock levels</li>
+<li><strong>Invoice/Orders API:</strong> Access invoice details and order information</li>
+<li><strong>Order Management API:</strong> Add new orders for products</li>
+<li><strong>Dispatch API:</strong> Track and check dispatches</li>
+<li><strong>E-Invoice API:</strong> GST e-invoicing compliance</li>
+<li><strong>SMS Gateway API:</strong> Bulk SMS integration</li>
+<li><strong>MargBooks Open API:</strong> Custom integrations</li>
+</ul>
+<p><strong>Contact for Technical Details:</strong> apiintegration@margerp.com, +91-9319806949</p>
+<p><strong>Documentation:</strong> Developer-friendly docs available. Training via docs, live online sessions, and webinars.</p>
+<div class="solution-box">
+<h3>Revised Marg Strategy</h3>
+<h4>Immediate: Contact Marg API Integration Team</h4>
+<p>Email apiintegration@margerp.com requesting:</p>
+<ul>
+<li>Full API documentation for Stock, Invoice/Orders, and Dispatch APIs</li>
+<li>Sandbox access for development/testing</li>
+<li>Authentication details (JWT/JWS beyond e-invoicing)</li>
+<li>Rate limits and pagination details</li>
+<li>Partnership program for integration vendors</li>
+</ul>
+<h4>Adapter: src-marg-api-v9</h4>
+<p>Marg ERP 9+ has formal API support. Build REST adapter covering the Invoice/Orders and Dispatch APIs. This covers the Order-to-Cash flow FC needs.</p>
+</div>
+<div class="verdict">
+<strong>Verdict:</strong> Marg has sufficient APIs for FC integration. The gap was our research, not Marg's capability. Contact their API team immediately. This moves Marg from "unknown risk" to "standard REST adapter build."
+</div>
+</div>
+<!-- Q9 -->
+<div class="q-header section-header" id="q9">Q9: No-ERP Factory Percentage in India</div>
+<div class="section-body">
+<p><strong>Addresses:</strong> I-T08 (No-ERP Factories)</p>
+<h4>Research Findings</h4>
+<ul>
+<li><strong>Only 34% of Indian SMEs</strong> have successfully adopted technological and digital changes</li>
+<li><strong>~66% of manufacturers</strong> claim to be "embracing digital transformation" but this includes minimal adoption (email, basic accounting)</li>
+<li><strong>45% of SMEs</strong> cite inadequate budgets as barrier to smart manufacturing technology</li>
+<li><strong>15 million SMEs</strong> (out of 63 million) using digital payment platforms — indicating most have some digital footprint but not necessarily ERP</li>
+<li><strong>GST compliance</strong> has been the single largest driver of ERP adoption (Tally dominant due to GST filing)</li>
+</ul>
+<h4>Estimated ERP Adoption Among Indian Export Factories</h4>
+<p>No published study gives exact percentages. Based on triangulating multiple data points:</p>
+<table>
+<tr><th>Factory Size</th><th>Estimated ERP Adoption</th><th>Most Common</th></tr>
+<tr><td>Large exporters ($10M+ revenue)</td><td>~85-90%</td><td>SAP B1, Tally Prime, Zoho Books</td></tr>
+<tr><td>Medium exporters ($1-10M)</td><td>~60-70%</td><td>Tally Prime, Busy, ERPNext</td></tr>
+<tr><td>Small exporters ($100K-1M)</td><td>~30-45%</td><td>Tally, Marg, Excel/paper</td></tr>
+<tr><td>Micro exporters (&lt;$100K)</td><td>~10-20%</td><td>Excel, paper, WhatsApp</td></tr>
+</table>
+<div class="solution-box">
+<h3>No-ERP Factory Strategy</h3>
+<h4>Tier 1 (Day One): WhatsApp Data Entry</h4>
+<p>Factory sends order details via WhatsApp messages. FC AI parses structured data from unstructured messages. Human-in-the-loop verification. Generates EDI.</p>
+<h4>Tier 2 (Phase 2): Web Form Entry</h4>
+<p>Simple web forms for order entry, invoice creation, shipment notification. Mobile-optimized. Available in Hindi, Tamil, Gujarati, Telugu.</p>
+<h4>Tier 3 (Phase 3): FC Mini-ERP</h4>
+<p>For no-ERP factories, FC becomes their order management system. Track orders, generate invoices, manage shipments — all through WhatsApp + web portal. Premium pricing tier.</p>
+</div>
+<div class="verdict">
+<strong>Verdict:</strong> An estimated 30-55% of Indian export factories below $10M revenue may not have proper ERP. This is a massive addressable market. WhatsApp-based data entry is the minimum viable solution. But Phase 1 should focus on ERP-using factories (faster onboarding, higher reliability) and expand to no-ERP factories in Phase 2.
+</div>
+</div>
+<!-- Q10 -->
+<div class="q-header section-header" id="q10">Q10: Indian SME Willingness to Pay for SaaS</div>
+<div class="section-body">
+<p><strong>Addresses:</strong> A-B01 (Factories Will Pay), R-B04 (Pricing Mismatch)</p>
+<h4>Research Findings</h4>
+<ul>
+<li><strong>Cultural resistance to subscription models</strong> — Indian SMEs historically prefer one-time purchase (why Tally's perpetual license dominated for decades)</li>
+<li><strong>Only 6% of Indian SaaS companies</strong> conduct pricing research to understand buyer willingness</li>
+<li><strong>Indian SaaS growing at ~30% YoY</strong> — subscription acceptance is increasing but from a low base</li>
+<li><strong>Frugal innovation imperative:</strong> Indian software must solve for "10x cheaper, 10x faster" compared to Western alternatives</li>
+<li><strong>INR-based fixed pricing</strong> strongly preferred over USD-denominated variable pricing</li>
+</ul>
+<div class="solution-box">
+<h3>Recommended Pricing Model</h3>
+<h4>Three-Tier Structure (INR, All-Inclusive)</h4>
+<table>
+<tr><th>Tier</th><th>Monthly Price</th><th>Includes</th><th>Target</th></tr>
+<tr><td><strong>Starter</strong></td><td>₹4,999/month</td><td>1 buyer connection, 500 documents/month, email support, WhatsApp channel</td><td>Small exporters testing the platform</td></tr>
+<tr><td><strong>Growth</strong></td><td>₹9,999/month</td><td>5 buyer connections, 2,500 documents/month, priority support, all channels</td><td>Medium exporters with multiple buyers</td></tr>
+<tr><td><strong>Enterprise</strong></td><td>₹24,999/month</td><td>Unlimited buyers, unlimited documents, dedicated success manager, SLA guarantee, custom mapping</td><td>Large exporters, high volume</td></tr>
+</table>
+<h4>Pricing Psychology for Indian SMEs</h4>
+<ul>
+<li><strong>Annual Payment with 2 Months Free:</strong> ₹49,990/year for Starter (instead of ₹59,988). Feels like a purchase, not subscription.</li>
+<li><strong>30-Day Free Trial:</strong> Shadow mode — factory sees documents flowing but nothing is sent to buyer. Zero risk.</li>
+<li><strong>ROI Calculator:</strong> "You spend ₹X/month on manual data entry and compliance fines. FC costs ₹5K/month." Make the savings tangible.</li>
+<li><strong>No Lock-in:</strong> Month-to-month option. Indian SMEs fear being trapped in contracts.</li>
+</ul>
+<h4>Competitive Positioning</h4>
+<p>SPS Commerce charges $300-1000/month per connection (~₹25K-84K). FC at ₹5K-25K/month is <strong>60-80% cheaper</strong>. This is the "10x cheaper" that Indian market demands.</p>
+</div>
+<div class="verdict">
+<strong>Verdict:</strong> Price at ₹4,999-24,999/month. Offer annual payment with discount (feels like purchase). Free 30-day trial in shadow mode. India-specific pricing is FC's competitive weapon against SPS Commerce. But validate with 10 pre-sales before committing to these tiers.
+</div>
+<div class="expert-prompt">
+<strong>Cross-validate with GPT/Gemini:</strong> "We're pricing a B2B integration SaaS for Indian SME exporters at ₹5,000-25,000/month. SPS Commerce charges $300-1000/month (₹25K-84K). Is our pricing too low for sustainability, or is it the right wedge for the India market? What's the typical LTV:CAC ratio for Indian B2B SaaS?"
+</div>
+</div>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2 id="part3">Part 3: Cloud Architecture Expert Answers</h2>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- Q11 -->
+<div class="q-header section-header" id="q11">Q11: GKE Autopilot + KEDA at Scale</div>
+<div class="section-body">
+<p><strong>Addresses:</strong> R-T09 (Kubernetes Complexity), A-T06 (GKE Autopilot Handles Pattern)</p>
+<h4>Research Findings</h4>
+<p><strong>KEDA on GKE Autopilot is production-ready and officially documented by Google Cloud.</strong></p>
+<ul>
+<li>Google Cloud has published official tutorials for KEDA scale-to-zero on Autopilot</li>
+<li>KEDA scales Pub/Sub, Redis, Kafka, and custom metrics workloads from 0→N pods</li>
+<li><strong>Cold start latency: 5-30 seconds</strong> per pod when scaling from zero (this is the main trade-off)</li>
+<li>No published per-cluster deployment limit, but 50-200 KEDA scalers per cluster is the practical range before controller becomes bottleneck</li>
+<li>~60-70% cost reduction vs. maintaining minimum 2 replicas for bursty workloads</li>
+</ul>
+<div class="solution-box">
+<h3>FC Deployment Strategy</h3>
+<h4>Scale-to-Zero (KEDA) — Bursty/Low-Traffic Adapters</h4>
+<p>Adapters with intermittent traffic: <code>tgt-coupa-31</code>, <code>tgt-edifact-d01b</code>, <code>src-marg-api-v9</code>, <code>src-busy-odbc-21</code>. These may handle 0-100 messages/day. Scale to zero between bursts. Accept 5-30 second cold start.</p>
+<h4>Always-On (HPA) — Critical Path Adapters</h4>
+<p>Adapters on the critical path: <code>tgt-x12-4010</code>, <code>src-tally-json-70</code>, <code>src-zoho-v3</code>. These handle continuous traffic. Min 2 replicas. HPA scales up based on CPU/queue depth.</p>
+<h4>Always-On (Fixed) — Core Services</h4>
+<p>Routing engine, canonical transform, pre-flight validator, cascade dependency engine. These are in every message's path. Fixed 2-3 replicas. No scale-to-zero.</p>
+</div>
+<div class="verdict">
+<strong>Verdict:</strong> GKE Autopilot + KEDA is the right choice. 25 deployments is well within the supported range. The key decision: don't scale-to-zero on critical-path services (routing, validation). Only scale-to-zero on per-buyer/per-ERP adapters with intermittent traffic.
+</div>
+</div>
+<!-- Q12 -->
+<div class="q-header section-header" id="q12">Q12: Redis Streams vs NATS JetStream vs Kafka</div>
+<div class="section-body">
+<p><strong>Addresses:</strong> R-T11 (Redis SPOF), A-T07 (Redis Queue Volume)</p>
+<h4>2025-2026 Benchmarks</h4>
+<table>
+<tr><th>System</th><th>Throughput</th><th>Latency</th><th>Persistence</th><th>Ops Complexity</th><th>Cost (Managed)</th></tr>
+<tr><td><strong>Redis Streams</strong></td><td>100-300K msg/sec</td><td>&lt;1ms</td><td>AOF (1 sec loss risk)</td><td class="win">Lowest</td><td>$100-300/mo</td></tr>
+<tr><td><strong>NATS JetStream</strong></td><td>200-400K msg/sec</td><td>1-5ms</td><td>Configurable (strong)</td><td class="win">Low</td><td>$50-200/mo (self-hosted)</td></tr>
+<tr><td><strong>Apache Kafka</strong></td><td>500K-1M+ msg/sec</td><td>10-50ms</td><td>Multi-month retention</td><td class="lose">High</td><td>$300-1000/mo (managed)</td></tr>
+</table>
+<div class="solution-box">
+<h3>Recommended Path</h3>
+<h4>Phase 1: Redis Streams (You Already Have Redis)</h4>
+<p>FC already uses Redis for caching. Adding Streams for message routing is zero additional infrastructure. Redis Sentinel (3 nodes) for HA. AOF with fsync=everysec. Dual-write message log to PostgreSQL for durability guarantee. This handles FC's Phase 1 volume (estimated 1K-10K msg/min) with massive headroom.</p>
+<h4>Phase 2 (If Volume Exceeds 50K msg/min): NATS JetStream</h4>
+<p>Single binary deployment. Built-in clustering. No external coordinator. Stronger persistence than Redis. Better consumer group semantics. Perfect for a small team that doesn't want Kafka's operational burden.</p>
+<h4>Phase 3 (If Volume Exceeds 300K msg/min): Kafka</h4>
+<p>Kafka 4.0+ dropped ZooKeeper (KRaft mode). Still operationally heavy. Only needed if FC grows to thousands of concurrent connections with high message volume. Unlikely before Phase 3.</p>
+<h4>Queue Interface Abstraction</h4>
+<pre>
+// internal/queue/queue.go
+type MessageQueue interface {
+    Publish(ctx context.Context, topic string, msg *Message) error
+    Subscribe(ctx context.Context, topic string, handler Handler) error
+    Ack(ctx context.Context, msgID string) error
+}
+
+// Implementations:
+// internal/queue/redis.go   — Phase 1
+// internal/queue/nats.go    — Phase 2
+// internal/queue/kafka.go   — Phase 3
+</pre>
+</div>
+<div class="verdict">
+<strong>Verdict:</strong> Start with Redis Streams + PostgreSQL dual-write. Build queue interface abstraction from day one. Migrate to NATS JetStream if/when you hit 50K msg/min. Don't even think about Kafka until 300K+ msg/min. For a startup, operational simplicity beats raw throughput.
+</div>
+</div>
+<!-- Q13 -->
+<div class="q-header section-header" id="q13">Q13: Canonical Data Model Patterns (N×M Translation)</div>
+<div class="section-body">
+<p><strong>Addresses:</strong> R-T03 (Canonical Model Inadequacy), A-T02 (Model Covers 90%+)</p>
+<h4>How Enterprise Platforms Handle It</h4>
+<table>
+<tr><th>Platform</th><th>Approach</th><th>Details</th></tr>
+<tr><td><strong>MuleSoft</strong></td><td>Fixed canonical + policy</td><td>Strict governance. Central canonical schema. All integrations map to/from canonical. Strong for compliance-heavy environments.</td></tr>
+<tr><td><strong>Boomi</strong></td><td>Template-driven + flexible</td><td>Pre-built templates with flexible mapping. Balance of structure and adaptability. Good for mid-market.</td></tr>
+<tr><td><strong>IBM Sterling</strong></td><td>Hybrid (legacy + modern)</td><td>EDI-specific canonical with API layering. Backward compatibility for legacy EDI + modern REST. Best for B2B.</td></tr>
+</table>
+<p><strong>Key insight:</strong> Fixed canonical with N×M adapters reduces translation count from N×M to N+M. For FC (6 sources × 7 targets = 42 possible translations), canonical model reduces to 6+7 = 13 adapters. As FC grows to 20 sources × 20 targets, this goes from 400 translations to 40. The savings are exponential.</p>
+<div class="solution-box">
+<h3>FC Canonical Model Validation Strategy</h3>
+<h4>Fixed Core + Extension Fields (IBM Sterling Pattern)</h4>
+<pre>
+// internal/canonical/order.go
+type Order struct {
+    // Fixed core fields — present in every order
+    ID              string          `json:"id"`
+    PONumber        string          `json:"po_number"`
+    BuyerID         string          `json:"buyer_id"`
+    SellerID        string          `json:"seller_id"`
+    OrderDate       time.Time       `json:"order_date"`
+    RequestedShip   time.Time       `json:"requested_ship_date"`
+    Currency        string          `json:"currency"`
+    TotalAmount     decimal.Decimal `json:"total_amount"`
+    LineItems       []LineItem      `json:"line_items"`
+    ShipTo          Party           `json:"ship_to"`
+    BillTo          Party           `json:"bill_to"`
+
+    // Extension fields — industry/buyer specific
+    // Pass-through: source adapter sets, target adapter reads
+    Extensions      map[string]interface{} `json:"extensions,omitempty"`
+
+    // Metadata
+    CanonicalVersion string         `json:"canonical_version"` // "v1", "v2"
+    SourceSystem     string         `json:"source_system"`     // "tally-json-70"
+    CreatedAt        time.Time      `json:"created_at"`
+}
+
+// Extensions example for textile industry:
+// { "lot_number": "LOT-2026-042",
+//   "fabric_composition": "100% Cotton",
+//   "gsm": 180,
+//   "color_code": "PANTONE-19-4052" }
+</pre>
+<h4>Validation Strategy</h4>
+<p>Before building adapters, validate the 6-entity model against real data:</p>
+<ol>
+<li>Export 10 sales orders from each of 5 ERPs (Tally, Zoho, SAP B1, ERPNext, Marg)</li>
+<li>Map every field to canonical model or extensions</li>
+<li>Track coverage percentage: target &gt;90% in core fields</li>
+<li>Identify fields that should be promoted from extensions to core</li>
+<li>Test canonical → EDI X12 850 generation for 3 buyer IGs</li>
+</ol>
+</div>
+<div class="verdict">
+<strong>Verdict:</strong> FC's fixed canonical model is the right pattern (matches IBM Sterling's B2B approach). The <code>Extensions map[string]interface{}</code> field is the escape valve for industry-specific data. Validate against real factory data from 5 ERPs before building adapters. If core coverage drops below 80%, add entity extensions (PharmaOrder, TextileOrder) as canonical model v2.
+</div>
+</div>
+<!-- Q14 -->
+<div class="q-header section-header" id="q14">Q14: RTO/RPO Requirements for B2B Integration SaaS</div>
+<div class="section-body">
+<p><strong>Addresses:</strong> I-A01 (No DR Plan)</p>
+<h4>Enterprise Standard (2025-2026)</h4>
+<table>
+<tr><th>Integration Type</th><th>RTO</th><th>RPO</th><th>Justification</th></tr>
+<tr><td>Order routing / fulfillment</td><td>4 hours</td><td>1 hour</td><td>Financial impact; manual workaround exists</td></tr>
+<tr><td>Invoice reconciliation</td><td>2 hours</td><td>15 min</td><td>Real-time settlement requirement</td></tr>
+<tr><td>Non-critical notifications</td><td>24 hours</td><td>4 hours</td><td>Deferred processing acceptable</td></tr>
+<tr><td>Payment/settlement</td><td>30 min</td><td>&lt;5 min</td><td>Regulatory, audit trail critical</td></tr>
+</table>
+<p><strong>Enterprise procurement RFPs now include "Disaster Recovery" as a line item.</strong> Buyers expect 99.9% uptime SLA (8.7 hours/year downtime) minimum. Enterprise buyers demand documented DR plan, tested annually.</p>
+<div class="solution-box">
+<h3>FC Disaster Recovery Plan</h3>
+<h4>Phase 1 Targets: RTO = 2 hours, RPO = 30 minutes</h4>
+<table>
+<tr><th>Component</th><th>Strategy</th><th>Cost</th></tr>
+<tr><td>PostgreSQL</td><td>Cloud SQL HA (multi-zone). Continuous WAL archiving to GCS. Cross-region read replica in GCP Singapore.</td><td>+$100-200/mo</td></tr>
+<tr><td>Redis</td><td>Memorystore with Redis Sentinel (3-node). AOF with fsync=everysec.</td><td>+$50-100/mo</td></tr>
+<tr><td>Kubernetes</td><td>GKE multi-zone in Mumbai. Workloads spread across 3 AZs. Pod disruption budgets.</td><td>Included in Autopilot</td></tr>
+<tr><td>Backup</td><td>Daily full + continuous WAL (PostgreSQL). Hourly Redis RDB snapshot to GCS. 30-day retention.</td><td>~$20/mo storage</td></tr>
+<tr><td>DNS Failover</td><td>Cloud DNS health checks. Manual failover to Singapore in disaster. Automated in Phase 3.</td><td>~$5/mo</td></tr>
+<tr><td><strong>Total DR Overhead</strong></td><td></td><td><strong>~$275-525/mo</strong></td></tr>
+</table>
+<h4>Monthly DR Drill (30 minutes)</h4>
+<ol>
+<li>Simulate primary database failure (stop Cloud SQL primary)</li>
+<li>Verify replica promotion completes within 60 seconds</li>
+<li>Verify application reconnects within 5 minutes</li>
+<li>Run smoke test: process one end-to-end order</li>
+<li>Failback to primary</li>
+<li>Document results in DR drill log</li>
+</ol>
+</div>
+<div class="verdict">
+<strong>Verdict:</strong> RTO 2 hours / RPO 30 minutes is achievable for ~$300-500/month additional cost. This meets enterprise buyer requirements for B2B integration SaaS. Monthly DR drills are non-negotiable for SOC 2 compliance. Upgrade to RTO 30min / RPO 5min in Phase 3 with active-passive multi-region.
+</div>
+</div>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2 id="part4">Part 4: Security &amp; Compliance Expert Answers</h2>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- Q15 -->
+<div class="q-header section-header" id="q15">Q15: AS2 Certificate Lifecycle Management at Scale</div>
+<div class="section-body">
+<p><strong>Addresses:</strong> R-S01 (AS2 Certificate Management)</p>
+<h4>Scale Thresholds</h4>
+<table>
+<tr><th>Partner Count</th><th>Certificates</th><th>Recommended Approach</th><th>Annual Cost</th></tr>
+<tr><td>&lt;10 partners</td><td>&lt;20 certs</td><td>Spreadsheet + calendar reminders. Manual renewal. 1-2 hours per renewal.</td><td>$0</td></tr>
+<tr><td>10-50 partners</td><td>20-100 certs</td><td>Kubernetes cert-manager or DigiCert CertCentral. Auto-renewal for FC-owned certs. Alerts for partner certs.</td><td>$10K-30K/yr</td></tr>
+<tr><td>50+ partners</td><td>100+ certs</td><td>Segura or Keyfactor Command. Full lifecycle automation including partner notification.</td><td>$20K-150K/yr</td></tr>
+</table>
+<div class="solution-box">
+<h3>FC Certificate Management Strategy</h3>
+<h4>Phase 1 (0-20 Buyers): cert_inventory PostgreSQL Table + Cron</h4>
+<pre>
+CREATE TABLE cert_inventory (
+  id              UUID PRIMARY KEY,
+  partner_name    TEXT NOT NULL,
+  cert_type       TEXT NOT NULL,      -- "signing", "encryption", "tls"
+  direction       TEXT NOT NULL,      -- "inbound" (partner's cert), "outbound" (FC's cert)
+  subject_cn      TEXT,
+  issuer          TEXT,
+  serial_number   TEXT,
+  not_before      TIMESTAMP,
+  not_after       TIMESTAMP,
+  key_size        INT,
+  fingerprint_sha256 TEXT,
+  vault_path      TEXT,              -- path in Vault where cert is stored
+  alert_90_sent   BOOLEAN DEFAULT FALSE,
+  alert_60_sent   BOOLEAN DEFAULT FALSE,
+  alert_30_sent   BOOLEAN DEFAULT FALSE,
+  created_at      TIMESTAMP DEFAULT NOW()
+);
+
+-- Daily cron: check for certs expiring within 90/60/30 days
+-- Send alerts via email + Slack + WhatsApp
+</pre>
+<h4>Phase 2 (20+ Buyers): Kubernetes cert-manager + Automated Renewal</h4>
+<p>cert-manager handles FC-owned certificate renewal via Let's Encrypt or Sectigo. Partner certificates tracked in cert_inventory with automated alerting. Monthly AS2 handshake test with every partner endpoint.</p>
+</div>
+<div class="verdict">
+<strong>Verdict:</strong> Start with PostgreSQL inventory + daily cron job. This costs $0 and handles up to 20 buyers. Upgrade to cert-manager + automation when approaching 50 partners. Certificate management is operationally critical but doesn't need enterprise tooling on day one.
+</div>
+</div>
+<!-- Q16 -->
+<div class="q-header section-header" id="q16">Q16: DPDP + GDPR + CCPA Minimum Compliance Posture</div>
+<div class="section-body">
+<p><strong>Addresses:</strong> R-S02 (Data Residency &amp; Compliance)</p>
+<h4>FC processes mostly B2B data (orders, invoices, company information). Personal data exposure is limited to contact persons' names, emails, and phone numbers. This significantly reduces compliance scope.</h4>
+<table>
+<tr><th>Regulation</th><th>Scope for FC</th><th>Day-One Requirements</th><th>Cost</th></tr>
+<tr>
+<td><strong>India DPDP Act 2023</strong></td>
+<td>Personal data of Indian individuals (factory contact persons). Full compliance by May 2027.</td>
+<td>1. Privacy policy + consent flow<br/>2. Appoint DPO (can be external)<br/>3. 72-hour breach notification process<br/>4. User data deletion capability<br/>5. Encryption at rest + in transit</td>
+<td>$5K-10K legal + $8K-15K/yr DPO</td>
+</tr>
+<tr>
+<td><strong>GDPR (EU buyers)</strong></td>
+<td>Only if processing EU individual's data. B2B business contacts have reduced scope under GDPR legitimate interest.</td>
+<td>1. Data Processing Agreement (DPA) template<br/>2. EU data residency option (GCP Belgium)<br/>3. Right to erasure endpoint<br/>4. Data breach notification (72 hours)</td>
+<td>$5K-10K legal review</td>
+</tr>
+<tr>
+<td><strong>CCPA (California)</strong></td>
+<td>B2B exemption still applies for employee/business contact data. Minimal exposure.</td>
+<td>1. Privacy policy mentioning CCPA rights<br/>2. "Do Not Sell" opt-out (if applicable)</td>
+<td>Minimal ($1K-2K legal)</td>
+</tr>
+</table>
+<div class="solution-box">
+<h3>Minimum Viable Compliance Stack</h3>
+<h4>Month 1-2</h4>
+<ul>
+<li>Privacy policy covering DPDP + GDPR basics. Published on FC website.</li>
+<li>Consent capture during factory onboarding (WhatsApp flow).</li>
+<li>Breach notification runbook (who to call, what to report, within 72 hours).</li>
+<li>Data classification: tag all data fields as "business" or "personal".</li>
+</ul>
+<h4>Month 3-4</h4>
+<ul>
+<li>Appoint external DPO ($8K-15K/year). Display contact on website.</li>
+<li>Build user data deletion API (<code>DELETE /api/v1/data-subject/{id}</code>).</li>
+<li>DPA template for factory contracts and buyer agreements.</li>
+</ul>
+<h4>Month 6+ (Before EU Buyer Onboarding)</h4>
+<ul>
+<li>Deploy EU data residency option (GCP Belgium).</li>
+<li>Legal review of GDPR DPA by EU-qualified lawyer.</li>
+<li>Data Protection Impact Assessment (DPIA) for high-risk processing.</li>
+</ul>
+<h4>Penalty Risk</h4>
+<p>DPDP Act: ₹250 crore (~$30M) maximum for serious violations. GDPR: €20M or 4% global turnover. CCPA: $7,500 per intentional violation. <strong>For a startup processing mostly B2B data, the realistic risk is low if basic controls are in place.</strong></p>
+</div>
+<div class="verdict">
+<strong>Verdict:</strong> FC's B2B focus significantly reduces compliance scope. Privacy policy + consent + DPO + breach runbook covers 80% of requirements. Don't over-engineer compliance for Phase 1. Budget $15K-25K total for Year 1 compliance. Engage data privacy lawyer before EU buyer onboarding (Phase 2).
+</div>
+</div>
+<!-- Q17 -->
+<div class="q-header section-header" id="q17">Q17: SOC 2 Type I for Startups</div>
+<div class="section-body">
+<p><strong>Addresses:</strong> R-S04 (SOC 2 Requirement)</p>
+<h4>Research-Backed Timeline &amp; Cost</h4>
+<table>
+<tr><th>Component</th><th>Timeline</th><th>Cost</th></tr>
+<tr><td>Compliance platform (Drata/Secureframe)</td><td>Setup: 1-2 weeks</td><td>$8K-15K/year</td></tr>
+<tr><td>Control implementation</td><td>2-4 months</td><td>100-200 hours engineering time</td></tr>
+<tr><td>Type I audit (CPA firm)</td><td>2-4 weeks</td><td>$10K-25K</td></tr>
+<tr><td>Legal/policy review</td><td>1-2 weeks</td><td>$2K-5K</td></tr>
+<tr><td><strong>Total</strong></td><td><strong>4-6 months</strong></td><td><strong>$20K-45K Year 1</strong></td></tr>
+</table>
+<h4>Platform Comparison</h4>
+<table>
+<tr><th>Platform</th><th>Price</th><th>Best For</th><th>Timeline</th></tr>
+<tr><td><strong>Vanta</strong></td><td>$8K-15K/yr (startup pricing)</td><td>Fast, lightweight teams. Minimal overhead.</td><td>3-4 months</td></tr>
+<tr><td><strong>Drata</strong></td><td>$10K-15K/yr</td><td>Engineering-heavy orgs. Deep automation. Real-time monitoring.</td><td>4-6 months</td></tr>
+<tr><td><strong>Secureframe</strong></td><td>$8K-12K/yr</td><td>Non-technical buyers. AI-assisted policy drafting.</td><td>5-7 months</td></tr>
+</table>
+<h4>Top 7 Commonly Failed Controls</h4>
+<ol>
+<li><strong>Access Control:</strong> Incomplete user deprovisioning; overly broad IAM roles</li>
+<li><strong>Change Management:</strong> No documented approval workflow for production deploys</li>
+<li><strong>Incident Response:</strong> No playbooks or tested procedures</li>
+<li><strong>Encryption in Transit:</strong> Self-signed certs or missing TLS on internal services</li>
+<li><strong>Backup &amp; Recovery:</strong> No tested restore procedures; RTO/RPO undocumented</li>
+<li><strong>Vendor Management:</strong> No contracts defining security obligations from SaaS vendors</li>
+<li><strong>Risk Assessment:</strong> No formal annual risk assessment or vulnerability scans</li>
+</ol>
+<div class="solution-box">
+<h3>FC SOC 2 Roadmap</h3>
+<h4>Month 1: Foundation</h4>
+<ul>
+<li>Sign up for Drata (best for Go + Python + Docker stack)</li>
+<li>Enable MFA everywhere (GCP, GitHub, Vault, Slack)</li>
+<li>Document access control policy (who has access to what, why)</li>
+<li>Set up automated dependency scanning (govulncheck, Snyk)</li>
+</ul>
+<h4>Month 2-3: Controls</h4>
+<ul>
+<li>Change management: All production changes via PR → review → merge → CI/CD. No manual deploys.</li>
+<li>Incident response runbook + tabletop drill</li>
+<li>Backup verification: weekly restore test from backup</li>
+<li>Vendor contracts: review all SaaS vendors (GCP, Anthropic, WhatsApp BSP). Ensure security obligations documented.</li>
+</ul>
+<h4>Month 4-5: Audit Prep</h4>
+<ul>
+<li>Risk assessment document (use RAID analysis as foundation!)</li>
+<li>Vulnerability scan (quarterly, automated)</li>
+<li>Drata evidence collection running for 30+ days (auditor wants to see controls operating over time)</li>
+</ul>
+<h4>Month 5-6: Type I Audit</h4>
+<ul>
+<li>Engage CPA firm (Prescient Assurance, Johanson Group good for startups)</li>
+<li>2-4 week audit period</li>
+<li>Receive SOC 2 Type I report</li>
+</ul>
+</div>
+<div class="verdict">
+<strong>Verdict:</strong> SOC 2 Type I in 5-6 months is realistic for a startup. Budget $25K-35K Year 1. Use Drata. Start implementing controls from day one — don't wait until "we need it." The RAID analysis document IS your risk assessment foundation. SOC 2 Type I gets you past 80% of enterprise buyer procurement gates. Type II (12-month observation period) follows naturally.
+</div>
+</div>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2 id="part5">Part 5: Business &amp; GTM Expert Answers</h2>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- Q18 -->
+<div class="q-header section-header" id="q18">Q18: Competing with SPS Commerce ($500M Revenue)</div>
+<div class="section-body">
+<p><strong>Addresses:</strong> R-B02 (Competitor Incumbency)</p>
+<h4>SPS Commerce Weaknesses</h4>
+<table>
+<tr><th>Weakness</th><th>FC Opportunity</th></tr>
+<tr><td>No India-specific ERP support (Tally, Busy, Marg)</td><td>FC is the only platform connecting Indian ERPs to global buyers</td></tr>
+<tr><td>No WhatsApp channel</td><td>FC offers WhatsApp-native interface — how Indian factories actually communicate</td></tr>
+<tr><td>Pricing at $300-1000/month/connection</td><td>FC at ₹5K-25K/month is 60-80% cheaper with Indian cost structure</td></tr>
+<tr><td>Generic onboarding (weeks)</td><td>FC's AI-powered mapping targets hours, not weeks</td></tr>
+<tr><td>US/EU focused sales team</td><td>FC has India ground presence with local language support</td></tr>
+<tr><td>No bridge agent for Windows-only ERPs</td><td>FC builds bridge agents for Tally/Busy (Windows-only) as core feature</td></tr>
+</table>
+<div class="solution-box">
+<h3>Competitive Strategy: India Wedge → Global Expansion</h3>
+<h4>Year 1: Own the India-to-Global Niche</h4>
+<p>No competitor serves "Indian factory using Tally connecting to Walmart via EDI." This is FC's unique position. SPS Commerce doesn't have Tally adapters. TrueCommerce doesn't have WhatsApp. Own this niche completely.</p>
+<h4>Year 2: Expand to Southeast Asia</h4>
+<p>Vietnam, Bangladesh, Sri Lanka factories face the same problem. Same model, new source ERPs.</p>
+<h4>Year 3: Challenge SPS on Price</h4>
+<p>With Indian cost structure and AI-powered onboarding, FC can profitably serve US/EU factories at prices SPS can't match.</p>
+<h4>Key Metric: Time to First Buyer Connection</h4>
+<p>If FC can take a factory from zero to first live buyer connection in 2-4 weeks (vs. 8-14 weeks with legacy), that's the differentiation that matters.</p>
+</div>
+<div class="verdict">
+<strong>Verdict:</strong> Don't compete head-to-head with SPS Commerce. Own the India-to-Global niche where SPS has zero presence. Indian ERP support + WhatsApp + Indian pricing = defensible wedge. Expand from there.
+</div>
+</div>
+<!-- Q19 -->
+<div class="q-header section-header" id="q19">Q19: VAN Partnership vs Direct Buyer Relationships</div>
+<div class="section-body">
+<p><strong>Addresses:</strong> R-B01 (Buyer Cooperation), A-B03 (Buyer Acceptance)</p>
+<div class="solution-box">
+<h3>Recommended: Hybrid Approach</h3>
+<h4>VAN Partnership for Buyer Delivery (Phase 1)</h4>
+<p>Partner with <strong>TrueCommerce</strong> (apply for xChange ISV Partner program). FC generates EDI documents, sends to TrueCommerce for delivery to buyer. FC handles: factory ERP integration, canonical translation, AI mapping, WhatsApp channel. TrueCommerce handles: buyer delivery, AS2 transport, buyer-side compliance.</p>
+<p><strong>Why TrueCommerce over Cleo:</strong></p>
+<ul>
+<li>TrueCommerce xChange program is explicitly designed for ISV partners building on their platform</li>
+<li>300+ partners in their ecosystem (proven model for new entrants)</li>
+<li>EDI + ERP integration focus matches FC's needs</li>
+<li>Cleo is more enterprise/SI focused (higher partnership bar)</li>
+</ul>
+<h4>Direct Buyer Relationships (Phase 2, Parallel Track)</h4>
+<p>While TrueCommerce handles delivery, build direct relationships with 5-10 mid-market buyers. These are buyers with less strict VAN requirements. Certify directly. Build track record.</p>
+<h4>Cost Model</h4>
+<table>
+<tr><th>Model</th><th>Estimated Cost</th><th>Time to First Connection</th></tr>
+<tr><td>TrueCommerce Partnership</td><td>$5K-15K/month + per-transaction</td><td>4-6 weeks</td></tr>
+<tr><td>Direct (build AS2 + certify)</td><td>$3K-5K/month infra + 8-14 weeks per buyer</td><td>12-18 weeks</td></tr>
+<tr><td><strong>Hybrid (recommended)</strong></td><td>$5K-10K/month VAN + direct for select buyers</td><td>4-6 weeks via VAN</td></tr>
+</table>
+</div>
+<div class="verdict">
+<strong>Verdict:</strong> TrueCommerce ISV partnership for Phase 1 buyer delivery. Direct certification for Phase 2 (select buyers). This is the fastest path to revenue. The VAN cost ($5K-15K/month) is worth it to save 12+ months of direct certification effort.
+</div>
+<div class="expert-prompt">
+<strong>Cross-validate with GPT/Gemini:</strong> "We're an Indian integration SaaS startup. We plan to partner with TrueCommerce (xChange ISV program) for EDI buyer delivery while we build direct buyer relationships in parallel. Is TrueCommerce the right VAN partner for a startup? What are typical ISV partnership terms (revenue share, minimum commitment, exclusivity)?"
+</div>
+</div>
+<!-- Q20 -->
+<div class="q-header section-header" id="q20">Q20: Go-to-Market in Indian Manufacturing</div>
+<div class="section-body">
+<p><strong>Addresses:</strong> D-H06 (Industry Association Relationships), R-B03 (Customer Churn from Complexity)</p>
+<h4>Research Findings</h4>
+<p>FIEO and CII don't have formal B2B SaaS partnership programs. They focus on networking, compliance advocacy, and trade facilitation. But they're powerful distribution channels if approached correctly.</p>
+<div class="solution-box">
+<h3>FC Go-to-Market Strategy for India</h3>
+<h4>Channel 1: Tally Partner Ecosystem (Fastest Path)</h4>
+<p>Apply for Tally 5-Star Certified Partner. Tally has 3.6+ lakh installations. Every Tally user who exports is an FC prospect. Co-marketing with Tally reaches the exact target audience. Tally partners are trusted by factory owners — FC rides that trust.</p>
+<h4>Channel 2: Export Cluster Approach</h4>
+<p>India's manufacturing clusters are geographically concentrated. Target clusters where buyer pressure is highest:</p>
+<table>
+<tr><th>Cluster</th><th>City</th><th>Exports</th><th>Key Buyers</th></tr>
+<tr><td>Cotton Knitwear</td><td>Tiruppur (TN)</td><td>$3.2B (2024)</td><td>Walmart, H&amp;M, Zara, Gap</td></tr>
+<tr><td>Diamond &amp; Jewelry</td><td>Surat (GJ)</td><td>$25B+</td><td>Tiffany, Signet, Blue Nile</td></tr>
+<tr><td>Auto Components</td><td>Chennai/Pune</td><td>$20B+</td><td>Ford, GM, Toyota, VW</td></tr>
+<tr><td>Pharma</td><td>Hyderabad</td><td>$27B+</td><td>CVS, Walgreens, McKesson</td></tr>
+<tr><td>Leather Goods</td><td>Kanpur/Chennai</td><td>$5B+</td><td>Coach, Michael Kors, Prada</td></tr>
+</table>
+<h4>Channel 3: FIEO/TEA/CII Events</h4>
+<ul>
+<li>Sponsor FIEO's B2B buyer-seller meets (they host ~100 annually)</li>
+<li>Present at Tiruppur Exporters' Association (TEA) meetings (1,100+ registered exporters)</li>
+<li>Offer free workshops: "How to Set Up EDI with Your Buyer in 2 Weeks"</li>
+</ul>
+<h4>Channel 4: WhatsApp Referral Program</h4>
+<p>Factory owners talk to other factory owners on WhatsApp groups. Build referral program: existing customer refers new customer → both get 1 month free. WhatsApp is the viral channel in Indian manufacturing communities.</p>
+<h4>Sales Cycle Estimate</h4>
+<table>
+<tr><th>Stage</th><th>Duration</th><th>Activity</th></tr>
+<tr><td>Awareness</td><td>1-2 weeks</td><td>Factory hears about FC at association event or WhatsApp group</td></tr>
+<tr><td>Interest</td><td>1-2 weeks</td><td>WhatsApp conversation. Demo video. Factory asks questions.</td></tr>
+<tr><td>Decision</td><td>2-4 weeks</td><td>Factory owner consults with accountant, buyer, maybe other factory owners.</td></tr>
+<tr><td>Trial</td><td>2-4 weeks</td><td>30-day free trial in shadow mode. Factory sees documents flowing.</td></tr>
+<tr><td>Conversion</td><td>1 week</td><td>Annual payment or monthly subscription. Onboarding goes live.</td></tr>
+<tr><td><strong>Total</strong></td><td><strong>6-12 weeks</strong></td><td></td></tr>
+</table>
+</div>
+<div class="verdict">
+<strong>Verdict:</strong> Tally Partner Ecosystem is the fastest path to customers. Export cluster approach (starting with Tiruppur textiles) gives geographic focus. WhatsApp referral program leverages existing factory owner networks. Budget 6-12 week sales cycle. Target: 50 paying customers in Year 1.
+</div>
+</div>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2 id="critical">Part 6: Critical RAID Resolution Summary</h2>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<div class="card">
+<h3>The 5 Decisions That Determine FC's Success</h3>
+<table>
+<tr><th>#</th><th>Decision</th><th>Recommendation</th><th>RAID Items Resolved</th></tr>
+<tr>
+<td><strong>1</strong></td>
+<td><strong>EDI Parser Choice</strong></td>
+<td>Python Bots gRPC sidecar (Phase 1) → Native Go library (Phase 2). Hybrid approach.</td>
+<td>I-T03, A-T09, R-T02</td>
+</tr>
+<tr>
+<td><strong>2</strong></td>
+<td><strong>Buyer Connectivity</strong></td>
+<td>TrueCommerce ISV Partnership for delivery. Direct certification in parallel.</td>
+<td>R-B01, A-B03, D-H02, I-P01</td>
+</tr>
+<tr>
+<td><strong>3</strong></td>
+<td><strong>Tally Adapter</strong></td>
+<td>JSON-first (TallyPrime 7.0), XML fallback. Bridge agent required. Apply for 5-Star Partner.</td>
+<td>A-T01, I-T02, R-T07, R-T01</td>
+</tr>
+<tr>
+<td><strong>4</strong></td>
+<td><strong>Pricing Model</strong></td>
+<td>₹4,999-24,999/month, INR-only, annual payment with 2-months-free. 30-day free trial.</td>
+<td>A-B01, R-B04, R-B02</td>
+</tr>
+<tr>
+<td><strong>5</strong></td>
+<td><strong>GTM Channel</strong></td>
+<td>Tally Partner Ecosystem + Tiruppur Textile Cluster + WhatsApp Referral.</td>
+<td>D-H06, R-B03, R-B05</td>
+</tr>
+</table>
+</div>
+<div class="card">
+<h3>Month-by-Month Execution Plan</h3>
+<table>
+<tr><th>Month</th><th>Actions</th><th>RAID Items Addressed</th></tr>
+<tr><td><strong>Month 1</strong></td><td>Hire/contract EDI specialist. Apply for Tally 5-Star Partner. Apply for TrueCommerce xChange ISV. Apply for Busy Strategic Partner. Pre-sell to 10 factories. Contact Marg API team.</td><td>D-H01, A-T01, R-B01, I-T01, I-T05, A-B01</td></tr>
+<tr><td><strong>Month 2</strong></td><td>Build Python Bots gRPC sidecar. Validate canonical model with 5 real factory datasets. Implement PostgreSQL RLS. Set up Vault HA. Define RTO/RPO. Sign up for Drata.</td><td>I-T03, A-T02, R-T08, D-V03, I-A01, R-S04</td></tr>
+<tr><td><strong>Month 3</strong></td><td>Build Tally JSON adapter + bridge agent PoC. Collect 10 buyer Implementation Guides. Build pre-flight EDI validator (Stage 1-2). AI mapping benchmark on real data.</td><td>I-T02, I-T04, R-T02, R-T04</td></tr>
+<tr><td><strong>Month 4</strong></td><td>Build buyer-specific validation (Stage 3). Complete TrueCommerce integration. First factory-to-buyer connection via TrueCommerce. Start SOC 2 evidence collection.</td><td>R-T02, R-B01, I-P01, R-S04</td></tr>
+<tr><td><strong>Month 5</strong></td><td>Build Zoho + SAP B1 adapters. Onboard first 5 paying customers. Billing system (manual Razorpay). WhatsApp referral program launch.</td><td>A-T04, R-B03, I-A04, D-H06</td></tr>
+<tr><td><strong>Month 6</strong></td><td>SOC 2 Type I audit. DR drill. Load testing. Start direct buyer certification (5 mid-market buyers). Begin Go EDI library build.</td><td>R-S04, I-A01, I-A03, R-B01, I-T03</td></tr>
+</table>
+</div>
+<div class="callout-green callout" style="margin-top: 32px;">
+<strong>Next Step:</strong> Share this document with GPT, Gemini, and industry experts. Ask them to challenge each recommendation. Bring their feedback back and we'll converge on the final execution plan together. Focus expert consultations on the 5 key decisions — those are the ones that matter most.
+</div>
+<div class="footer">
+FactoryConnect RAID Recommendations v1.0  |  Generated April 2026  |  20 Expert Answers • 5 Key Decisions • 6-Month Execution Plan  |  Based on research from official documentation, vendor portals, and industry benchmarks
+</div>
+
+
+<div class="footer">
+FactoryConnect Consolidated Documentation | Generated April 2026 | Author: Kishor Dama + Claude (Co-Architect)<br>
+This document merges multiple source artifacts into a single authoritative reference.
+</div>
+</div>
+<script>
+// Auto-generate sidebar navigation from h2 elements
+const navContent = document.getElementById('nav-content');
+const h2s = document.querySelectorAll('.main h2');
+h2s.forEach((h2, i) => {
+  const id = 'section-' + i;
+  h2.id = id;
+  const a = document.createElement('a');
+  a.href = '#' + id;
+  a.textContent = h2.textContent;
+  navContent.appendChild(a);
+});
+</script>
+</body>
+</html>

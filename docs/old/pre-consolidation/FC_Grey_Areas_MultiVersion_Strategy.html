@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FactoryConnect — Grey Areas, Multi-Version Strategy &amp; System Resilience</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f6f9; color: #1a1a2e; padding: 24px; max-width: 1200px; margin: 0 auto; }
+  h1 { font-size: 1.5rem; color: #0f3460; margin-bottom: 4px; }
+  h2 { font-size: 1.15rem; color: #0f3460; margin: 28px 0 12px; border-bottom: 2px solid #0f3460; padding-bottom: 6px; }
+  h3 { font-size: 0.95rem; color: #16213e; margin: 16px 0 8px; }
+  .subtitle { color: #555; font-size: 0.88rem; margin-bottom: 24px; }
+  .card { background: #fff; border-radius: 8px; padding: 20px 24px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin: 12px 0; }
+  th { background: #0f3460; color: #fff; padding: 9px 10px; text-align: left; font-size: 0.78rem; }
+  td { padding: 8px 10px; border-bottom: 1px solid #eee; vertical-align: top; }
+  tr:hover td { background: #f0f4ff; }
+  .tag { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.72rem; font-weight: 600; margin: 1px 2px; }
+  .tag-red { background: #ffe0e0; color: #c0392b; }
+  .tag-orange { background: #fff3cd; color: #856404; }
+  .tag-green { background: #d4edda; color: #155724; }
+  .tag-blue { background: #e8f0fe; color: #1a73e8; }
+  .tag-purple { background: #f3e5f5; color: #7b1fa2; }
+  .callout { background: #e8f0fe; border-left: 4px solid #1a73e8; padding: 14px 18px; margin: 14px 0; border-radius: 0 6px 6px 0; font-size: 0.85rem; }
+  .callout-red { background: #fce4ec; border-left-color: #c62828; }
+  .callout-green { background: #d4edda; border-left-color: #27ae60; }
+  .callout-warn { background: #fff3cd; border-left-color: #e67e22; }
+  .grey-area { background: #f5f5f5; border-left: 4px solid #616161; padding: 14px 18px; margin: 14px 0; border-radius: 0 6px 6px 0; }
+  pre { background: #1a1a2e; color: #e0e0e0; padding: 16px; border-radius: 6px; overflow-x: auto; font-size: 0.78rem; line-height: 1.6; margin: 10px 0; }
+  code { background: #f0f0f0; padding: 2px 6px; border-radius: 3px; font-size: 0.8rem; }
+  p, li { font-size: 0.87rem; line-height: 1.65; }
+  ul { margin: 6px 0 12px 20px; }
+  .solution-box { background: #0f3460; color: #fff; border-radius: 8px; padding: 18px 22px; margin: 14px 0; }
+  .solution-box h3 { color: #82aaff; }
+  .footer { margin-top: 24px; font-size: 0.78rem; color: #888; text-align: center; }
+</style>
+</head>
+<body>
+
+<h1>FactoryConnect — Grey Areas, Multi-Version Challenges &amp; Solutions</h1>
+<p class="subtitle">Identifying every edge case, version conflict, and system mismatch that can break factory-to-buyer communication — and how to overcome each one | April 2026</p>
+
+<h2>1. The 14 Grey Areas (Blind Spots)</h2>
+<p>These are the scenarios that will break in production if not addressed in architecture. Most integration platforms fail here.</p>
+
+<h3>Grey Area #1: Source System Field Drift</h3>
+<div class="grey-area">
+<p><strong>Problem:</strong> Factory updates their ERP (e.g., Tally Prime 4.0 → 4.1). Field names change, new fields appear, old fields deprecated. Zoho renames API fields between versions. SAP B1 patches alter Service Layer responses.</p>
+<p><strong>Impact:</strong> Existing mappings break silently. Data stops flowing or, worse, maps to wrong fields.</p>
+</div>
+<div class="solution-box">
+<h3>Solution: Source Schema Fingerprinting + Drift Detection</h3>
+<p>On every data sync, FC computes a schema fingerprint (hash of field names + types + nesting). If the fingerprint changes from the last sync:</p>
+<ul>
+<li>Auto-pause the connection (don't send corrupted data to buyer)</li>
+<li>Run AI re-mapping on the new schema against the existing mapping</li>
+<li>If AI confidence &gt;90%: auto-heal the mapping, log the change, resume</li>
+<li>If AI confidence &lt;90%: alert FC admin + factory. Manual review required.</li>
+<li>Store schema history for rollback</li>
+</ul>
+<pre>
+// Schema fingerprint on every sync
+const currentFingerprint = hashFields(incomingData);
+const lastFingerprint = await getLastFingerprint(connectionId);
+if (currentFingerprint !== lastFingerprint) {
+  await triggerSchemaDriftDetection(connectionId, incomingData, lastFingerprint);
+}
+</pre>
+</div>
+
+<h3>Grey Area #2: Buyer EDI Version Mismatch</h3>
+<div class="grey-area">
+<p><strong>Problem:</strong> Factory's buyer A uses EDI X12 4010, buyer B uses 5010, buyer C uses 5020. Same transaction set (850 PO) but different segment structures, different qualifiers, different mandatory fields. A Walmart 850 looks nothing like a Target 850 even on the same X12 version.</p>
+<p><strong>Impact:</strong> One-size-fits-all EDI mapping fails. Every buyer needs a buyer-specific implementation guide overlay.</p>
+</div>
+<div class="solution-box">
+<h3>Solution: Three-Layer Mapping Architecture</h3>
+<pre>
+Layer 1: BASE SPEC (standard X12 4010 / 5010 / Ariba cXML)
+  ↓  inherits + overrides
+Layer 2: BUYER TEMPLATE (Walmart-specific, H&M-specific, Bosch-specific)
+  ↓  inherits + overrides
+Layer 3: CONNECTION-LEVEL (factory-specific customizations for this buyer)
+
+// Resolution: connection overrides buyer template overrides base spec
+function resolveMapping(connectionId, baseVersion, buyerTemplateId) {
+  const base = loadBaseSpec(baseVersion);          // X12 5010 standard
+  const buyer = loadBuyerTemplate(buyerTemplateId); // Walmart overlay
+  const conn = loadConnectionOverrides(connectionId); // Factory-specific
+  return deepMerge(base, buyer, conn); // Connection wins, then buyer, then base
+}
+</pre>
+<p>This means: when a new factory connects to Walmart, they inherit the Walmart buyer template automatically. Only factory-specific deviations need configuration. The Walmart template is maintained once and shared across all factories selling to Walmart.</p>
+</div>
+
+<h3>Grey Area #3: The "Factory Has No ERP" Scenario</h3>
+<div class="grey-area">
+<p><strong>Problem:</strong> Many factories (especially in Bangladesh, smaller Indian SMEs) don't have any ERP. They run on Excel, paper registers, or WhatsApp. They can't push data to FC via API because there's no system to push from.</p>
+<p><strong>Impact:</strong> No source connector works. The entire source-side architecture assumes an ERP exists.</p>
+</div>
+<div class="solution-box">
+<h3>Solution: Multi-Modal Ingestion Layer</h3>
+<p>FC must support non-ERP data sources as first-class citizens:</p>
+<table>
+<tr><th>Input Mode</th><th>How It Works</th><th>AI Role</th></tr>
+<tr><td><strong>WhatsApp Photo</strong></td><td>Factory sends photo of handwritten invoice, challan, or PO. FC AI (Claude Vision) extracts structured data.</td><td>OCR + field extraction + canonical mapping</td></tr>
+<tr><td><strong>Excel/CSV Upload</strong></td><td>Factory uploads Excel templates (FC provides pre-formatted templates). Portal or WhatsApp file share.</td><td>AI validates column mapping, flags anomalies</td></tr>
+<tr><td><strong>WhatsApp Text (NLP)</strong></td><td>"Ship 500 units of SKU-123 to Walmart PO #WM-8876" → AI parses structured order.</td><td>NLP entity extraction (Hindi, English, Bangla, Bahasa)</td></tr>
+<tr><td><strong>Email Parsing</strong></td><td>Factory forwards buyer PO email to <code>orders@factoryconnect.io</code>. FC parses PDF/Excel attachment.</td><td>AI extracts PO data from email body + attachments</td></tr>
+<tr><td><strong>FC Lite Portal</strong></td><td>Simple mobile-first web form. Factory manually enters order/invoice data. No ERP needed.</td><td>AI auto-completes fields based on history</td></tr>
+</table>
+<div class="callout callout-green"><strong>Key principle:</strong> The source connector is NOT the ERP. The source connector is the DATA INGESTION POINT. ERP is just one type. WhatsApp, email, Excel, manual entry are equally valid source connectors. The canonical model doesn't care where the data came from.</div>
+</div>
+
+<h3>Grey Area #4: SOAP Legacy Systems</h3>
+<div class="grey-area">
+<p><strong>Problem:</strong> Many large buyers (especially in automotive, defense, government) still use SOAP/XML web services, not REST. Some factories also have legacy SOAP-based ERPs. FC currently only designs for REST + EDI + cXML.</p>
+<p><strong>Impact:</strong> Can't connect to buyers like Bosch (SOAP-based supplier portal), Indian government GSTN (SOAP), older SAP PI/PO systems.</p>
+</div>
+<div class="solution-box">
+<h3>Solution: Universal Protocol Adapter Layer</h3>
+<pre>
+┌─────────────────────────────────────────────────────┐
+│              PROTOCOL ADAPTER LAYER                  │
+├─────────┬──────────┬──────────┬──────────┬──────────┤
+│  REST   │  SOAP    │  EDI/AS2 │  cXML    │  GraphQL │
+│ Adapter │ Adapter  │ Adapter  │ Adapter  │ Adapter  │
+├─────────┴──────────┴──────────┴──────────┴──────────┤
+│           CANONICAL MODEL (unchanged)                │
+└─────────────────────────────────────────────────────┘
+
+SOAP Adapter handles:
+  - WSDL auto-discovery and parsing
+  - WS-Security (UsernameToken, X509Token, SAML)
+  - SOAPAction routing
+  - MTOM attachments (for document exchange)
+  - SOAP 1.1 and 1.2 envelope differences
+  - WS-Addressing (for async SOAP)
+  - WS-ReliableMessaging (for guaranteed delivery)
+</pre>
+</div>
+
+<h3>Grey Area #5: Credential Lifecycle Management</h3>
+<div class="grey-area">
+<p><strong>Problem:</strong> Buyer AS2 certificates expire. OAuth tokens expire. API keys get rotated. Factory changes ERP passwords. Each connection has 3-6 credentials that expire at different times. At 500 connections, that's 2,000+ credentials to manage.</p>
+<p><strong>Impact:</strong> Silent failures when a cert expires at 2am. Data stops flowing. No one notices until a buyer complains about missing ASN.</p>
+</div>
+<div class="solution-box">
+<h3>Solution: Credential Lifecycle Engine</h3>
+<table>
+<tr><th>Feature</th><th>Implementation</th></tr>
+<tr><td><strong>Expiry Tracking</strong></td><td>Every credential stored with <code>expires_at</code> timestamp. Daily scan job checks all credentials. Alert at 30 days, 14 days, 7 days, 1 day before expiry.</td></tr>
+<tr><td><strong>Auto-Renewal</strong></td><td>OAuth tokens: auto-refresh using refresh_token before expiry. FC API keys: auto-rotate every 90 days with 7-day overlap. AS2 certs: alert only (requires buyer to reissue).</td></tr>
+<tr><td><strong>Fallback Auth</strong></td><td>If primary auth fails, try secondary (e.g., if OAuth token refresh fails, fall back to Basic auth if configured). Log escalation.</td></tr>
+<tr><td><strong>Credential Vault</strong></td><td>All secrets in HashiCorp Vault with transit encryption. Application never sees plaintext credentials. Audit log on every access.</td></tr>
+<tr><td><strong>Health Check</strong></td><td>Hourly connectivity test per connection. Ping buyer endpoint with minimal request. Track success rate. Alert on degradation before full failure.</td></tr>
+</table>
+</div>
+
+<h3>Grey Area #6: Data Format Conflicts Between Source &amp; Target</h3>
+<div class="grey-area">
+<p><strong>Problem:</strong> Factory sends date as "DD-MM-YYYY" (Indian format). Buyer expects "YYYYMMDD" (EDI) or "YYYY-MM-DDT00:00:00Z" (ISO 8601 for REST). Factory uses KG, buyer expects LB. Factory uses INR, buyer expects USD. Factory HSN codes don't match buyer's HTS codes. Factory godown names don't match buyer warehouse codes.</p>
+<p><strong>Impact:</strong> Data transforms are the #1 source of bugs in integration platforms. A date format bug can cause a shipment to be rejected.</p>
+</div>
+<div class="solution-box">
+<h3>Solution: Transform Function Library + AI Inference</h3>
+<table>
+<tr><th>Transform Type</th><th>Library Functions</th><th>AI Role</th></tr>
+<tr><td><strong>Date/Time</strong></td><td><code>dateConvert(value, fromFormat, toFormat, timezone)</code> — handles 50+ date formats. Auto-detects input format.</td><td>AI infers source date format from sample data. Detects edge cases (DD/MM vs MM/DD ambiguity).</td></tr>
+<tr><td><strong>Units</strong></td><td><code>unitConvert(value, fromUnit, toUnit)</code> — KG↔LB, MTR↔FT, LTR↔GAL, PCS↔DOZEN. Full UNECE Rec. 20 unit code mapping.</td><td>AI detects unit from field name or context. "Weight: 50" → infers KG if factory is Indian.</td></tr>
+<tr><td><strong>Currency</strong></td><td><code>currencyConvert(amount, from, to, rateDate)</code> — uses RBI/ECB reference rates. Rate locked at order date.</td><td>AI identifies currency fields even when not labeled. Detects implicit INR in Indian ERPs.</td></tr>
+<tr><td><strong>HSN → HTS</strong></td><td><code>hsnToHts(hsnCode)</code> — India HSN (8-digit) → US HTS (10-digit) cross-reference table. 12,000+ mappings maintained.</td><td>AI suggests HTS when exact match not found. Fuzzy matching on product description.</td></tr>
+<tr><td><strong>Address</strong></td><td><code>addressNormalize(raw, targetFormat)</code> — Indian addresses to structured international format. PIN → ZIP mapping.</td><td>AI parses unstructured addresses. Handles "Opp. SBI Bank, 2nd Cross, JP Nagar" → structured fields.</td></tr>
+<tr><td><strong>Code Mapping</strong></td><td><code>codeMap(value, mappingTable)</code> — configurable lookup tables per connection. Godown → Warehouse, Party Code → DUNS.</td><td>AI suggests mappings for new codes based on similar connections.</td></tr>
+<tr><td><strong>String</strong></td><td><code>truncate, pad, uppercase, concat, split, regex_extract</code> — EDI fields have strict length limits.</td><td>AI ensures output fits target field constraints (e.g., EDI N201 max 60 chars).</td></tr>
+</table>
+</div>
+
+<h3>Grey Area #7: Multi-Version Source Support (Same ERP, Different Versions)</h3>
+<div class="grey-area">
+<p><strong>Problem:</strong> Factory A runs Tally Prime 3.0 (older XML response format). Factory B runs Tally Prime 4.1 (new fields added, some renamed). Factory C runs Zoho Books API v2 (deprecated), Factory D runs Zoho Books API v3 (different response structure). SAP B1 10.0 FP2305 vs FP2402 have different Service Layer behaviors.</p>
+<p><strong>Impact:</strong> One source connector per ERP type is not enough. Need version-aware parsing.</p>
+</div>
+<div class="solution-box">
+<h3>Solution: Versioned Adapter Pattern</h3>
+<pre>
+// Adapter registry with version ranges
+const adapterRegistry = {
+  'TALLY_PRIME': {
+    '3.0-3.x': TallyV3Adapter,    // Old XML format
+    '4.0-4.x': TallyV4Adapter,    // New XML format with additional fields
+  },
+  'ZOHO_BOOKS': {
+    'v2': ZohoV2Adapter,           // Deprecated but some factories still on it
+    'v3': ZohoV3Adapter,           // Current
+  },
+  'SAP_B1': {
+    'SL_v1': SapB1V1Adapter,      // Older Service Layer
+    'SL_v2': SapB1V2Adapter,      // Newer Service Layer
+  }
+};
+
+// Version detection: auto-detect from response or config
+function detectVersion(erpType, sampleResponse) {
+  // AI analyzes response structure to determine version
+  // e.g., Tally V4 has GSTREGISTRATIONTYPE field, V3 doesn't
+  // Zoho V3 uses 'line_items', V2 uses 'line_item_list'
+  return aiDetectVersion(erpType, sampleResponse);
+}
+
+// Each adapter implements the same interface but handles version-specific parsing
+interface SourceAdapter {
+  parseProducts(raw: any): CanonicalProduct[];
+  parseOrders(raw: any): CanonicalOrder[];
+  parseInvoices(raw: any): CanonicalInvoice[];
+  parseInventory(raw: any): CanonicalInventory[];
+  writebackOrder(canonical: CanonicalOrder): any; // Transform back to ERP format
+  getVersion(): string;
+  detectVersion(sample: any): string;
+}
+</pre>
+<p><strong>Key rule:</strong> Never force a factory to upgrade their ERP. FC must support the version they have. Deprecation policy: support old versions for minimum 2 years after a new version is released.</p>
+</div>
+
+<h3>Grey Area #8: Buyer Changes Format Without Notice</h3>
+<div class="grey-area">
+<p><strong>Problem:</strong> Walmart updates their EDI implementation guide. H&M changes their cXML schema. Coupa releases a new API version and deprecates the old one. Target changes their ASN requirements. These changes often come with 30-60 days notice (or less).</p>
+<p><strong>Impact:</strong> All factories connected to that buyer break simultaneously.</p>
+</div>
+<div class="solution-box">
+<h3>Solution: Buyer Spec Monitoring + Graceful Versioning</h3>
+<table>
+<tr><th>Strategy</th><th>Implementation</th></tr>
+<tr><td><strong>Spec Version Registry</strong></td><td>For every buyer, store: current spec version, spec document (implementation guide), supported message types, known quirks. Track buyer announcements for changes.</td></tr>
+<tr><td><strong>Dual-Version Support</strong></td><td>When a buyer announces a version change, FC builds support for both old and new versions. Connections migrate individually (not all at once). Old version supported until all factories have migrated.</td></tr>
+<tr><td><strong>997/CONTRL Monitoring</strong></td><td>Track EDI functional acknowledgments (997 for X12, CONTRL for EDIFACT). If rejection rate suddenly spikes for a buyer, it likely means they changed something. Auto-alert FC engineering.</td></tr>
+<tr><td><strong>Buyer Relationship Manager</strong></td><td>For top 20 buyers (by factory count), FC maintains a direct relationship with buyer's EDI team. Proactive change notifications. FC joins buyer's supplier onboarding mailing list.</td></tr>
+<tr><td><strong>Regression Test Suite</strong></td><td>Per buyer, maintain a test transaction set. Run weekly against buyer's test endpoint. If tests fail = buyer changed something. Alert before production impact.</td></tr>
+</table>
+</div>
+
+<h3>Grey Area #9: Partial Data — Factory Doesn't Have All Fields Buyer Requires</h3>
+<div class="grey-area">
+<p><strong>Problem:</strong> Buyer's EDI 856 ASN requires SSCC barcodes, but factory doesn't generate them. Ariba OrderConfirmation needs estimated ship date, but factory doesn't track it. Buyer needs weight per carton, factory only knows total weight. CBAM requires carbon emission data per product, factory has never tracked it.</p>
+<p><strong>Impact:</strong> Buyer rejects the document. Transaction fails. Factory blames FC.</p>
+</div>
+<div class="solution-box">
+<h3>Solution: Smart Default Engine + Progressive Data Enrichment</h3>
+<table>
+<tr><th>Strategy</th><th>How It Works</th></tr>
+<tr><td><strong>Required vs Best-Effort</strong></td><td>Classify every buyer field as: MANDATORY (transaction fails without it), PREFERRED (buyer wants it but accepts empty), OPTIONAL (nice to have). Only block on MANDATORY.</td></tr>
+<tr><td><strong>Intelligent Defaults</strong></td><td>AI generates reasonable defaults from context: ship date = order date + factory's average lead time. Weight per carton = total weight / number of cartons. SSCC = FC generates compliant barcode using factory's GS1 prefix.</td></tr>
+<tr><td><strong>Progressive Enrichment</strong></td><td>Start with defaults. Over time, teach factory to provide the data. WhatsApp prompt: "Your buyer prefers weight per carton. Can you add this to your next Delivery Note?" Gamify completeness with a data quality score.</td></tr>
+<tr><td><strong>CBAM Data Collection</strong></td><td>Special onboarding flow for CBAM: collect factory's energy source (coal/gas/renewable %), production process emissions, transport mode. AI calculates emission factors using IPCC defaults where factory data is missing.</td></tr>
+</table>
+</div>
+
+<h3>Grey Area #10: Bidirectional Sync Conflicts</h3>
+<div class="grey-area">
+<p><strong>Problem:</strong> Buyer sends PO. FC creates order in factory ERP. Factory modifies the order in ERP (changes quantity). Buyer also modifies the PO (changes delivery date). Now FC has two conflicting versions. Who wins?</p>
+<p><strong>Impact:</strong> Data inconsistency. Wrong quantities shipped. Invoice mismatches. Payment disputes.</p>
+</div>
+<div class="solution-box">
+<h3>Solution: Conflict Resolution Policy Engine</h3>
+<pre>
+Conflict Resolution Rules (configurable per connection):
+
+RULE 1: BUYER_WINS (default for most connections)
+  - Buyer is the source of truth for: PO quantity, delivery date, price, ship-to address
+  - Factory is the source of truth for: shipment details, invoice data, inventory levels
+  - On conflict: buyer's version overwrites, factory notified via WhatsApp
+
+RULE 2: LAST_WRITE_WINS (for equal-authority connections)
+  - Timestamp-based resolution. Latest change wins.
+  - Both parties notified of the change.
+
+RULE 3: MANUAL_RESOLUTION (for high-value orders)
+  - On conflict: pause sync. Alert factory admin. Show diff.
+  - Factory must explicitly approve or reject the change.
+
+RULE 4: FIELD-LEVEL RULES (granular)
+  - Quantity: buyer_wins
+  - Delivery date: buyer_wins
+  - Price: factory_wins (factory re-quotes if buyer changes quantity)
+  - Packaging instructions: last_write_wins
+</pre>
+</div>
+
+<h3>Grey Area #11: Intermittent Connectivity (Factory Side)</h3>
+<div class="grey-area">
+<p><strong>Problem:</strong> Indian factory internet is unreliable. Power cuts. ISP outages. Tally runs on a single PC that gets turned off at night. VPN disconnects during large data transfers.</p>
+<p><strong>Impact:</strong> Incomplete syncs. Duplicate data. Missed polling cycles. Buyer doesn't get ASN on time.</p>
+</div>
+<div class="solution-box">
+<h3>Solution: Store-and-Forward with Idempotency</h3>
+<table>
+<tr><th>Component</th><th>Mechanism</th></tr>
+<tr><td><strong>Bridge Agent Local Queue</strong></td><td>Bridge agent has local SQLite DB. Queues all outbound data. Retries with exponential backoff (5s, 30s, 2m, 10m, 1h). Max queue: 48 hours. Survives PC restart.</td></tr>
+<tr><td><strong>Idempotency Keys</strong></td><td>Every message has a unique idempotency key (SHA256 of factory_id + document_type + document_id + version). FC deduplicates on receipt. Safe to retry infinitely.</td></tr>
+<tr><td><strong>Sync Checkpoints</strong></td><td>Bridge agent tracks last successful sync timestamp per data type. On reconnect, only syncs changes since last checkpoint. No full re-sync.</td></tr>
+<tr><td><strong>Heartbeat Monitoring</strong></td><td>Agent sends heartbeat every 60s. If FC doesn't receive heartbeat for 5 min → alert FC ops. 30 min → alert factory IT. 2 hrs → alert factory admin via WhatsApp.</td></tr>
+<tr><td><strong>Offline Mode</strong></td><td>For WhatsApp/CSV factories: FC accepts data whenever it arrives. No real-time expectation. SLA is "within 4 hours of factory submitting data."</td></tr>
+</table>
+</div>
+
+<h3>Grey Area #12: Multi-Currency, Multi-Tax, Multi-Regulation</h3>
+<div class="grey-area">
+<p><strong>Problem:</strong> Factory invoices in INR. Buyer wants USD. Exchange rate at which date? Order date or invoice date? Which country's tax rules apply? India GST or destination country VAT? CBAM is EU-only. What about UK CBAM (planned)? Each target country has different e-invoicing rules.</p>
+</div>
+<div class="solution-box">
+<h3>Solution: Regulation Engine (pluggable per jurisdiction)</h3>
+<pre>
+RegulationEngine {
+  jurisdictions: [
+    IndiaGST    → e-Invoice IRN, e-Way Bill, GSTR-1
+    EU_CBAM     → Carbon reporting, CBAM declaration
+    EU_VAT      → EU e-Invoice (EN 16931), Peppol
+    US_EDI      → X12 compliance, UCC requirements
+    UK_CBAM     → UK carbon border adjustment (when live)
+    UAE_VAT     → VAT e-Invoice (FTA format)
+  ]
+
+  // Auto-select regulations based on: factory country + buyer country + product type
+  function getApplicableRegulations(factoryCountry, buyerCountry, productHSN) {
+    // India factory → EU buyer → steel product = IndiaGST + EU_CBAM + EU_VAT
+    // India factory → US buyer → pharma = IndiaGST + US_EDI
+    // Indonesia factory → EU buyer → aluminium = IndonesiaVAT + EU_CBAM
+  }
+}
+</pre>
+</div>
+
+<h3>Grey Area #13: Testing Without Buyer Cooperation</h3>
+<div class="grey-area">
+<p><strong>Problem:</strong> Large buyers (Walmart, Bosch, Samsung) take weeks to set up test environments. Some never provide test endpoints. Factory is onboarded and ready but can't test because buyer hasn't responded. This is the #1 bottleneck in onboarding.</p>
+</div>
+<div class="solution-box">
+<h3>Solution: FC Buyer Simulator</h3>
+<p>FC builds a <strong>buyer simulation engine</strong> that mimics buyer endpoints for testing:</p>
+<table>
+<tr><th>Buyer Type</th><th>Simulator Capability</th></tr>
+<tr><td>EDI X12</td><td>FC runs a test AS2 endpoint that accepts 855/856/810, validates against buyer's implementation guide, returns 997 FA. Simulates buyer's response patterns.</td></tr>
+<tr><td>Ariba</td><td>FC runs a mock Ariba cXML endpoint. Sends test OrderRequests. Validates ConfirmationRequests and ShipNoticeRequests against Ariba schema.</td></tr>
+<tr><td>Coupa</td><td>FC runs a mock Coupa API. Simulates PO webhooks. Validates invoice and ASN API calls.</td></tr>
+<tr><td>Custom REST/SOAP</td><td>FC generates mock endpoint from buyer's OpenAPI spec or WSDL. Returns realistic test responses.</td></tr>
+</table>
+<p>Result: Factory can complete 90% of testing without buyer participation. Only final certification requires buyer's real test environment.</p>
+</div>
+
+<h3>Grey Area #14: The "N+1 Buyer System" Problem</h3>
+<div class="grey-area">
+<p><strong>Problem:</strong> A factory's new buyer uses a system FC has never seen before — a custom procurement portal, a niche industry-specific platform, or a regional system (e.g., Jaggaer, GEP, Ivalua, Basware). There's no existing target adapter.</p>
+</div>
+<div class="solution-box">
+<h3>Solution: Generic Adapter + AI-Assisted Connector Builder</h3>
+<p>FC maintains a <strong>Generic REST Adapter</strong> and <strong>Generic SOAP Adapter</strong> that can be configured (not coded) for any buyer:</p>
+<table>
+<tr><th>Step</th><th>How It Works</th></tr>
+<tr><td>1. Spec Import</td><td>Upload buyer's OpenAPI spec, WSDL, or Postman collection. FC parses automatically.</td></tr>
+<tr><td>2. AI Mapping</td><td>AI maps canonical model fields to buyer's API fields. Generates target_mapping.</td></tr>
+<tr><td>3. Auth Config</td><td>Configure auth type (API key, OAuth, mTLS, WS-Security) via UI. No code.</td></tr>
+<tr><td>4. Test</td><td>FC sends test transactions to buyer's sandbox. Validate responses.</td></tr>
+<tr><td>5. Promote</td><td>If buyer gets 3+ factories on FC, promote from Generic Adapter to Named Adapter (with buyer-specific optimizations).</td></tr>
+</table>
+<p><strong>Key insight:</strong> You'll never anticipate every buyer system. The Generic Adapter + AI mapping means FC can connect to ANY buyer with a REST or SOAP API within 1-2 days, without writing new code.</p>
+</div>
+
+<h2>2. Multi-Version Strategy: The Version Matrix</h2>
+<div class="card">
+<p>This is the master compatibility matrix FC must maintain. Every cell represents a tested, supported combination:</p>
+<table>
+<tr>
+  <th rowspan="2" style="width:15%">Source ERP</th>
+  <th colspan="6">Target System</th>
+</tr>
+<tr>
+  <th>X12 4010</th><th>X12 5010</th><th>Ariba cXML</th><th>Coupa v34+</th><th>EDIFACT D96A</th><th>Custom REST</th>
+</tr>
+<tr><td>Tally Prime 3.x</td><td style="background:#d4edda">Tested</td><td style="background:#d4edda">Tested</td><td style="background:#d4edda">Tested</td><td style="background:#d4edda">Tested</td><td style="background:#fff3cd">Planned</td><td style="background:#d4edda">Tested</td></tr>
+<tr><td>Tally Prime 4.x</td><td style="background:#d4edda">Tested</td><td style="background:#d4edda">Tested</td><td style="background:#d4edda">Tested</td><td style="background:#d4edda">Tested</td><td style="background:#fff3cd">Planned</td><td style="background:#d4edda">Tested</td></tr>
+<tr><td>Zoho Books v2</td><td style="background:#d4edda">Tested</td><td style="background:#d4edda">Tested</td><td style="background:#d4edda">Tested</td><td style="background:#d4edda">Tested</td><td style="background:#fff3cd">Planned</td><td style="background:#d4edda">Tested</td></tr>
+<tr><td>Zoho Books v3</td><td style="background:#d4edda">Tested</td><td style="background:#d4edda">Tested</td><td style="background:#d4edda">Tested</td><td style="background:#d4edda">Tested</td><td style="background:#fff3cd">Planned</td><td style="background:#d4edda">Tested</td></tr>
+<tr><td>SAP B1 SL v1</td><td style="background:#d4edda">Tested</td><td style="background:#d4edda">Tested</td><td style="background:#d4edda">Tested</td><td style="background:#d4edda">Tested</td><td style="background:#d4edda">Tested</td><td style="background:#d4edda">Tested</td></tr>
+<tr><td>SAP B1 SL v2</td><td style="background:#d4edda">Tested</td><td style="background:#d4edda">Tested</td><td style="background:#d4edda">Tested</td><td style="background:#d4edda">Tested</td><td style="background:#d4edda">Tested</td><td style="background:#d4edda">Tested</td></tr>
+<tr><td>Accurate (Indonesia)</td><td style="background:#fff3cd">Planned</td><td style="background:#fff3cd">Planned</td><td style="background:#fff3cd">Planned</td><td style="background:#fff3cd">Planned</td><td style="background:#ffe0e0">TBD</td><td style="background:#fff3cd">Planned</td></tr>
+<tr><td>CSV / Excel</td><td style="background:#d4edda">Tested</td><td style="background:#d4edda">Tested</td><td style="background:#d4edda">Tested</td><td style="background:#d4edda">Tested</td><td style="background:#d4edda">Tested</td><td style="background:#d4edda">Tested</td></tr>
+<tr><td>WhatsApp NLP</td><td style="background:#d4edda">Tested</td><td style="background:#d4edda">Tested</td><td style="background:#d4edda">Tested</td><td style="background:#d4edda">Tested</td><td style="background:#fff3cd">Planned</td><td style="background:#d4edda">Tested</td></tr>
+<tr><td>Custom REST</td><td style="background:#d4edda">Tested</td><td style="background:#d4edda">Tested</td><td style="background:#d4edda">Tested</td><td style="background:#d4edda">Tested</td><td style="background:#d4edda">Tested</td><td style="background:#d4edda">Tested</td></tr>
+<tr><td>Custom SOAP</td><td style="background:#fff3cd">Planned</td><td style="background:#fff3cd">Planned</td><td style="background:#fff3cd">Planned</td><td style="background:#fff3cd">Planned</td><td style="background:#fff3cd">Planned</td><td style="background:#d4edda">Tested</td></tr>
+</table>
+<p style="margin-top:8px; font-size:0.8rem; color:#555;"><span style="background:#d4edda; padding:2px 8px;">Tested</span> = Integration tested end-to-end. <span style="background:#fff3cd; padding:2px 8px;">Planned</span> = Architecture supports, needs testing. <span style="background:#ffe0e0; padding:2px 8px;">TBD</span> = May not be needed.</p>
+</div>
+
+<h2>3. Architecture Recommendations to Make It Bulletproof</h2>
+<div class="card">
+<table>
+<tr><th style="width:5%">#</th><th style="width:25%">Recommendation</th><th style="width:70%">Why &amp; How</th></tr>
+<tr><td>1</td><td><strong>Schema Registry with Versioning</strong></td><td>Every source format (Tally XML v3, v4) and target format (X12 4010, 5010) registered as a versioned schema in PostgreSQL. Mappings reference schema versions, not hardcoded formats. When a new version appears, add schema — old mappings continue working.</td></tr>
+<tr><td>2</td><td><strong>Adapter Plugin Architecture</strong></td><td>Each source and target adapter is a self-contained plugin (Node.js module) with a standard interface. New adapters added without touching core engine. Adapters can be hot-loaded without restart. Community/customer can contribute adapters.</td></tr>
+<tr><td>3</td><td><strong>Canonical Model is Sacred</strong></td><td>NEVER add buyer-specific or ERP-specific fields to the canonical model. Use the <code>attributes JSONB</code> field for everything non-standard. The 6 canonical entities are the contract. Changing them breaks everything.</td></tr>
+<tr><td>4</td><td><strong>Message Replay &amp; Audit Trail</strong></td><td>Store every inbound and outbound message in its raw format (MinIO). Every transformation step logged. If a mapping error is discovered, replay the original messages through the corrected mapping. No data loss ever.</td></tr>
+<tr><td>5</td><td><strong>Circuit Breaker per Connection</strong></td><td>If a buyer endpoint fails 3 times consecutively, open the circuit breaker. Queue messages. Retry every 5 min. Alert FC ops. Prevents cascade failure where one buyer's outage affects other connections.</td></tr>
+<tr><td>6</td><td><strong>AI Mapping Confidence Threshold</strong></td><td>Auto-approve AI mappings with confidence &gt;95%. Send to human review if 80-95%. Reject if &lt;80%. Over time, the threshold increases as AI learns from corrections. Track AI accuracy per ERP type.</td></tr>
+<tr><td>7</td><td><strong>Buyer Template Library</strong></td><td>Maintain pre-built buyer templates for top 50 global buyers (Walmart, Amazon, Bosch, Samsung, H&M, etc.). When a factory says "I sell to Walmart", the entire buyer configuration loads from template. Only factory-specific fields need configuration.</td></tr>
+<tr><td>8</td><td><strong>Backward Compatibility Contract</strong></td><td>FC API versioning: <code>/v1</code> supported forever (or until 0 factories use it). <code>/v2</code> adds features, never removes. Deprecation = 12 months notice + migration assistance. Factory never forced to upgrade.</td></tr>
+</table>
+</div>
+
+<div class="card" style="background:#0f3460; color:#fff;">
+<h2 style="color:#fff; border-bottom-color:#4a7ab5; margin-top:0;">Summary: How to Build a Better System</h2>
+<p style="margin-top:12px;">The 3 principles that make FactoryConnect resilient across all these grey areas:</p>
+<p style="margin-top:12px;"><strong>1. Configuration over Code:</strong> Every new factory-buyer pair is a database row, not a deployment. Generic adapters + AI mapping means zero engineering per connection. Code only changes when adding a fundamentally new protocol.</p>
+<p style="margin-top:12px;"><strong>2. AI as the Onboarding Engine:</strong> Claude analyzes sample data, detects systems, generates mappings, suggests defaults, heals schema drift. Humans review, not create. This is what makes 10,000 connections manageable.</p>
+<p style="margin-top:12px;"><strong>3. Version Everything, Break Nothing:</strong> Schema registry, versioned adapters, three-layer mapping inheritance, backward-compatible APIs. A factory onboarded today on Tally Prime 3.0 still works when Tally releases version 6.0 — because the old adapter remains.</p>
+</div>
+
+<p class="footer">FactoryConnect Grey Areas &amp; Multi-Version Strategy v1.0 | Architecture guidance for resilient N&times;M integration | April 2026</p>
+</body>
+</html>

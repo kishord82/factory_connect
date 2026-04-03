@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FactoryConnect - Security Best Practices &amp; RACI</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f6f9; color: #1a1a2e; padding: 24px; max-width: 1200px; margin: 0 auto; }
+  h1 { font-size: 1.5rem; color: #0f3460; margin-bottom: 4px; }
+  h2 { font-size: 1.15rem; color: #0f3460; margin: 28px 0 12px; border-bottom: 2px solid #0f3460; padding-bottom: 6px; }
+  h3 { font-size: 0.95rem; color: #16213e; margin: 16px 0 8px; }
+  .subtitle { color: #555; font-size: 0.88rem; margin-bottom: 24px; }
+  .card { background: #fff; border-radius: 8px; padding: 20px 24px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin: 12px 0; }
+  th { background: #0f3460; color: #fff; padding: 9px 10px; text-align: center; font-size: 0.78rem; }
+  th:first-child { text-align: left; }
+  td { padding: 8px 10px; border-bottom: 1px solid #eee; vertical-align: top; text-align: center; }
+  td:first-child { text-align: left; font-weight: 500; }
+  tr:hover td { background: #f0f4ff; }
+  .r { color: #c0392b; font-weight: 700; } /* Responsible */
+  .a { color: #0f3460; font-weight: 700; } /* Accountable */
+  .c { color: #e67e22; font-weight: 600; } /* Consulted */
+  .i { color: #888; } /* Informed */
+  .legend { display: flex; gap: 20px; flex-wrap: wrap; margin: 10px 0; font-size: 0.82rem; }
+  .legend span { padding: 2px 8px; border-radius: 4px; }
+  .tag { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.73rem; font-weight: 600; }
+  .tag-critical { background: #ffe0e0; color: #c0392b; }
+  .tag-high { background: #fff3cd; color: #856404; }
+  .tag-medium { background: #d4edda; color: #155724; }
+  .env-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 600; margin: 1px; }
+  .env-onprem { background: #e8f0fe; color: #1a73e8; }
+  .env-cloud { background: #fce4ec; color: #c62828; }
+  .env-hybrid { background: #f3e5f5; color: #7b1fa2; }
+  p, li { font-size: 0.87rem; line-height: 1.6; }
+  ul { margin: 6px 0 12px 20px; }
+  .callout { background: #fff3cd; border-left: 4px solid #e67e22; padding: 12px 16px; margin: 12px 0; border-radius: 0 6px 6px 0; font-size: 0.85rem; }
+  .footer { margin-top: 24px; font-size: 0.78rem; color: #888; text-align: center; }
+  @media print { body { padding: 8px; } .card { break-inside: avoid; } }
+</style>
+</head>
+<body>
+
+<h1>FactoryConnect Security Best Practices &amp; RACI Accountability</h1>
+<p class="subtitle">Security framework for on-premises, cloud, and hybrid factory environments connecting to FactoryConnect SaaS | April 2026</p>
+
+<h2>1. Stakeholder Definitions</h2>
+<div class="card">
+<table>
+<tr><th style="text-align:left; width:20%">Role</th><th style="text-align:left; width:25%">Organization</th><th style="text-align:left">Description</th></tr>
+<tr><td><strong>FC-Eng</strong></td><td>FactoryConnect Engineering</td><td>Platform development team. Builds and maintains all microservices, APIs, connectors, and infrastructure code.</td></tr>
+<tr><td><strong>FC-Ops</strong></td><td>FactoryConnect DevOps/SRE</td><td>Manages cloud infrastructure, deployments, monitoring, incident response, and disaster recovery.</td></tr>
+<tr><td><strong>FC-Sec</strong></td><td>FactoryConnect Security</td><td>Security architecture, compliance, penetration testing, security reviews, and policy enforcement.</td></tr>
+<tr><td><strong>FC-PM</strong></td><td>FactoryConnect Product</td><td>Product decisions, customer communication, SLA definitions, feature prioritization.</td></tr>
+<tr><td><strong>Cust-IT</strong></td><td>Factory Customer IT</td><td>Factory's IT team or managed IT provider. Manages factory ERP, network, Tally bridge agent installation.</td></tr>
+<tr><td><strong>Cust-Mgmt</strong></td><td>Factory Customer Management</td><td>Factory owner/director who signs off on security policies, data sharing agreements, and budgets.</td></tr>
+<tr><td><strong>Buyer-IT</strong></td><td>Global Buyer IT</td><td>Buyer's procurement/IT team managing Ariba, Coupa, or EDI VAN. Provides AS2 certificates, endpoints.</td></tr>
+</table>
+</div>
+
+<h2>2. RACI Legend</h2>
+<div class="card">
+<div class="legend">
+  <span><span class="r">R</span> = Responsible (does the work)</span>
+  <span><span class="a">A</span> = Accountable (final authority, signs off)</span>
+  <span><span class="c">C</span> = Consulted (provides input before action)</span>
+  <span><span class="i">I</span> = Informed (notified after action)</span>
+</div>
+<div class="legend" style="margin-top:8px;">
+  <span><span class="env-tag env-onprem">On-Prem</span> = Factory with on-premises ERP only</span>
+  <span><span class="env-tag env-cloud">Cloud</span> = Factory using cloud ERP (Zoho, ERPNext)</span>
+  <span><span class="env-tag env-hybrid">Hybrid</span> = Mix of on-prem + cloud systems</span>
+</div>
+</div>
+
+<h2>3. Security Controls RACI Matrix</h2>
+
+<h3>3.1 Network Security</h3>
+<div class="card">
+<table>
+<tr>
+  <th style="width:28%">Security Control</th>
+  <th>Env</th>
+  <th>FC-Eng</th>
+  <th>FC-Ops</th>
+  <th>FC-Sec</th>
+  <th>FC-PM</th>
+  <th>Cust-IT</th>
+  <th>Cust-Mgmt</th>
+  <th>Buyer-IT</th>
+  <th>Severity</th>
+</tr>
+<tr>
+  <td>TLS 1.3 encryption on all API endpoints</td>
+  <td><span class="env-tag env-onprem">All</span></td>
+  <td class="r">R</td><td class="a">A</td><td class="c">C</td><td class="i">I</td><td class="i">I</td><td class="i">I</td><td class="i">I</td>
+  <td><span class="tag tag-critical">Critical</span></td>
+</tr>
+<tr>
+  <td>VPN tunnel (factory → FactoryConnect)</td>
+  <td><span class="env-tag env-onprem">On-Prem</span></td>
+  <td class="c">C</td><td class="r">R</td><td class="a">A</td><td class="i">I</td><td class="r">R</td><td class="a">A</td><td class="i">I</td>
+  <td><span class="tag tag-critical">Critical</span></td>
+</tr>
+<tr>
+  <td>IP allowlisting for Tally bridge agent</td>
+  <td><span class="env-tag env-onprem">On-Prem</span></td>
+  <td class="r">R</td><td class="r">R</td><td class="c">C</td><td class="i">I</td><td class="r">R</td><td class="i">I</td><td class="i">I</td>
+  <td><span class="tag tag-high">High</span></td>
+</tr>
+<tr>
+  <td>WAF (Web Application Firewall) on API gateway</td>
+  <td><span class="env-tag env-cloud">All</span></td>
+  <td class="c">C</td><td class="r">R</td><td class="a">A</td><td class="i">I</td><td class="i">I</td><td class="i">I</td><td class="i">I</td>
+  <td><span class="tag tag-critical">Critical</span></td>
+</tr>
+<tr>
+  <td>DDoS protection (Cloudflare / Cloud Armor)</td>
+  <td><span class="env-tag env-cloud">All</span></td>
+  <td class="i">I</td><td class="r">R</td><td class="a">A</td><td class="i">I</td><td class="i">I</td><td class="i">I</td><td class="i">I</td>
+  <td><span class="tag tag-high">High</span></td>
+</tr>
+<tr>
+  <td>Network segmentation (microservice isolation)</td>
+  <td><span class="env-tag env-cloud">All</span></td>
+  <td class="r">R</td><td class="a">A</td><td class="c">C</td><td class="i">I</td><td class="i">I</td><td class="i">I</td><td class="i">I</td>
+  <td><span class="tag tag-high">High</span></td>
+</tr>
+<tr>
+  <td>AS2 mutual TLS with buyer endpoints</td>
+  <td><span class="env-tag env-hybrid">All</span></td>
+  <td class="r">R</td><td class="r">R</td><td class="a">A</td><td class="i">I</td><td class="i">I</td><td class="i">I</td><td class="r">R</td>
+  <td><span class="tag tag-critical">Critical</span></td>
+</tr>
+<tr>
+  <td>Factory firewall outbound rules (ports 443, 9000)</td>
+  <td><span class="env-tag env-onprem">On-Prem</span></td>
+  <td class="c">C</td><td class="c">C</td><td class="c">C</td><td class="i">I</td><td class="r">R</td><td class="a">A</td><td class="i">I</td>
+  <td><span class="tag tag-high">High</span></td>
+</tr>
+</table>
+</div>
+
+<h3>3.2 Authentication &amp; Access Control</h3>
+<div class="card">
+<table>
+<tr>
+  <th style="width:28%">Security Control</th>
+  <th>Env</th>
+  <th>FC-Eng</th>
+  <th>FC-Ops</th>
+  <th>FC-Sec</th>
+  <th>FC-PM</th>
+  <th>Cust-IT</th>
+  <th>Cust-Mgmt</th>
+  <th>Buyer-IT</th>
+  <th>Severity</th>
+</tr>
+<tr>
+  <td>Keycloak multi-tenant SSO configuration</td>
+  <td><span class="env-tag env-cloud">All</span></td>
+  <td class="r">R</td><td class="a">A</td><td class="c">C</td><td class="i">I</td><td class="i">I</td><td class="i">I</td><td class="i">I</td>
+  <td><span class="tag tag-critical">Critical</span></td>
+</tr>
+<tr>
+  <td>API key rotation policy (90-day max)</td>
+  <td><span class="env-tag env-cloud">All</span></td>
+  <td class="r">R</td><td class="r">R</td><td class="a">A</td><td class="i">I</td><td class="r">R</td><td class="i">I</td><td class="i">I</td>
+  <td><span class="tag tag-high">High</span></td>
+</tr>
+<tr>
+  <td>Factory user RBAC (admin/operator/viewer)</td>
+  <td><span class="env-tag env-cloud">All</span></td>
+  <td class="r">R</td><td class="i">I</td><td class="c">C</td><td class="c">C</td><td class="r">R</td><td class="a">A</td><td class="i">I</td>
+  <td><span class="tag tag-high">High</span></td>
+</tr>
+<tr>
+  <td>MFA enforcement for factory admin accounts</td>
+  <td><span class="env-tag env-cloud">All</span></td>
+  <td class="r">R</td><td class="i">I</td><td class="a">A</td><td class="i">I</td><td class="r">R</td><td class="a">A</td><td class="i">I</td>
+  <td><span class="tag tag-critical">Critical</span></td>
+</tr>
+<tr>
+  <td>Service-to-service mTLS (internal mesh)</td>
+  <td><span class="env-tag env-cloud">All</span></td>
+  <td class="r">R</td><td class="a">A</td><td class="c">C</td><td class="i">I</td><td class="i">I</td><td class="i">I</td><td class="i">I</td>
+  <td><span class="tag tag-high">High</span></td>
+</tr>
+<tr>
+  <td>Tally bridge agent authentication token</td>
+  <td><span class="env-tag env-onprem">On-Prem</span></td>
+  <td class="r">R</td><td class="c">C</td><td class="a">A</td><td class="i">I</td><td class="r">R</td><td class="i">I</td><td class="i">I</td>
+  <td><span class="tag tag-critical">Critical</span></td>
+</tr>
+<tr>
+  <td>WhatsApp channel user verification (OTP)</td>
+  <td><span class="env-tag env-cloud">All</span></td>
+  <td class="r">R</td><td class="i">I</td><td class="a">A</td><td class="c">C</td><td class="i">I</td><td class="i">I</td><td class="i">I</td>
+  <td><span class="tag tag-high">High</span></td>
+</tr>
+</table>
+</div>
+
+<h3>3.3 Data Protection &amp; Privacy</h3>
+<div class="card">
+<table>
+<tr>
+  <th style="width:28%">Security Control</th>
+  <th>Env</th>
+  <th>FC-Eng</th>
+  <th>FC-Ops</th>
+  <th>FC-Sec</th>
+  <th>FC-PM</th>
+  <th>Cust-IT</th>
+  <th>Cust-Mgmt</th>
+  <th>Buyer-IT</th>
+  <th>Severity</th>
+</tr>
+<tr>
+  <td>Encryption at rest (AES-256 for all datastores)</td>
+  <td><span class="env-tag env-cloud">All</span></td>
+  <td class="r">R</td><td class="a">A</td><td class="c">C</td><td class="i">I</td><td class="i">I</td><td class="i">I</td><td class="i">I</td>
+  <td><span class="tag tag-critical">Critical</span></td>
+</tr>
+<tr>
+  <td>Tenant data isolation (row-level + schema)</td>
+  <td><span class="env-tag env-cloud">All</span></td>
+  <td class="r">R</td><td class="c">C</td><td class="a">A</td><td class="i">I</td><td class="i">I</td><td class="i">I</td><td class="i">I</td>
+  <td><span class="tag tag-critical">Critical</span></td>
+</tr>
+<tr>
+  <td>PII masking in logs (GST numbers, pricing)</td>
+  <td><span class="env-tag env-cloud">All</span></td>
+  <td class="r">R</td><td class="c">C</td><td class="a">A</td><td class="i">I</td><td class="i">I</td><td class="i">I</td><td class="i">I</td>
+  <td><span class="tag tag-high">High</span></td>
+</tr>
+<tr>
+  <td>DPDPA 2023 compliance (consent, data access)</td>
+  <td><span class="env-tag env-cloud">All</span></td>
+  <td class="c">C</td><td class="i">I</td><td class="r">R</td><td class="a">A</td><td class="i">I</td><td class="c">C</td><td class="i">I</td>
+  <td><span class="tag tag-critical">Critical</span></td>
+</tr>
+<tr>
+  <td>Data retention policy (configurable per tenant)</td>
+  <td><span class="env-tag env-cloud">All</span></td>
+  <td class="r">R</td><td class="r">R</td><td class="c">C</td><td class="a">A</td><td class="c">C</td><td class="a">A</td><td class="i">I</td>
+  <td><span class="tag tag-high">High</span></td>
+</tr>
+<tr>
+  <td>Backup encryption and access control</td>
+  <td><span class="env-tag env-cloud">All</span></td>
+  <td class="c">C</td><td class="r">R</td><td class="a">A</td><td class="i">I</td><td class="i">I</td><td class="i">I</td><td class="i">I</td>
+  <td><span class="tag tag-critical">Critical</span></td>
+</tr>
+<tr>
+  <td>Secrets management (Vault / cloud KMS)</td>
+  <td><span class="env-tag env-cloud">All</span></td>
+  <td class="r">R</td><td class="a">A</td><td class="c">C</td><td class="i">I</td><td class="i">I</td><td class="i">I</td><td class="i">I</td>
+  <td><span class="tag tag-critical">Critical</span></td>
+</tr>
+<tr>
+  <td>Factory local data (Tally) backup responsibility</td>
+  <td><span class="env-tag env-onprem">On-Prem</span></td>
+  <td class="c">C</td><td class="i">I</td><td class="c">C</td><td class="i">I</td><td class="r">R</td><td class="a">A</td><td class="i">I</td>
+  <td><span class="tag tag-high">High</span></td>
+</tr>
+</table>
+</div>
+
+<h3>3.4 Application Security</h3>
+<div class="card">
+<table>
+<tr>
+  <th style="width:28%">Security Control</th>
+  <th>Env</th>
+  <th>FC-Eng</th>
+  <th>FC-Ops</th>
+  <th>FC-Sec</th>
+  <th>FC-PM</th>
+  <th>Cust-IT</th>
+  <th>Cust-Mgmt</th>
+  <th>Buyer-IT</th>
+  <th>Severity</th>
+</tr>
+<tr>
+  <td>Parameterized SQL queries (no concatenation)</td>
+  <td><span class="env-tag env-cloud">All</span></td>
+  <td class="r">R</td><td class="i">I</td><td class="a">A</td><td class="i">I</td><td class="i">I</td><td class="i">I</td><td class="i">I</td>
+  <td><span class="tag tag-critical">Critical</span></td>
+</tr>
+<tr>
+  <td>Input validation on all connector payloads</td>
+  <td><span class="env-tag env-cloud">All</span></td>
+  <td class="r">R</td><td class="i">I</td><td class="a">A</td><td class="i">I</td><td class="i">I</td><td class="i">I</td><td class="i">I</td>
+  <td><span class="tag tag-critical">Critical</span></td>
+</tr>
+<tr>
+  <td>Rate limiting per tenant (Kong gateway)</td>
+  <td><span class="env-tag env-cloud">All</span></td>
+  <td class="r">R</td><td class="a">A</td><td class="c">C</td><td class="c">C</td><td class="i">I</td><td class="i">I</td><td class="i">I</td>
+  <td><span class="tag tag-high">High</span></td>
+</tr>
+<tr>
+  <td>Idempotency keys for all mutations</td>
+  <td><span class="env-tag env-cloud">All</span></td>
+  <td class="r">R</td><td class="i">I</td><td class="c">C</td><td class="i">I</td><td class="i">I</td><td class="i">I</td><td class="i">I</td>
+  <td><span class="tag tag-high">High</span></td>
+</tr>
+<tr>
+  <td>SAST/DAST scanning in CI/CD pipeline</td>
+  <td><span class="env-tag env-cloud">All</span></td>
+  <td class="r">R</td><td class="r">R</td><td class="a">A</td><td class="i">I</td><td class="i">I</td><td class="i">I</td><td class="i">I</td>
+  <td><span class="tag tag-high">High</span></td>
+</tr>
+<tr>
+  <td>Dependency vulnerability scanning (Snyk/Trivy)</td>
+  <td><span class="env-tag env-cloud">All</span></td>
+  <td class="r">R</td><td class="r">R</td><td class="a">A</td><td class="i">I</td><td class="i">I</td><td class="i">I</td><td class="i">I</td>
+  <td><span class="tag tag-high">High</span></td>
+</tr>
+<tr>
+  <td>Annual penetration test (third-party)</td>
+  <td><span class="env-tag env-cloud">All</span></td>
+  <td class="c">C</td><td class="c">C</td><td class="r">R</td><td class="a">A</td><td class="i">I</td><td class="i">I</td><td class="i">I</td>
+  <td><span class="tag tag-critical">Critical</span></td>
+</tr>
+</table>
+</div>
+
+<h3>3.5 Monitoring, Incident Response &amp; Compliance</h3>
+<div class="card">
+<table>
+<tr>
+  <th style="width:28%">Security Control</th>
+  <th>Env</th>
+  <th>FC-Eng</th>
+  <th>FC-Ops</th>
+  <th>FC-Sec</th>
+  <th>FC-PM</th>
+  <th>Cust-IT</th>
+  <th>Cust-Mgmt</th>
+  <th>Buyer-IT</th>
+  <th>Severity</th>
+</tr>
+<tr>
+  <td>Centralized audit logging (all API calls)</td>
+  <td><span class="env-tag env-cloud">All</span></td>
+  <td class="r">R</td><td class="a">A</td><td class="c">C</td><td class="i">I</td><td class="i">I</td><td class="i">I</td><td class="i">I</td>
+  <td><span class="tag tag-critical">Critical</span></td>
+</tr>
+<tr>
+  <td>Real-time anomaly detection (unusual data volumes)</td>
+  <td><span class="env-tag env-cloud">All</span></td>
+  <td class="r">R</td><td class="r">R</td><td class="a">A</td><td class="i">I</td><td class="i">I</td><td class="i">I</td><td class="i">I</td>
+  <td><span class="tag tag-high">High</span></td>
+</tr>
+<tr>
+  <td>Incident response plan (documented, tested)</td>
+  <td><span class="env-tag env-cloud">All</span></td>
+  <td class="c">C</td><td class="r">R</td><td class="a">A</td><td class="r">R</td><td class="i">I</td><td class="i">I</td><td class="c">C</td>
+  <td><span class="tag tag-critical">Critical</span></td>
+</tr>
+<tr>
+  <td>Breach notification (72-hour DPDPA / CERT-In)</td>
+  <td><span class="env-tag env-cloud">All</span></td>
+  <td class="i">I</td><td class="r">R</td><td class="r">R</td><td class="a">A</td><td class="i">I</td><td class="i">I</td><td class="i">I</td>
+  <td><span class="tag tag-critical">Critical</span></td>
+</tr>
+<tr>
+  <td>SOC 2 Type II certification (Year 2)</td>
+  <td><span class="env-tag env-cloud">All</span></td>
+  <td class="c">C</td><td class="r">R</td><td class="r">R</td><td class="a">A</td><td class="i">I</td><td class="i">I</td><td class="i">I</td>
+  <td><span class="tag tag-high">High</span></td>
+</tr>
+<tr>
+  <td>ISO 27001 certification (Year 2-3)</td>
+  <td><span class="env-tag env-cloud">All</span></td>
+  <td class="c">C</td><td class="r">R</td><td class="r">R</td><td class="a">A</td><td class="i">I</td><td class="i">I</td><td class="i">I</td>
+  <td><span class="tag tag-high">High</span></td>
+</tr>
+<tr>
+  <td>Customer security audit support (annual)</td>
+  <td><span class="env-tag env-cloud">All</span></td>
+  <td class="c">C</td><td class="c">C</td><td class="r">R</td><td class="a">A</td><td class="r">R</td><td class="a">A</td><td class="c">C</td>
+  <td><span class="tag tag-medium">Medium</span></td>
+</tr>
+<tr>
+  <td>CERT-In compliance (6-hour incident reporting)</td>
+  <td><span class="env-tag env-cloud">All</span></td>
+  <td class="i">I</td><td class="r">R</td><td class="r">R</td><td class="a">A</td><td class="i">I</td><td class="i">I</td><td class="i">I</td>
+  <td><span class="tag tag-critical">Critical</span></td>
+</tr>
+</table>
+</div>
+
+<h2>4. Environment-Specific Security Playbooks</h2>
+
+<h3>4.1 On-Premises Factory (Tally Prime / Busy / Marg)</h3>
+<div class="card">
+<table>
+<tr><th style="text-align:left; width:25%">Layer</th><th style="text-align:left; width:35%">Best Practice</th><th style="text-align:left; width:20%">Owner</th><th style="text-align:left; width:20%">Tooling</th></tr>
+<tr><td>Connectivity</td><td>Install FactoryConnect Bridge Agent on factory LAN. Outbound-only HTTPS to FC cloud. No inbound ports opened.</td><td>Cust-IT (install) + FC-Ops (config)</td><td>FC Bridge Agent, WireGuard VPN</td></tr>
+<tr><td>Authentication</td><td>Bridge agent uses rotating JWT tokens (auto-renewed every 24h). Token stored in OS keychain, not plaintext.</td><td>FC-Eng (build) + Cust-IT (deploy)</td><td>Keycloak, OS Keychain API</td></tr>
+<tr><td>Data in Transit</td><td>All Tally XML data encrypted with TLS 1.3 in tunnel. No factory data touches public internet unencrypted.</td><td>FC-Ops</td><td>TLS 1.3, mTLS</td></tr>
+<tr><td>Local Data</td><td>Bridge agent caches failed syncs locally (encrypted). Auto-retries when connection restored. Max 48h local cache.</td><td>FC-Eng</td><td>SQLite (encrypted), AES-256</td></tr>
+<tr><td>Updates</td><td>Bridge agent auto-updates via signed packages. Factory IT can defer updates up to 7 days. No silent changes.</td><td>FC-Eng (package) + Cust-IT (approve)</td><td>Code signing, semver</td></tr>
+<tr><td>Monitoring</td><td>Agent heartbeat every 60s. Alert FC-Ops + Cust-IT if agent goes offline for &gt;5 min.</td><td>FC-Ops</td><td>Prometheus, Novu alerts</td></tr>
+</table>
+<div class="callout">Key principle for on-prem: <strong>The factory never opens inbound ports.</strong> The bridge agent always initiates outbound connections. This eliminates 90% of attack surface for factories with basic firewalls.</div>
+</div>
+
+<h3>4.2 Cloud Factory (Zoho Books / ERPNext / SAP B1 Cloud)</h3>
+<div class="card">
+<table>
+<tr><th style="text-align:left; width:25%">Layer</th><th style="text-align:left; width:35%">Best Practice</th><th style="text-align:left; width:20%">Owner</th><th style="text-align:left; width:20%">Tooling</th></tr>
+<tr><td>Connectivity</td><td>OAuth 2.0 / API key authentication with ERP cloud APIs. No VPN needed. Webhook verification (HMAC signatures).</td><td>FC-Eng + Cust-IT (API key provisioning)</td><td>OAuth 2.0, HMAC-SHA256</td></tr>
+<tr><td>Authorization</td><td>Request minimum scopes from ERP API. Read-only for sync; write-only for order confirmation. Principle of least privilege.</td><td>FC-Eng (implement) + FC-Sec (review)</td><td>OAuth scopes, Zoho API Console</td></tr>
+<tr><td>Webhook Security</td><td>All inbound webhooks verified via shared secret HMAC. IP allowlisting where supported (Zoho, SAP).</td><td>FC-Eng</td><td>HMAC, IP allowlist</td></tr>
+<tr><td>Token Storage</td><td>OAuth tokens encrypted in Vault/KMS. Never in application config or database plaintext.</td><td>FC-Eng + FC-Ops</td><td>HashiCorp Vault, GCP KMS</td></tr>
+<tr><td>Rate Limits</td><td>Respect ERP API rate limits. Implement exponential backoff. Queue overflow goes to DLQ for retry.</td><td>FC-Eng</td><td>BullMQ, Redis rate limiter</td></tr>
+</table>
+</div>
+
+<h3>4.3 Hybrid Factory (Tally on-prem + Zoho Inventory cloud)</h3>
+<div class="card">
+<table>
+<tr><th style="text-align:left; width:25%">Layer</th><th style="text-align:left; width:35%">Best Practice</th><th style="text-align:left; width:20%">Owner</th><th style="text-align:left; width:20%">Tooling</th></tr>
+<tr><td>Architecture</td><td>Bridge agent handles Tally (on-prem). Cloud connector handles Zoho (cloud). Both feed canonical model. No cross-contamination of credentials.</td><td>FC-Eng</td><td>Separate connector instances</td></tr>
+<tr><td>Data Reconciliation</td><td>Canonical model validates data from both sources. Conflict resolution rules defined per tenant. Audit trail for all merges.</td><td>FC-Eng + Cust-IT</td><td>JSONata, audit log</td></tr>
+<tr><td>Credential Isolation</td><td>Tally bridge token and Zoho OAuth token stored in separate Vault paths. Compromising one doesn't expose the other.</td><td>FC-Eng + FC-Ops</td><td>Vault namespaces</td></tr>
+<tr><td>Failover</td><td>If one source goes down, the other continues. No single point of failure. Manual reconciliation UI for conflicts.</td><td>FC-Eng + FC-Ops</td><td>BullMQ DLQ, conflict UI</td></tr>
+</table>
+<div class="callout">Hybrid is the most complex scenario. Recommend: <strong>onboard factories as single-source first</strong> (Tally OR Zoho), then add second source after 30 days of stable operation.</div>
+</div>
+
+<h2>5. Compliance Roadmap</h2>
+<div class="card">
+<table>
+<tr><th>Phase</th><th>Timeline</th><th>Compliance Target</th><th>Owner</th><th>Cost Estimate</th></tr>
+<tr><td>Phase 1 (Launch)</td><td>Month 1-6</td><td>DPDPA 2023 basics, CERT-In registration, TLS everywhere, Vault for secrets, basic audit logging</td><td>FC-Sec + FC-Eng</td><td>Rs 2-3L (tooling)</td></tr>
+<tr><td>Phase 2 (Scale)</td><td>Month 7-12</td><td>SOC 2 Type I readiness, pen test, WAF hardening, MFA enforcement, incident response drills</td><td>FC-Sec + external auditor</td><td>Rs 8-12L (audit + tools)</td></tr>
+<tr><td>Phase 3 (Enterprise)</td><td>Year 2</td><td>SOC 2 Type II certification, ISO 27001, GDPR for EU buyers, buyer security questionnaire templates</td><td>FC-Sec + FC-PM</td><td>Rs 15-25L (certification)</td></tr>
+<tr><td>Phase 4 (Global)</td><td>Year 3</td><td>ISO 27701 (privacy), HIPAA readiness (pharma), PCI DSS (if payment processing), regional certifications</td><td>FC-Sec</td><td>Rs 20-30L</td></tr>
+</table>
+</div>
+
+<h2>6. Factory Onboarding Security Checklist</h2>
+<div class="card">
+<p>Every new factory customer goes through this checklist before going live:</p>
+<table>
+<tr><th style="text-align:left; width:5%">#</th><th style="text-align:left; width:35%">Step</th><th style="text-align:left; width:15%">Owner</th><th style="text-align:left; width:15%">Sign-off</th><th style="text-align:left; width:30%">Evidence Required</th></tr>
+<tr><td>1</td><td>Data Processing Agreement signed</td><td>FC-PM</td><td>Cust-Mgmt</td><td>Signed DPA document</td></tr>
+<tr><td>2</td><td>Network connectivity verified (VPN or HTTPS)</td><td>FC-Ops + Cust-IT</td><td>FC-Sec</td><td>Connectivity test report</td></tr>
+<tr><td>3</td><td>Bridge agent installed (on-prem) or OAuth connected (cloud)</td><td>Cust-IT</td><td>FC-Ops</td><td>Heartbeat confirmed in monitoring</td></tr>
+<tr><td>4</td><td>Admin account created with MFA enabled</td><td>Cust-IT</td><td>FC-Sec</td><td>MFA enrollment screenshot</td></tr>
+<tr><td>5</td><td>RBAC roles configured (admin, operator, viewer)</td><td>Cust-IT + FC-PM</td><td>Cust-Mgmt</td><td>Role assignment matrix</td></tr>
+<tr><td>6</td><td>Test data sync (non-production) successful</td><td>FC-Ops</td><td>Cust-IT</td><td>Sync log with 0 errors</td></tr>
+<tr><td>7</td><td>Data retention policy agreed</td><td>FC-PM</td><td>Cust-Mgmt</td><td>Retention config in tenant settings</td></tr>
+<tr><td>8</td><td>Emergency contact registered (both sides)</td><td>FC-PM + Cust-IT</td><td>Both</td><td>Contact list in CRM + portal</td></tr>
+<tr><td>9</td><td>Production go-live approved</td><td>FC-Ops</td><td>FC-Sec + Cust-Mgmt</td><td>Go-live sign-off form</td></tr>
+</table>
+</div>
+
+<p class="footer">FactoryConnect Security Framework v1.0 | Aligned with DPDPA 2023, CERT-In, ISO 27001, SOC 2 | April 2026</p>
+</body>
+</html>

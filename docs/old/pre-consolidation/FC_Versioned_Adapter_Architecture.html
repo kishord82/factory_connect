@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FactoryConnect — Versioned Adapter Architecture & Network Security</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f6f9; color: #1a1a2e; padding: 24px; max-width: 1300px; margin: 0 auto; }
+  h1 { font-size: 1.5rem; color: #0f3460; margin-bottom: 4px; }
+  h2 { font-size: 1.15rem; color: #0f3460; margin: 32px 0 12px; border-bottom: 2px solid #0f3460; padding-bottom: 6px; }
+  h3 { font-size: 0.95rem; color: #16213e; margin: 18px 0 8px; }
+  h4 { font-size: 0.88rem; color: #333; margin: 12px 0 6px; }
+  .subtitle { color: #555; font-size: 0.88rem; margin-bottom: 24px; }
+  .card { background: #fff; border-radius: 8px; padding: 20px 24px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin: 12px 0; }
+  th { background: #0f3460; color: #fff; padding: 9px 10px; text-align: left; font-size: 0.78rem; }
+  td { padding: 8px 10px; border-bottom: 1px solid #eee; vertical-align: top; }
+  tr:hover td { background: #f0f4ff; }
+  .tag { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.72rem; font-weight: 600; margin: 1px 2px; }
+  .tag-red { background: #ffe0e0; color: #c0392b; }
+  .tag-orange { background: #fff3cd; color: #856404; }
+  .tag-green { background: #d4edda; color: #155724; }
+  .tag-blue { background: #e8f0fe; color: #1a73e8; }
+  .tag-purple { background: #f3e5f5; color: #7b1fa2; }
+  .tag-teal { background: #e0f2f1; color: #00695c; }
+  .callout { background: #e8f0fe; border-left: 4px solid #1a73e8; padding: 14px 18px; margin: 14px 0; border-radius: 0 6px 6px 0; font-size: 0.85rem; }
+  .callout-red { background: #fce4ec; border-left-color: #c62828; }
+  .callout-green { background: #d4edda; border-left-color: #27ae60; }
+  .callout-warn { background: #fff3cd; border-left-color: #e67e22; }
+  .callout-purple { background: #f3e5f5; border-left-color: #7b1fa2; }
+  .solution-box { background: #0f3460; color: #fff; border-radius: 8px; padding: 18px 22px; margin: 14px 0; }
+  .solution-box h3 { color: #82aaff; margin-top: 0; }
+  .solution-box h4 { color: #c3e88d; }
+  .solution-box p, .solution-box li { color: #e0e0e0; }
+  .solution-box code { background: #16213e; color: #c3e88d; }
+  pre { background: #1a1a2e; color: #e0e0e0; padding: 16px; border-radius: 6px; overflow-x: auto; font-size: 0.78rem; line-height: 1.6; margin: 10px 0; }
+  pre .key { color: #82aaff; } pre .str { color: #c3e88d; } pre .num { color: #f78c6c; } pre .comment { color: #546e7a; }
+  code { background: #f0f0f0; padding: 2px 6px; border-radius: 3px; font-size: 0.8rem; }
+  p, li { font-size: 0.87rem; line-height: 1.65; }
+  ul, ol { margin: 6px 0 12px 20px; }
+  .flow-box { background: #16213e; color: #fff; border-radius: 8px; padding: 18px 22px; margin: 14px 0; font-family: 'Courier New', monospace; font-size: 0.78rem; line-height: 1.7; white-space: pre-wrap; overflow-x: auto; }
+  .section-header { background: linear-gradient(135deg, #0f3460, #16213e); color: #fff; padding: 14px 20px; border-radius: 8px 8px 0 0; font-weight: 700; font-size: 0.92rem; }
+  .section-body { background: #fff; padding: 16px 20px; border-radius: 0 0 8px 8px; border: 1px solid #e0e0e0; border-top: none; margin-bottom: 20px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  @media (max-width: 900px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+  .principle-box { background: #fff; border: 2px solid #0f3460; border-radius: 8px; padding: 16px; text-align: center; }
+  .principle-box .num { font-size: 1.8rem; font-weight: 800; color: #0f3460; }
+  .principle-box .label { font-size: 0.82rem; color: #555; margin-top: 4px; }
+  .lifecycle-bar { display: flex; gap: 0; margin: 16px 0; }
+  .lifecycle-step { flex: 1; padding: 10px 8px; text-align: center; font-size: 0.75rem; font-weight: 600; color: #fff; }
+  .lifecycle-step:first-child { border-radius: 6px 0 0 6px; }
+  .lifecycle-step:last-child { border-radius: 0 6px 6px 0; }
+  .footer { margin-top: 24px; font-size: 0.78rem; color: #888; text-align: center; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; }
+  .badge-active { background: #27ae60; color: #fff; }
+  .badge-deprecated { background: #e67e22; color: #fff; }
+  .badge-sunset { background: #c0392b; color: #fff; }
+  .badge-dev { background: #1a73e8; color: #fff; }
+</style>
+</head>
+<body>
+
+<h1>FactoryConnect — Versioned Adapter Architecture & Network Security</h1>
+<p class="subtitle">Independent, load-scalable microservice adapters for every source/target version with secure network layer, cipher management, and zero-downtime version lifecycle | April 2026</p>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2>1. Design Philosophy: Think Big, Keep It Simple</h2>
+<!-- ═══════════════════════════════════════════════════════ -->
+
+<div class="card">
+<p>Kishor's principle: <em>"Think big and solve with simple — not too complex to build."</em> Every decision in this architecture follows three rules:</p>
+
+<div class="grid-3" style="margin-top: 16px;">
+  <div class="principle-box">
+    <div class="num">1</div>
+    <div class="label"><strong>One Adapter = One Container</strong><br>Each source/target version is a single Docker container with one job. No shared state, no tangled dependencies.</div>
+  </div>
+  <div class="principle-box">
+    <div class="num">2</div>
+    <div class="label"><strong>Scale by Load, Not by Hope</strong><br>Kubernetes HPA scales each adapter independently based on actual message volume. Busy adapters get more pods; idle ones scale to zero.</div>
+  </div>
+  <div class="principle-box">
+    <div class="num">3</div>
+    <div class="label"><strong>Deploy & Decommission Freely</strong><br>Add a new version without touching existing ones. Sunset an old version when zero connections remain. No "big bang" migrations.</div>
+  </div>
+</div>
+
+<div class="callout" style="margin-top: 16px;">
+<strong>The Core Insight:</strong> FactoryConnect connects N factories (each with different ERP types and versions) to M buyers (each with different procurement systems and versions). Instead of building a monolithic translator that handles every combination, we build small, focused adapters — one per source version, one per target version — and let the <strong>Canonical Model</strong> in the middle be the universal translator. The routing engine picks the right adapter pair for each message. That's the entire complexity — everything else is just plumbing.
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2>2. Architecture Overview</h2>
+<!-- ═══════════════════════════════════════════════════════ -->
+
+<div class="flow-box">
+                            ┌─────────────────────────────────────────────────────────────┐
+                            │               FC ADAPTER MESH (Kubernetes)                   │
+                            │                                                             │
+  ┌─────────────┐           │  ┌──────────────┐    ┌─────────────┐    ┌──────────────┐   │          ┌─────────────┐
+  │ Tally 3.0   │──mTLS────▶│  │ src-tally-3  │    │             │    │ tgt-x12-4010 │───│──AS2────▶│ Walmart EDI │
+  │ Factory A   │           │  │ (2 pods)     │──▶ │  CANONICAL  │ ──▶│ (3 pods)     │   │          └─────────────┘
+  └─────────────┘           │  └──────────────┘    │   MODEL     │    └──────────────┘   │
+                            │                      │   ENGINE    │                       │
+  ┌─────────────┐           │  ┌──────────────┐    │             │    ┌──────────────┐   │          ┌─────────────┐
+  │ Tally 4.1   │──mTLS────▶│  │ src-tally-4  │──▶ │  (Routing   │ ──▶│ tgt-ariba-23 │───│──HTTPS──▶│ SAP Ariba   │
+  │ Factory B   │           │  │ (1 pod)      │    │   Engine)   │    │ (2 pods)     │   │          └─────────────┘
+  └─────────────┘           │  └──────────────┘    │             │    └──────────────┘   │
+                            │                      │  Validates   │                       │
+  ┌─────────────┐           │  ┌──────────────┐    │  Enriches    │    ┌──────────────┐   │          ┌─────────────┐
+  │ Zoho Books  │──HTTPS───▶│  │ src-zoho-v2  │──▶ │  Routes      │ ──▶│ tgt-coupa-31 │───│──REST───▶│ Coupa       │
+  │ Factory C   │           │  │ (1 pod)      │    │             │    │ (1 pod)      │   │          └─────────────┘
+  └─────────────┘           │  └──────────────┘    └─────────────┘    └──────────────┘   │
+                            │                                                             │
+                            │  ┌──────────────┐                       ┌──────────────┐   │          ┌─────────────┐
+  ┌─────────────┐           │  │ src-sapb1-10 │                       │ tgt-x12-5010 │───│──AS2────▶│ Target EDI  │
+  │ SAP B1 10.0 │──REST────▶│  │ (0 pods,     │                       │ (4 pods,     │   │          └─────────────┘
+  │ Factory D   │           │  │  scaled down) │                       │  high load)  │   │
+  └─────────────┘           │  └──────────────┘                       └──────────────┘   │
+                            │                                                             │
+                            │      ▲ HPA auto-scales each adapter independently ▲         │
+                            └─────────────────────────────────────────────────────────────┘
+                                                       │
+                                           ┌───────────┴───────────┐
+                                           │  NETWORK SECURITY     │
+                                           │  LAYER                │
+                                           │  - mTLS everywhere    │
+                                           │  - TLS 1.3 only       │
+                                           │  - Cipher allowlist   │
+                                           │  - AS2 mutual certs   │
+                                           └───────────────────────┘
+</div>
+
+<div class="card">
+<h3>How It Works — 5 Steps, That's It</h3>
+<ol>
+<li><strong>Message arrives</strong> from factory (webhook, poll, bridge push) into the matching <strong>Source Adapter</strong></li>
+<li><strong>Source Adapter transforms</strong> raw ERP data into FactoryConnect Canonical Model (6 entities: Product, Inventory, Order, Shipment, Invoice, Party)</li>
+<li><strong>Routing Engine</strong> looks up <code>connections</code> + <code>routing_rules</code> tables to find which buyer(s) should receive this, and which Target Adapter version to use</li>
+<li><strong>Target Adapter transforms</strong> Canonical Model into buyer-specific format (EDI 850, cXML OrderRequest, Coupa PO, etc.) using the three-layer mapping (Base Spec + Buyer Template + Connection Overrides)</li>
+<li><strong>Target Adapter delivers</strong> over the correct protocol (AS2, HTTPS, SFTP, cXML, SOAP) with proper security credentials</li>
+</ol>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2>3. Source Adapters: Versioned Microservices</h2>
+<!-- ═══════════════════════════════════════════════════════ -->
+
+<div class="card">
+<p>Each source adapter is a standalone Go microservice in its own Docker image. The adapter knows exactly one thing: how to read data from a specific ERP version and produce Canonical Model output.</p>
+
+<table>
+<thead>
+<tr><th>Adapter ID</th><th>ERP System</th><th>Version</th><th>Protocol In</th><th>Container Image</th><th>Status</th></tr>
+</thead>
+<tbody>
+<tr><td><code>src-tally-3</code></td><td>Tally Prime</td><td>3.x</td><td>XML Export / Bridge Agent</td><td><code>fc/src-tally:3</code></td><td><span class="badge badge-active">ACTIVE</span></td></tr>
+<tr><td><code>src-tally-4</code></td><td>Tally Prime</td><td>4.x</td><td>REST API / Bridge Agent</td><td><code>fc/src-tally:4</code></td><td><span class="badge badge-active">ACTIVE</span></td></tr>
+<tr><td><code>src-zoho-v2</code></td><td>Zoho Books</td><td>API v2</td><td>Webhooks + REST</td><td><code>fc/src-zoho:2</code></td><td><span class="badge badge-active">ACTIVE</span></td></tr>
+<tr><td><code>src-zoho-v3</code></td><td>Zoho Books</td><td>API v3</td><td>Webhooks + REST</td><td><code>fc/src-zoho:3</code></td><td><span class="badge badge-dev">DEV</span></td></tr>
+<tr><td><code>src-sapb1-10</code></td><td>SAP B1</td><td>10.0 FP2308+</td><td>Service Layer REST</td><td><code>fc/src-sapb1:10</code></td><td><span class="badge badge-active">ACTIVE</span></td></tr>
+<tr><td><code>src-busy-21</code></td><td>Busy Accounting</td><td>21.x</td><td>ODBC Bridge</td><td><code>fc/src-busy:21</code></td><td><span class="badge badge-active">ACTIVE</span></td></tr>
+<tr><td><code>src-marg-9</code></td><td>Marg ERP</td><td>9.x</td><td>SQL Bridge</td><td><code>fc/src-marg:9</code></td><td><span class="badge badge-active">ACTIVE</span></td></tr>
+<tr><td><code>src-erpnext-14</code></td><td>ERPNext</td><td>v14</td><td>REST API</td><td><code>fc/src-erpnext:14</code></td><td><span class="badge badge-active">ACTIVE</span></td></tr>
+<tr><td><code>src-erpnext-15</code></td><td>ERPNext</td><td>v15</td><td>REST API</td><td><code>fc/src-erpnext:15</code></td><td><span class="badge badge-dev">DEV</span></td></tr>
+<tr><td><code>src-whatsapp-v1</code></td><td>WhatsApp NLP</td><td>v1</td><td>WhatsApp Business API</td><td><code>fc/src-whatsapp:1</code></td><td><span class="badge badge-active">ACTIVE</span></td></tr>
+<tr><td><code>src-csv-v1</code></td><td>CSV/Excel Upload</td><td>v1</td><td>File Upload / Email</td><td><code>fc/src-csv:1</code></td><td><span class="badge badge-active">ACTIVE</span></td></tr>
+<tr><td><code>src-generic-rest</code></td><td>Any REST ERP</td><td>configurable</td><td>REST (OpenAPI spec)</td><td><code>fc/src-generic-rest:1</code></td><td><span class="badge badge-active">ACTIVE</span></td></tr>
+<tr><td><code>src-generic-soap</code></td><td>Any SOAP ERP</td><td>configurable</td><td>SOAP (WSDL)</td><td><code>fc/src-generic-soap:1</code></td><td><span class="badge badge-active">ACTIVE</span></td></tr>
+</tbody>
+</table>
+
+<div class="callout">
+<strong>Simplicity Rule:</strong> Each adapter has exactly one <code>Transform(rawData) -> CanonicalModel</code> function. It doesn't know about buyers, routing, or other adapters. It just translates its ERP dialect to the canonical format. That single responsibility is what makes the system simple despite handling N versions.
+</div>
+</div>
+
+<div class="solution-box">
+<h3>Source Adapter Internal Structure (Every Adapter Follows This)</h3>
+<pre>
+src-tally-4/
+  ├── main.go                 // HTTP server, health check, Prometheus metrics
+  ├── handler.go              // Receive data (webhook/poll/bridge)
+  ├── transform.go            // THE core logic: Tally 4.x XML/JSON → Canonical Model
+  ├── schema_detect.go        // Schema fingerprinting for drift detection
+  ├── validate.go             // Validate incoming Tally data before transform
+  ├── config.go               // Version-specific field mappings, defaults
+  ├── Dockerfile              // Single-stage build, ~15MB image
+  ├── k8s/
+  │   ├── deployment.yaml     // Resource limits, replicas, HPA reference
+  │   ├── hpa.yaml            // Auto-scale based on message queue depth
+  │   └── service.yaml        // ClusterIP service for internal routing
+  └── tests/
+      ├── transform_test.go   // Unit tests with real Tally 4.x sample data
+      └── testdata/           // Sample payloads from actual Tally 4.x exports
+</pre>
+<p style="margin-top: 12px;"><strong>Total lines of code per adapter: ~400-800.</strong> Small enough for one developer to own. Simple enough to build a new one in 1-2 days when a new ERP version arrives.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2>4. Target Adapters: Versioned Microservices</h2>
+<!-- ═══════════════════════════════════════════════════════ -->
+
+<div class="card">
+<p>Target adapters take Canonical Model data and transform it into buyer-specific formats, then deliver over the correct protocol. Each is also a standalone Go microservice.</p>
+
+<table>
+<thead>
+<tr><th>Adapter ID</th><th>Buyer System</th><th>Version</th><th>Protocol Out</th><th>Container Image</th><th>Status</th></tr>
+</thead>
+<tbody>
+<tr><td><code>tgt-x12-4010</code></td><td>EDI X12</td><td>4010</td><td>AS2 / SFTP</td><td><code>fc/tgt-x12:4010</code></td><td><span class="badge badge-active">ACTIVE</span></td></tr>
+<tr><td><code>tgt-x12-5010</code></td><td>EDI X12</td><td>5010</td><td>AS2 / SFTP</td><td><code>fc/tgt-x12:5010</code></td><td><span class="badge badge-active">ACTIVE</span></td></tr>
+<tr><td><code>tgt-x12-5020</code></td><td>EDI X12</td><td>5020</td><td>AS2 / SFTP</td><td><code>fc/tgt-x12:5020</code></td><td><span class="badge badge-dev">DEV</span></td></tr>
+<tr><td><code>tgt-ariba-23</code></td><td>SAP Ariba</td><td>cXML 1.2.053</td><td>HTTPS cXML</td><td><code>fc/tgt-ariba:23</code></td><td><span class="badge badge-active">ACTIVE</span></td></tr>
+<tr><td><code>tgt-ariba-24</code></td><td>SAP Ariba</td><td>cXML 1.2.060</td><td>HTTPS cXML</td><td><code>fc/tgt-ariba:24</code></td><td><span class="badge badge-dev">DEV</span></td></tr>
+<tr><td><code>tgt-coupa-31</code></td><td>Coupa</td><td>API R31</td><td>REST HTTPS</td><td><code>fc/tgt-coupa:31</code></td><td><span class="badge badge-active">ACTIVE</span></td></tr>
+<tr><td><code>tgt-coupa-34</code></td><td>Coupa</td><td>API R34</td><td>REST HTTPS</td><td><code>fc/tgt-coupa:34</code></td><td><span class="badge badge-dev">DEV</span></td></tr>
+<tr><td><code>tgt-oracle-v2</code></td><td>Oracle Fusion</td><td>REST v2</td><td>REST HTTPS</td><td><code>fc/tgt-oracle:2</code></td><td><span class="badge badge-active">ACTIVE</span></td></tr>
+<tr><td><code>tgt-edifact-d01b</code></td><td>EDIFACT</td><td>D.01B</td><td>OFTP2 / AS2</td><td><code>fc/tgt-edifact:d01b</code></td><td><span class="badge badge-active">ACTIVE</span></td></tr>
+<tr><td><code>tgt-edifact-d19a</code></td><td>EDIFACT</td><td>D.19A</td><td>OFTP2 / AS2</td><td><code>fc/tgt-edifact:d19a</code></td><td><span class="badge badge-dev">DEV</span></td></tr>
+<tr><td><code>tgt-generic-rest</code></td><td>Any REST buyer</td><td>configurable</td><td>REST HTTPS</td><td><code>fc/tgt-generic-rest:1</code></td><td><span class="badge badge-active">ACTIVE</span></td></tr>
+<tr><td><code>tgt-generic-soap</code></td><td>Any SOAP buyer</td><td>configurable</td><td>SOAP HTTPS</td><td><code>fc/tgt-generic-soap:1</code></td><td><span class="badge badge-active">ACTIVE</span></td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="solution-box">
+<h3>Target Adapter Internal Structure</h3>
+<pre>
+tgt-x12-5010/
+  ├── main.go                 // gRPC/HTTP server, health, metrics
+  ├── handler.go              // Receive canonical model from routing engine
+  ├── transform.go            // Canonical Model → X12 5010 segments
+  ├── mapping_loader.go       // Load three-layer mapping (base + buyer template + connection)
+  ├── envelope.go             // ISA/GS/ST envelope generation with buyer-specific IDs
+  ├── deliver_as2.go          // AS2 delivery with MDN tracking
+  ├── deliver_sftp.go         // SFTP delivery fallback
+  ├── acknowledge.go          // Handle 997 functional acknowledgments
+  ├── config.go               // Segment definitions, qualifiers, mandatory fields
+  ├── Dockerfile
+  ├── k8s/
+  │   ├── deployment.yaml
+  │   ├── hpa.yaml            // Scale on queue depth (messages waiting to be delivered)
+  │   └── service.yaml
+  └── tests/
+      ├── transform_test.go   // Verify output matches buyer implementation guide
+      └── testdata/           // Golden files: expected EDI output for known canonical input
+</pre>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2>5. Load-Based Auto-Scaling (Every Adapter Independently)</h2>
+<!-- ═══════════════════════════════════════════════════════ -->
+
+<div class="card">
+<p>This is where Kishor's insight about load-based scalability becomes architecture. Each adapter is a <strong>Kubernetes Deployment</strong> with its own <strong>Horizontal Pod Autoscaler (HPA)</strong>. The adapters that handle heavy traffic get more pods; adapters for rarely-used ERP versions scale to zero when idle.</p>
+
+<div class="callout-green callout">
+<strong>Why This is Simple:</strong> We don't build a custom load balancer. Kubernetes does it for us. We just tell it: "This adapter should have 1-20 pods, and scale up when the message queue depth exceeds 50." That's 15 lines of YAML per adapter. Zero custom code.
+</div>
+
+<h3>Scaling Strategy by Adapter Type</h3>
+<table>
+<thead>
+<tr><th>Adapter Type</th><th>Scale Metric</th><th>Min Pods</th><th>Max Pods</th><th>Scale-to-Zero?</th><th>Why</th></tr>
+</thead>
+<tbody>
+<tr><td>Source: Tally 3.x</td><td>Incoming message rate</td><td>1</td><td>10</td><td>No (always polling)</td><td>High usage — most Indian SMEs are on Tally 3.x</td></tr>
+<tr><td>Source: Tally 4.x</td><td>Incoming message rate</td><td>1</td><td>10</td><td>No</td><td>Growing adoption after Tally 4.x launch</td></tr>
+<tr><td>Source: Zoho Books v2</td><td>Webhook queue depth</td><td>1</td><td>5</td><td>No</td><td>Webhook-driven; needs a listener running</td></tr>
+<tr><td>Source: SAP B1</td><td>Incoming message rate</td><td>0</td><td>5</td><td>Yes (KEDA)</td><td>Fewer factories on SAP B1; scale from zero on demand</td></tr>
+<tr><td>Source: WhatsApp</td><td>Message queue depth</td><td>1</td><td>8</td><td>No</td><td>WhatsApp always online for no-ERP factories</td></tr>
+<tr><td>Source: CSV Upload</td><td>Upload queue depth</td><td>0</td><td>5</td><td>Yes (KEDA)</td><td>Batch uploads are bursty, not constant</td></tr>
+<tr><td>Target: X12 5010</td><td>Outbound queue depth</td><td>2</td><td>20</td><td>No</td><td>Highest volume — most US buyers on 5010</td></tr>
+<tr><td>Target: X12 4010</td><td>Outbound queue depth</td><td>1</td><td>10</td><td>No</td><td>Legacy but still used by many buyers</td></tr>
+<tr><td>Target: Ariba cXML</td><td>Outbound queue depth</td><td>1</td><td>10</td><td>No</td><td>SAP Ariba is second most common</td></tr>
+<tr><td>Target: Coupa REST</td><td>Outbound queue depth</td><td>0</td><td>5</td><td>Yes (KEDA)</td><td>Fewer Coupa buyers initially</td></tr>
+<tr><td>Target: EDIFACT</td><td>Outbound queue depth</td><td>0</td><td>5</td><td>Yes (KEDA)</td><td>EU buyers; ramp up with CBAM demand</td></tr>
+<tr><td>Target: Generic REST</td><td>Outbound queue depth</td><td>0</td><td>5</td><td>Yes (KEDA)</td><td>On-demand for unknown buyer systems</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="solution-box">
+<h3>HPA + KEDA Configuration (Example: tgt-x12-5010)</h3>
+<pre>
+<span class="comment"># k8s/hpa.yaml — scales tgt-x12-5010 based on Redis queue depth</span>
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: tgt-x12-5010-hpa
+  namespace: fc-adapters
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: tgt-x12-5010
+  minReplicas: 2
+  maxReplicas: 20
+  metrics:
+  - type: External
+    external:
+      metric:
+        name: redis_queue_depth
+        selector:
+          matchLabels:
+            queue: "outbound.x12.5010"
+      target:
+        type: AverageValue
+        averageValue: "50"     <span class="comment"># Scale up when > 50 msgs per pod</span>
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 30   <span class="comment"># React fast to load spikes</span>
+      policies:
+      - type: Pods
+        value: 4                       <span class="comment"># Add up to 4 pods at a time</span>
+        periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300  <span class="comment"># Wait 5 min before scaling down</span>
+      policies:
+      - type: Pods
+        value: 2
+        periodSeconds: 120
+</pre>
+<h4>KEDA ScaledObject for Scale-to-Zero Adapters</h4>
+<pre>
+<span class="comment"># k8s/scaledobject.yaml — for low-traffic adapters like tgt-coupa-31</span>
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: tgt-coupa-31-scaler
+  namespace: fc-adapters
+spec:
+  scaleTargetRef:
+    name: tgt-coupa-31
+  minReplicaCount: 0          <span class="comment"># Scale to ZERO when no messages</span>
+  maxReplicaCount: 5
+  cooldownPeriod: 300
+  triggers:
+  - type: redis
+    metadata:
+      address: redis.fc-infra.svc:6379
+      listName: "outbound.coupa.31"
+      listLength: "5"         <span class="comment"># Wake up when 5+ messages in queue</span>
+</pre>
+</div>
+
+<div class="card">
+<h3>Scale-to-Zero Economics</h3>
+<p>At 500 factories in Year 1, not every adapter runs 24/7. With KEDA, adapters for rarely-used systems (SAP B1 source, Coupa target, EDIFACT target, Generic REST/SOAP) sleep until work arrives. This cuts infrastructure cost by an estimated <strong>30-40%</strong> vs running all adapters at minimum 1 pod.</p>
+
+<div class="grid-2">
+<div>
+<h4>Always Running (24/7)</h4>
+<ul>
+<li>src-tally-3, src-tally-4 (most factories)</li>
+<li>src-zoho-v2 (webhook listener)</li>
+<li>src-whatsapp-v1 (always online)</li>
+<li>tgt-x12-5010, tgt-x12-4010 (bulk of US buyers)</li>
+<li>tgt-ariba-23 (major buyer system)</li>
+<li>Routing Engine + Canonical Model Engine</li>
+</ul>
+</div>
+<div>
+<h4>Scale-to-Zero (Wake on Demand)</h4>
+<ul>
+<li>src-sapb1-10 (fewer SMEs on SAP B1)</li>
+<li>src-csv-v1 (batch uploads only)</li>
+<li>tgt-coupa-31 (growing but lower volume)</li>
+<li>tgt-edifact-d01b (EU buyers, CBAM growth)</li>
+<li>tgt-oracle-v2 (selective buyers)</li>
+<li>All generic adapters (REST, SOAP)</li>
+</ul>
+</div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2>6. Adapter Version Lifecycle: Deploy → Active → Deprecated → Sunset</h2>
+<!-- ═══════════════════════════════════════════════════════ -->
+
+<div class="card">
+<div class="lifecycle-bar">
+  <div class="lifecycle-step" style="background: #1a73e8;">DEV<br><small>Building & testing</small></div>
+  <div class="lifecycle-step" style="background: #27ae60;">ACTIVE<br><small>Serving traffic</small></div>
+  <div class="lifecycle-step" style="background: #e67e22;">DEPRECATED<br><small>No new connections</small></div>
+  <div class="lifecycle-step" style="background: #c0392b;">SUNSET<br><small>Zero connections → remove</small></div>
+</div>
+
+<h3>Lifecycle Rules</h3>
+<table>
+<thead>
+<tr><th>Phase</th><th>What Happens</th><th>Connections</th><th>Duration</th></tr>
+</thead>
+<tbody>
+<tr><td><span class="badge badge-dev">DEV</span></td><td>Adapter built, unit tested, integration tested in sandbox. Not exposed to production traffic.</td><td>0 (sandbox only)</td><td>1-4 weeks per adapter</td></tr>
+<tr><td><span class="badge badge-active">ACTIVE</span></td><td>Deployed to production. New connections can be routed here. Scales based on load.</td><td>1 to N (growing)</td><td>Months to years</td></tr>
+<tr><td><span class="badge badge-deprecated">DEPRECATED</span></td><td>New connections are routed to the newer version. Existing connections still served. Migration nudges sent to factories/buyers.</td><td>Shrinking (migrating away)</td><td>3-12 months grace period</td></tr>
+<tr><td><span class="badge badge-sunset">SUNSET</span></td><td>Zero active connections. Container removed from cluster. Image archived in registry.</td><td>0</td><td>Removed after 30-day zero-traffic confirmation</td></tr>
+</tbody>
+</table>
+
+<div class="callout-warn callout">
+<strong>The "Two in Production" Pattern:</strong> When a new version arrives (e.g., Tally 4.x releases a breaking API change for Tally 5.x), we deploy <code>src-tally-5</code> alongside <code>src-tally-4</code>. Both run simultaneously. Existing Tally 4.x factories keep working on <code>src-tally-4</code>. New factories on Tally 5.x get <code>src-tally-5</code>. Over time, as factories upgrade, traffic shifts naturally. When <code>src-tally-4</code> reaches zero connections, it gets decommissioned. <strong>No forced migrations. No downtime.</strong>
+</div>
+</div>
+
+<div class="solution-box">
+<h3>Version Registry Table (PostgreSQL)</h3>
+<pre>
+CREATE TABLE adapter_versions (
+    adapter_id          VARCHAR(50) PRIMARY KEY,      <span class="comment">-- e.g. 'src-tally-4'</span>
+    adapter_type        VARCHAR(10) NOT NULL,          <span class="comment">-- 'source' or 'target'</span>
+    system_name         VARCHAR(50) NOT NULL,          <span class="comment">-- e.g. 'tally_prime'</span>
+    system_version      VARCHAR(20) NOT NULL,          <span class="comment">-- e.g. '4.x'</span>
+    protocol            VARCHAR(20) NOT NULL,          <span class="comment">-- e.g. 'REST', 'AS2', 'SOAP'</span>
+    container_image     VARCHAR(100) NOT NULL,         <span class="comment">-- e.g. 'fc/src-tally:4'</span>
+    lifecycle_status    VARCHAR(15) NOT NULL DEFAULT 'DEV',
+        <span class="comment">-- CHECK (lifecycle_status IN ('DEV','ACTIVE','DEPRECATED','SUNSET'))</span>
+    min_replicas        INT NOT NULL DEFAULT 0,
+    max_replicas        INT NOT NULL DEFAULT 5,
+    scale_metric        VARCHAR(50),                   <span class="comment">-- e.g. 'redis_queue_depth'</span>
+    scale_threshold     INT DEFAULT 50,
+    active_connections  INT NOT NULL DEFAULT 0,        <span class="comment">-- maintained by routing engine</span>
+    successor_id        VARCHAR(50),                   <span class="comment">-- e.g. 'src-tally-5' when deprecated</span>
+    deployed_at         TIMESTAMPTZ,
+    deprecated_at       TIMESTAMPTZ,
+    sunset_at           TIMESTAMPTZ,
+    created_at          TIMESTAMPTZ DEFAULT NOW(),
+    updated_at          TIMESTAMPTZ DEFAULT NOW()
+);
+
+<span class="comment">-- Quick lookups</span>
+CREATE INDEX idx_adapter_type_status ON adapter_versions(adapter_type, lifecycle_status);
+CREATE INDEX idx_system_name ON adapter_versions(system_name, lifecycle_status);
+
+<span class="comment">-- Connection routing: which adapter serves which connection</span>
+CREATE TABLE connection_adapter_bindings (
+    connection_id       UUID NOT NULL REFERENCES connections(id),
+    source_adapter_id   VARCHAR(50) NOT NULL REFERENCES adapter_versions(adapter_id),
+    target_adapter_id   VARCHAR(50) NOT NULL REFERENCES adapter_versions(adapter_id),
+    bound_at            TIMESTAMPTZ DEFAULT NOW(),
+    PRIMARY KEY (connection_id)
+);
+</pre>
+</div>
+
+<div class="card">
+<h3>Automatic Decommission Logic</h3>
+<pre>
+<span class="comment">// Runs daily as a cron job in the routing engine</span>
+func checkAdapterSunset(ctx context.Context) {
+    deprecated := getAdaptersByStatus("DEPRECATED")
+    for _, adapter := range deprecated {
+        activeConns := countActiveConnections(adapter.AdapterID)
+        if activeConns == 0 {
+            daysSinceZero := daysSinceLastConnection(adapter.AdapterID)
+            if daysSinceZero >= 30 {
+                <span class="comment">// Safe to remove — 30 days with zero traffic</span>
+                scaleToZero(adapter.AdapterID)
+                markSunset(adapter.AdapterID)
+                archiveContainerImage(adapter.ContainerImage)
+                notifyOps(fmt.Sprintf("Adapter %s sunset after 30d zero traffic", adapter.AdapterID))
+            }
+        }
+    }
+}
+</pre>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2>7. Routing Engine: Picking the Right Adapter Pair</h2>
+<!-- ═══════════════════════════════════════════════════════ -->
+
+<div class="card">
+<p>The Routing Engine is the brain. When a message arrives, it determines which source adapter processed it, which buyer(s) it goes to, and which target adapter version to use for each buyer. It uses the <code>connection_adapter_bindings</code> table for fast lookup.</p>
+
+<pre>
+<span class="comment">// Core routing logic — simple and fast</span>
+func routeMessage(ctx context.Context, msg CanonicalMessage) error {
+    <span class="comment">// 1. Find all buyer connections for this factory</span>
+    connections := getActiveConnections(msg.FactoryID)
+
+    for _, conn := range connections {
+        <span class="comment">// 2. Look up bound adapters for this connection</span>
+        binding := getAdapterBinding(conn.ConnectionID)
+
+        <span class="comment">// 3. Verify target adapter is still ACTIVE or DEPRECATED (not SUNSET)</span>
+        adapter := getAdapter(binding.TargetAdapterID)
+        if adapter.LifecycleStatus == "SUNSET" {
+            <span class="comment">// This shouldn't happen, but safety check</span>
+            alertOps("Routing to sunset adapter", binding.TargetAdapterID)
+            continue
+        }
+
+        <span class="comment">// 4. Load three-layer mapping for this connection</span>
+        mapping := loadMapping(conn.ConnectionID)
+
+        <span class="comment">// 5. Enqueue to the target adapter's work queue</span>
+        queueName := fmt.Sprintf("outbound.%s", binding.TargetAdapterID)
+        enqueue(queueName, TransformJob{
+            Message:      msg,
+            ConnectionID: conn.ConnectionID,
+            Mapping:      mapping,
+            IdempotencyKey: msg.IdempotencyKey,
+        })
+    }
+    return nil
+}
+</pre>
+
+<div class="callout">
+<strong>Why Queue-Based, Not Direct Call:</strong> Source adapters don't call target adapters directly. They produce a Canonical Model message, and the Routing Engine enqueues it to the correct target adapter's Redis queue. This decouples source and target completely — a target adapter can be restarted, scaled, or replaced without affecting sources. And it gives us natural backpressure: if a target adapter falls behind, the queue fills, KEDA scales it up.
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2>8. Version Flexibility: Handling Any Versioning Problem</h2>
+<!-- ═══════════════════════════════════════════════════════ -->
+
+<div class="card">
+<p>Kishor said: <em>"We should be flexible to any kind of versioning problems."</em> Here's how the architecture handles every versioning scenario we've identified:</p>
+
+<table>
+<thead>
+<tr><th>Versioning Problem</th><th>How the Architecture Handles It</th><th>Complexity</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>ERP releases a new version with breaking API changes</strong><br><small>e.g., Tally Prime 4.x → 5.x changes XML schema</small></td>
+<td>Deploy a new source adapter (<code>src-tally-5</code>) alongside the existing one. Both run. No migration needed. Route new factories to the new adapter.</td>
+<td><span class="tag tag-green">Low</span> New adapter, ~2 days</td>
+</tr>
+<tr>
+<td><strong>Buyer changes EDI version requirement</strong><br><small>e.g., Walmart moves from X12 4010 → 5010</small></td>
+<td>Update the buyer's <code>connection_adapter_bindings</code> to point to <code>tgt-x12-5010</code>. Existing mapping layers carry over (buyer template + connection overrides). Test in sandbox, flip the binding.</td>
+<td><span class="tag tag-green">Low</span> Config change + test</td>
+</tr>
+<tr>
+<td><strong>Same buyer, different versions for different document types</strong><br><small>e.g., PO on 5010 but Invoice on 4010</small></td>
+<td>Connection bindings are per <strong>document type</strong>, not per connection. One factory-buyer pair can have <code>tgt-x12-5010</code> for POs and <code>tgt-x12-4010</code> for invoices.</td>
+<td><span class="tag tag-green">Low</span> Routing rule config</td>
+</tr>
+<tr>
+<td><strong>Minor version patch with field changes</strong><br><small>e.g., Zoho Books API v2.3 adds a new field</small></td>
+<td>Schema fingerprinting detects the drift. If it's additive (new fields only), AI auto-heals the mapping. If it's breaking, pause and alert. No new adapter needed for minor changes — the existing adapter handles it via config update.</td>
+<td><span class="tag tag-green">Low</span> Auto-heal or config</td>
+</tr>
+<tr>
+<td><strong>Protocol change (not just version)</strong><br><small>e.g., Buyer switches from AS2 to SFTP, or from SOAP to REST</small></td>
+<td>The protocol is part of the target adapter. If buyer moves from SOAP to REST, create a new binding to <code>tgt-generic-rest</code> instead of <code>tgt-generic-soap</code>. Or build a new adapter if it's a major buyer.</td>
+<td><span class="tag tag-orange">Medium</span> New binding or adapter</td>
+</tr>
+<tr>
+<td><strong>Completely new ERP system enters the market</strong><br><small>e.g., A new Indian ERP startup gains traction</small></td>
+<td>Build a new source adapter from the template. Plug into the adapter mesh. Register in <code>adapter_versions</code>. Done. No changes to routing engine, canonical model, or any target adapter.</td>
+<td><span class="tag tag-orange">Medium</span> 1-2 weeks for new adapter</td>
+</tr>
+<tr>
+<td><strong>Regulatory format change</strong><br><small>e.g., EU CBAM report format v2 replaces v1</small></td>
+<td>Build <code>tgt-cbam-v2</code> alongside <code>tgt-cbam-v1</code>. Route based on effective date. Keep both until the deadline passes.</td>
+<td><span class="tag tag-green">Low</span> Standard lifecycle</td>
+</tr>
+<tr>
+<td><strong>Factory uses multiple ERP systems simultaneously</strong><br><small>e.g., Tally for accounting, Zoho for inventory</small></td>
+<td>Each ERP is a separate source connection to the same factory. Routing engine merges data by factory ID in the canonical model. Two source adapters, same factory.</td>
+<td><span class="tag tag-green">Low</span> Multi-source config</td>
+</tr>
+</tbody>
+</table>
+
+<div class="callout-green callout">
+<strong>The Universal Answer:</strong> For any versioning problem, the solution is always one of: (a) deploy a new adapter beside the old one, (b) update a config/mapping, or (c) update a connection binding. The core engine never changes. That's the power of the versioned microservice pattern — the complexity is isolated in small, replaceable containers.
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2>9. Network Security Layer</h2>
+<!-- ═══════════════════════════════════════════════════════ -->
+
+<div class="card">
+<p>B2B integration demands enterprise-grade network security. FactoryConnect handles data from ERPs (financial data, invoices, POs) and delivers to global buyers who require compliance with their security standards. The network security layer has three zones:</p>
+</div>
+
+<div class="section-header">Zone 1: Factory → FactoryConnect (Inbound)</div>
+<div class="section-body">
+<table>
+<thead>
+<tr><th>Security Control</th><th>Implementation</th><th>When Applied</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>TLS 1.3 Only</strong></td><td>All inbound HTTPS endpoints enforce TLS 1.3 minimum. TLS 1.0/1.1/1.2 rejected at load balancer.</td><td>Every connection</td></tr>
+<tr><td><strong>mTLS for On-Prem ERPs</strong></td><td>Tally/Busy/Marg bridge agents use mutual TLS. FC issues client certificates during onboarding. Factory bridge presents cert on every connection.</td><td>Bridge agent connections</td></tr>
+<tr><td><strong>API Key + JWT</strong></td><td>Cloud ERPs (Zoho, ERPNext) authenticate via FC-issued API key in header + short-lived JWT (15min expiry).</td><td>REST API connections</td></tr>
+<tr><td><strong>IP Allowlisting</strong></td><td>Optional: factories can lock their connection to specific source IPs. Enforced at GCP Cloud Armor / WAF level.</td><td>Optional per factory</td></tr>
+<tr><td><strong>Webhook Signature Verification</strong></td><td>Zoho/ERPNext webhooks include HMAC-SHA256 signature. FC validates before processing.</td><td>Webhook connections</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="section-header">Zone 2: Internal (Adapter Mesh Communication)</div>
+<div class="section-body">
+<table>
+<thead>
+<tr><th>Security Control</th><th>Implementation</th><th>Why</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Service Mesh mTLS</strong></td><td>Istio/Linkerd sidecar proxies enforce mTLS between all adapter pods. No plaintext traffic inside the cluster.</td><td>Zero-trust internal network</td></tr>
+<tr><td><strong>Network Policies</strong></td><td>Kubernetes NetworkPolicy: source adapters can only talk to the routing engine. Target adapters can only receive from the routing engine. No adapter-to-adapter direct communication.</td><td>Blast radius containment</td></tr>
+<tr><td><strong>Redis TLS</strong></td><td>Redis queues (message passing between routing engine and target adapters) use TLS-encrypted connections with client certificate auth.</td><td>Encrypt data in transit between services</td></tr>
+<tr><td><strong>Vault for Secrets</strong></td><td>All credentials (buyer AS2 keys, Ariba secrets, factory API keys) stored in HashiCorp Vault. Adapters fetch at startup via Kubernetes Service Account auth. Short-lived dynamic secrets where possible.</td><td>No secrets in env vars or config files</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="section-header">Zone 3: FactoryConnect → Buyer (Outbound)</div>
+<div class="section-body">
+<table>
+<thead>
+<tr><th>Protocol</th><th>Security</th><th>Details</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>AS2 (EDI X12)</strong></td><td>Mutual TLS + Message Encryption + Digital Signature</td><td>AS2 uses S/MIME: encrypt with buyer's public key (3DES or AES-256), sign with FC's private key (RSA-2048+). MDN receipt confirms delivery. TLS 1.3 for the transport layer.</td></tr>
+<tr><td><strong>cXML (Ariba)</strong></td><td>HTTPS + Shared Secret</td><td>cXML OrderRequest authenticated via SharedSecret in the Header/Credential block. TLS 1.3 transport. Ariba NetworkID validates identity.</td></tr>
+<tr><td><strong>REST (Coupa, Oracle)</strong></td><td>OAuth 2.0 Client Credentials + TLS 1.3</td><td>FC obtains access token from buyer's OAuth server. Token cached with auto-refresh before expiry. All calls over TLS 1.3.</td></tr>
+<tr><td><strong>OFTP2 (EDIFACT)</strong></td><td>TLS 1.3 + Digital Certificate</td><td>OFTP2 provides its own certificate exchange mechanism on top of TLS. Supports end-to-end response (EERP) for delivery confirmation.</td></tr>
+<tr><td><strong>SFTP (Fallback)</strong></td><td>SSH Key Auth + SFTP over SSH</td><td>Ed25519 SSH keys preferred. Password auth disabled. Chroot jail on buyer SFTP server.</td></tr>
+<tr><td><strong>SOAP (WS-Security)</strong></td><td>WS-Security + TLS 1.3</td><td>UsernameToken or X509Token in SOAP Header. Message-level signing (XML-DSIG) and encryption (XML-ENC) when buyer requires. TLS 1.3 transport.</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2>10. Cipher Suite Allowlist</h2>
+<!-- ═══════════════════════════════════════════════════════ -->
+
+<div class="card">
+<p>FactoryConnect enforces a strict cipher allowlist. Only modern AEAD (Authenticated Encryption with Associated Data) ciphers are permitted. Legacy ciphers (RC4, 3DES, CBC mode) are rejected.</p>
+
+<h3>TLS 1.3 Cipher Suites (Mandatory for All New Connections)</h3>
+<table>
+<thead>
+<tr><th>Cipher Suite</th><th>IANA Name</th><th>Use Case</th><th>Priority</th></tr>
+</thead>
+<tbody>
+<tr><td><code>TLS_AES_256_GCM_SHA384</code></td><td>0x13,0x02</td><td>Default for all connections. Hardware AES-NI acceleration on GCP VMs.</td><td><span class="tag tag-green">Primary</span></td></tr>
+<tr><td><code>TLS_CHACHA20_POLY1305_SHA256</code></td><td>0x13,0x03</td><td>Preferred when client has no AES hardware (mobile, bridge agents on old hardware).</td><td><span class="tag tag-blue">Secondary</span></td></tr>
+<tr><td><code>TLS_AES_128_GCM_SHA256</code></td><td>0x13,0x01</td><td>Fallback. Still AEAD, still strong. For buyers with 128-bit policy.</td><td><span class="tag tag-orange">Fallback</span></td></tr>
+</tbody>
+</table>
+
+<h3>Legacy Compatibility (AS2 with Older Buyer Systems, TLS 1.2 Only)</h3>
+<table>
+<thead>
+<tr><th>Cipher Suite</th><th>When Allowed</th><th>Status</th></tr>
+</thead>
+<tbody>
+<tr><td><code>TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384</code></td><td>Buyers that haven't upgraded to TLS 1.3 yet. Time-bound: allowed until Dec 2027.</td><td><span class="tag tag-orange">Conditional</span></td></tr>
+<tr><td><code>TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256</code></td><td>Same as above. Forward secrecy maintained via ECDHE.</td><td><span class="tag tag-orange">Conditional</span></td></tr>
+<tr><td><code>TLS_RSA_WITH_AES_*</code></td><td><strong>BLOCKED.</strong> No forward secrecy. Never allowed.</td><td><span class="tag tag-red">Blocked</span></td></tr>
+<tr><td><code>*_CBC_*</code></td><td><strong>BLOCKED.</strong> Vulnerable to padding oracle attacks.</td><td><span class="tag tag-red">Blocked</span></td></tr>
+<tr><td><code>*_RC4_*</code></td><td><strong>BLOCKED.</strong> Broken cipher.</td><td><span class="tag tag-red">Blocked</span></td></tr>
+<tr><td><code>*_3DES_*</code></td><td><strong>BLOCKED.</strong> Sweet32 vulnerability. Even for AS2 S/MIME, use AES.</td><td><span class="tag tag-red">Blocked</span></td></tr>
+</tbody>
+</table>
+
+<div class="callout-red callout">
+<strong>AS2 Note:</strong> Many older AS2 implementations use 3DES for S/MIME message encryption. FC will NOT support 3DES even for AS2. If a buyer's AS2 system only supports 3DES, FC will flag this during onboarding certification and require the buyer to upgrade their AS2 software to support AES-128-CBC or AES-256-CBC for S/MIME (this is separate from the TLS cipher — S/MIME encrypts the payload inside the TLS tunnel). This is a firm security boundary.
+</div>
+</div>
+
+<div class="solution-box">
+<h3>TLS Configuration (Go / Gin — Applied to Every Adapter)</h3>
+<pre>
+<span class="comment">// internal/security/tls_config.go — shared by all adapters</span>
+package security
+
+import (
+    "crypto/tls"
+    "crypto/x509"
+    "os"
+)
+
+func NewTLSConfig(requireClientCert bool) *tls.Config {
+    cfg := &tls.Config{
+        MinVersion: tls.VersionTLS13,   <span class="comment">// TLS 1.3 minimum</span>
+
+        <span class="comment">// TLS 1.3 cipher preference (Go auto-negotiates, but we set preference)</span>
+        CipherSuites: nil, <span class="comment">// For TLS 1.3, Go uses the built-in list (cannot be customized)</span>
+
+        <span class="comment">// For TLS 1.2 fallback (legacy AS2 buyers only, controlled by feature flag)</span>
+        <span class="comment">// CipherSuites: []uint16{</span>
+        <span class="comment">//     tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,</span>
+        <span class="comment">//     tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,</span>
+        <span class="comment">// },</span>
+
+        CurvePreferences: []tls.CurveID{
+            tls.X25519,    <span class="comment">// Preferred: fastest, most secure</span>
+            tls.CurveP256, <span class="comment">// Fallback: widely supported</span>
+        },
+
+        <span class="comment">// Disable session tickets for forward secrecy</span>
+        SessionTicketsDisabled: true,
+    }
+
+    <span class="comment">// mTLS: require client certificate for factory bridge connections</span>
+    if requireClientCert {
+        caCert, _ := os.ReadFile(secrets.MustGet("FC_CA_CERT_PATH"))
+        caCertPool := x509.NewCertPool()
+        caCertPool.AppendCertsFromPEM(caCert)
+        cfg.ClientCAs = caCertPool
+        cfg.ClientAuth = tls.RequireAndVerifyClientCert
+    }
+
+    return cfg
+}
+</pre>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2>11. Per-Connection Security Configuration</h2>
+<!-- ═══════════════════════════════════════════════════════ -->
+
+<div class="card">
+<p>Each connection (factory → FC → buyer) has its own security configuration stored in the database. This allows FC to support heterogeneous security requirements across hundreds of connections without any hardcoded assumptions.</p>
+
+<pre>
+CREATE TABLE connection_security (
+    connection_id       UUID PRIMARY KEY REFERENCES connections(id),
+
+    <span class="comment">-- Inbound (factory → FC)</span>
+    inbound_tls_min     VARCHAR(10) DEFAULT 'TLS_1_3',
+    inbound_auth_type   VARCHAR(20) NOT NULL,
+        <span class="comment">-- 'mtls', 'api_key_jwt', 'webhook_hmac', 'basic_auth'</span>
+    inbound_client_cert VARCHAR(200),            <span class="comment">-- Vault path to factory's client cert</span>
+    inbound_api_key_id  VARCHAR(100),            <span class="comment">-- Reference to API key in Vault</span>
+    inbound_ip_allowlist INET[],                 <span class="comment">-- Optional IP restrictions</span>
+
+    <span class="comment">-- Outbound (FC → buyer)</span>
+    outbound_protocol   VARCHAR(10) NOT NULL,    <span class="comment">-- 'AS2', 'HTTPS', 'SFTP', 'OFTP2', 'SOAP'</span>
+    outbound_tls_min    VARCHAR(10) DEFAULT 'TLS_1_3',
+    outbound_tls_legacy BOOLEAN DEFAULT FALSE,   <span class="comment">-- Allow TLS 1.2 for this buyer?</span>
+    outbound_cipher_policy VARCHAR(20) DEFAULT 'STRICT',
+        <span class="comment">-- 'STRICT' = TLS 1.3 only, 'COMPAT' = TLS 1.2 ECDHE-GCM allowed</span>
+
+    <span class="comment">-- AS2-specific</span>
+    as2_signing_alg     VARCHAR(20) DEFAULT 'SHA-256',
+    as2_encrypt_alg     VARCHAR(20) DEFAULT 'AES-256-CBC',
+    as2_mdn_type        VARCHAR(10) DEFAULT 'SYNC',  <span class="comment">-- SYNC or ASYNC</span>
+    as2_buyer_cert_path VARCHAR(200),             <span class="comment">-- Vault path to buyer's public cert</span>
+    as2_fc_key_path     VARCHAR(200),             <span class="comment">-- Vault path to FC's signing key</span>
+
+    <span class="comment">-- OAuth (Coupa, Oracle)</span>
+    oauth_token_url     VARCHAR(500),
+    oauth_client_id     VARCHAR(200),             <span class="comment">-- Vault path</span>
+    oauth_client_secret VARCHAR(200),             <span class="comment">-- Vault path</span>
+    oauth_scope         VARCHAR(200),
+
+    <span class="comment">-- SOAP WS-Security</span>
+    ws_security_type    VARCHAR(20),              <span class="comment">-- 'UsernameToken', 'X509Token', 'SAML'</span>
+    ws_security_cred    VARCHAR(200),             <span class="comment">-- Vault path</span>
+
+    <span class="comment">-- Certificate lifecycle</span>
+    cert_expires_at     TIMESTAMPTZ,
+    cert_auto_renew     BOOLEAN DEFAULT TRUE,
+    cert_renewed_at     TIMESTAMPTZ,
+
+    created_at          TIMESTAMPTZ DEFAULT NOW(),
+    updated_at          TIMESTAMPTZ DEFAULT NOW()
+);
+
+<span class="comment">-- Alert on expiring certificates (daily cron check)</span>
+CREATE INDEX idx_cert_expiry ON connection_security(cert_expires_at)
+    WHERE cert_expires_at IS NOT NULL;
+</pre>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2>12. Adapter Deployment Pipeline</h2>
+<!-- ═══════════════════════════════════════════════════════ -->
+
+<div class="card">
+<h3>From Code to Production in 4 Steps</h3>
+<p>Every adapter (new or updated) follows the same CI/CD pipeline. Simple and repeatable.</p>
+
+<table>
+<thead>
+<tr><th>Step</th><th>What Happens</th><th>Tool</th><th>Time</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>1. Build & Test</strong></td><td>Go build, unit tests, lint. Must pass 100% test coverage on <code>transform.go</code> (the core logic).</td><td>GitHub Actions / Cloud Build</td><td>~2 min</td></tr>
+<tr><td><strong>2. Contract Test</strong></td><td>Feed 20+ golden test cases through the adapter. Verify output matches expected Canonical Model (for source) or expected buyer format (for target).</td><td>Golden file comparison</td><td>~1 min</td></tr>
+<tr><td><strong>3. Sandbox Deploy</strong></td><td>Deploy to <code>fc-sandbox</code> namespace. Run against FC Buyer Simulator. Verify end-to-end message flow with mTLS enabled.</td><td>Kubernetes + Helm</td><td>~5 min</td></tr>
+<tr><td><strong>4. Production Deploy</strong></td><td>Rolling update to <code>fc-adapters</code> namespace. Blue-green if it's a new major version. Register in <code>adapter_versions</code> table.</td><td>ArgoCD / kubectl</td><td>~3 min</td></tr>
+</tbody>
+</table>
+
+<div class="callout">
+<strong>One Command to Deploy a New Adapter:</strong><br>
+<code>make deploy-adapter ADAPTER=src-tally-5 ENV=production</code><br>
+This runs the full pipeline: build → test → contract test → sandbox verify → production deploy → register in adapter_versions → update monitoring dashboards. All automated.
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2>13. Monitoring & Observability per Adapter</h2>
+<!-- ═══════════════════════════════════════════════════════ -->
+
+<div class="card">
+<p>Every adapter exposes the same Prometheus metrics endpoint (<code>/metrics</code>). Grafana dashboards auto-discover adapters via Kubernetes service labels.</p>
+
+<h3>Standard Metrics (Every Adapter)</h3>
+<table>
+<thead>
+<tr><th>Metric</th><th>Type</th><th>Alert Threshold</th><th>What It Tells You</th></tr>
+</thead>
+<tbody>
+<tr><td><code>fc_adapter_messages_total</code></td><td>Counter</td><td>—</td><td>Total messages processed (by status: success, error, retry)</td></tr>
+<tr><td><code>fc_adapter_transform_duration_seconds</code></td><td>Histogram</td><td>p99 > 2s</td><td>How long the core transformation takes</td></tr>
+<tr><td><code>fc_adapter_delivery_duration_seconds</code></td><td>Histogram</td><td>p99 > 10s</td><td>End-to-end delivery time (target adapters only)</td></tr>
+<tr><td><code>fc_adapter_queue_depth</code></td><td>Gauge</td><td>> 500</td><td>Messages waiting in the adapter's Redis queue</td></tr>
+<tr><td><code>fc_adapter_active_connections</code></td><td>Gauge</td><td>—</td><td>How many factory/buyer connections use this adapter</td></tr>
+<tr><td><code>fc_adapter_errors_total</code></td><td>Counter</td><td>> 10/min</td><td>Errors by type: transform_error, delivery_error, auth_error, tls_error</td></tr>
+<tr><td><code>fc_adapter_tls_version</code></td><td>Gauge (label)</td><td>—</td><td>TLS version negotiated per connection (detect TLS 1.2 usage)</td></tr>
+<tr><td><code>fc_adapter_replicas</code></td><td>Gauge</td><td>—</td><td>Current pod count vs min/max (HPA tracking)</td></tr>
+</tbody>
+</table>
+
+<div class="callout-warn callout">
+<strong>Key Alert:</strong> If <code>fc_adapter_tls_version</code> shows TLS 1.2 for any connection, flag it in the security dashboard. These connections are on the compatibility policy and need a migration plan to TLS 1.3.
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2>14. Putting It All Together: Example Flow</h2>
+<!-- ═══════════════════════════════════════════════════════ -->
+
+<div class="card">
+<h3>Scenario: Factory A (Tally 4.x) sends Invoice to Buyer B (Walmart, EDI X12 5010)</h3>
+
+<div class="flow-box">
+Step 1  │ Tally 4.x Bridge Agent pushes invoice XML to FC
+        │ Protocol: HTTPS with mTLS (TLS 1.3, AES-256-GCM)
+        │ Factory's client cert validated against FC CA
+        ▼
+Step 2  │ Load balancer routes to src-tally-4 adapter (currently 2 pods)
+        │ src-tally-4 validates XML, computes schema fingerprint (no drift)
+        │ Transforms Tally XML → FC Canonical Invoice entity
+        ▼
+Step 3  │ Canonical Invoice published to Routing Engine
+        │ Routing Engine looks up: Factory A → Buyer B → connection_adapter_bindings
+        │ Target adapter: tgt-x12-5010
+        │ Loads three-layer mapping: X12 5010 base + Walmart template + connection overrides
+        ▼
+Step 4  │ TransformJob enqueued to Redis queue: outbound.tgt-x12-5010
+        │ HPA sees queue depth rise → already at 3 pods, OK for now
+        │ tgt-x12-5010 dequeues the job
+        ▼
+Step 5  │ tgt-x12-5010 transforms Canonical Invoice → X12 810 (Invoice)
+        │ Applies Walmart-specific qualifiers, segment overrides, ISA/GS envelope
+        │ Uses three-layer mapping for field-level precision
+        ▼
+Step 6  │ tgt-x12-5010 delivers via AS2 to Walmart's AS2 endpoint
+        │ TLS 1.3 transport (AES-256-GCM)
+        │ S/MIME: encrypt with Walmart's RSA public key (AES-256-CBC payload encryption)
+        │ Sign with FC's RSA private key (SHA-256 digest)
+        │ Walmart returns synchronous MDN (delivery receipt)
+        ▼
+Step 7  │ MDN validated. Invoice marked DELIVERED in FC.
+        │ 997 Functional Acknowledgment expected within 24 hours.
+        │ Metrics: fc_adapter_messages_total{adapter="tgt-x12-5010",status="success"} +1
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2>15. Architecture Decision Summary</h2>
+<!-- ═══════════════════════════════════════════════════════ -->
+
+<div class="card">
+<table>
+<thead>
+<tr><th>Decision</th><th>Choice</th><th>Why Simple</th><th>Why Powerful</th></tr>
+</thead>
+<tbody>
+<tr><td>One adapter per version</td><td>Independent Docker containers</td><td>Each adapter is 400-800 lines, one developer can own it</td><td>Deploy, scale, and decommission any version independently</td></tr>
+<tr><td>Queue-based message passing</td><td>Redis queues between routing engine and target adapters</td><td>Just enqueue/dequeue — no complex RPC framework needed</td><td>Natural backpressure, scale-to-zero, retry built-in</td></tr>
+<tr><td>Kubernetes HPA + KEDA</td><td>Auto-scale on queue depth</td><td>15 lines of YAML per adapter, zero custom scaling code</td><td>Each adapter scales independently based on actual load</td></tr>
+<tr><td>Canonical Model as contract</td><td>6 entities in the middle</td><td>Source adapters only produce canonical; target adapters only consume canonical</td><td>N sources × M targets without N×M mapping complexity</td></tr>
+<tr><td>Three-layer mappings</td><td>Base spec + buyer template + connection overrides</td><td>Change once at template level, propagates to all connections</td><td>Handles version differences, buyer quirks, and custom fields</td></tr>
+<tr><td>TLS 1.3 + cipher allowlist</td><td>AEAD ciphers only, no legacy</td><td>One shared TLS config function for all adapters</td><td>Enterprise-grade security, meets buyer compliance requirements</td></tr>
+<tr><td>mTLS for B2B connections</td><td>Mutual certificate auth</td><td>Standard Go <code>tls.Config</code>, no custom auth code</td><td>Non-repudiation, identity assurance for both parties</td></tr>
+<tr><td>Version lifecycle (4 phases)</td><td>DEV → ACTIVE → DEPRECATED → SUNSET</td><td>Automatic: cron checks connection count, notifies, removes</td><td>No forced migrations, no "big bang" version upgrades</td></tr>
+<tr><td>Scale-to-zero for low traffic</td><td>KEDA ScaledObjects</td><td>Declarative YAML, KEDA handles the rest</td><td>Save 30-40% infrastructure cost in Year 1</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2>16. Cost Impact: Scalable Architecture</h2>
+<!-- ═══════════════════════════════════════════════════════ -->
+
+<div class="card">
+<h3>Year 1 (500 factories) — Estimated Monthly Infrastructure</h3>
+<div class="grid-2">
+<div>
+<h4>Without Scale-to-Zero</h4>
+<table>
+<tr><td>All adapters at min 1 pod</td><td>~25 pods always running</td></tr>
+<tr><td>GKE node cost</td><td>$1,400/mo</td></tr>
+<tr><td>Redis, Vault, monitoring</td><td>$500/mo</td></tr>
+<tr><td><strong>Total</strong></td><td><strong>$1,900/mo</strong></td></tr>
+</table>
+</div>
+<div>
+<h4>With KEDA Scale-to-Zero</h4>
+<table>
+<tr><td>Active adapters: ~12 pods</td><td>Idle adapters: 0 pods</td></tr>
+<tr><td>GKE node cost</td><td>$900/mo</td></tr>
+<tr><td>Redis, Vault, monitoring</td><td>$500/mo</td></tr>
+<tr><td><strong>Total</strong></td><td><strong>$1,400/mo (~26% savings)</strong></td></tr>
+</table>
+</div>
+</div>
+<p style="margin-top: 12px;">At 5,000 factories (Year 3), scale-to-zero savings grow to ~35% because the ratio of high-traffic to low-traffic adapters increases. The busiest adapters scale up automatically; the long tail stays at zero.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<h2>17. Recommendations & Next Steps</h2>
+<!-- ═══════════════════════════════════════════════════════ -->
+
+<div class="card">
+<ol>
+<li><strong>Build the Adapter Template First</strong> — Create a cookiecutter/template repo for adapters. Every new adapter starts from this. Includes: main.go, transform.go, Dockerfile, k8s manifests, test harness, Prometheus metrics. Target: 2 hours to spin up a new adapter skeleton.</li>
+<li><strong>Start with 4 Adapters</strong> — Phase 1: <code>src-tally-3</code>, <code>src-tally-4</code>, <code>tgt-x12-5010</code>, <code>tgt-ariba-23</code>. These cover 80% of initial factory-buyer combinations.</li>
+<li><strong>Implement Routing Engine as a Separate Service</strong> — Stateless Go service that reads from <code>connections</code> + <code>connection_adapter_bindings</code>. Scales independently from adapters.</li>
+<li><strong>Set Up KEDA Early</strong> — Install KEDA on GKE from Day 1. Even if all adapters start at min 1, the ScaledObjects are ready for when traffic patterns emerge.</li>
+<li><strong>Certificate Management Automation</strong> — Use cert-manager with Let's Encrypt for FC-side certificates. Vault PKI for internal mTLS. Automate buyer certificate ingestion during onboarding.</li>
+<li><strong>Golden Test Suite per Adapter</strong> — Each adapter must have 20+ real-world test cases before going ACTIVE. These become the contract tests that prevent regressions.</li>
+<li><strong>Security Scanning in CI</strong> — Trivy for container image scanning, gosec for Go code scanning. Block deployment if critical CVEs found.</li>
+<li><strong>Build the Generic Adapters (REST + SOAP) Last</strong> — These are the most complex because they're configurable. Get specific adapters working first, then extract the generic pattern.</li>
+</ol>
+</div>
+
+<div class="footer">
+FactoryConnect — Versioned Adapter Architecture & Network Security | Research Document | April 2026<br>
+Confidential — For Internal Strategy Use Only
+</div>
+
+</body>
+</html>

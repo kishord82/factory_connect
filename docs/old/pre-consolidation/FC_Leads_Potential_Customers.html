@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FactoryConnect - Potential Leads &amp; Customers</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f6f9; color: #1a1a2e; padding: 24px; }
+  h1 { font-size: 1.6rem; margin-bottom: 4px; color: #0f3460; }
+  .subtitle { color: #555; font-size: 0.9rem; margin-bottom: 20px; }
+  .controls { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+  .controls select, .controls input { padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.85rem; }
+  .controls input { width: 260px; }
+  .controls button { padding: 8px 18px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600; }
+  #exportBtn { background: #0f3460; color: #fff; }
+  #exportBtn:hover { background: #16213e; }
+  .stats { display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+  .stat-card { background: #fff; border-radius: 8px; padding: 14px 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); min-width: 140px; }
+  .stat-card .label { font-size: 0.75rem; color: #777; text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-card .value { font-size: 1.4rem; font-weight: 700; color: #0f3460; margin-top: 2px; }
+  .table-wrap { overflow-x: auto; background: #fff; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  th { background: #0f3460; color: #fff; padding: 10px 14px; text-align: left; white-space: nowrap; cursor: pointer; user-select: none; position: sticky; top: 0; }
+  th:hover { background: #16213e; }
+  th .sort-arrow { margin-left: 4px; font-size: 0.7rem; }
+  td { padding: 9px 14px; border-bottom: 1px solid #eee; }
+  tr:hover td { background: #f0f4ff; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 600; margin: 1px 2px; }
+  .tag-high { background: #ffe0e0; color: #c0392b; }
+  .tag-medium { background: #fff3cd; color: #856404; }
+  .tag-low { background: #d4edda; color: #155724; }
+  .tag-sector { background: #e8f0fe; color: #1a73e8; }
+  .priority-1 { border-left: 4px solid #c0392b; }
+  .priority-2 { border-left: 4px solid #e67e22; }
+  .priority-3 { border-left: 4px solid #27ae60; }
+  .footer { margin-top: 20px; font-size: 0.78rem; color: #888; text-align: center; }
+  @media print { .controls, #exportBtn { display: none; } body { padding: 8px; } }
+</style>
+</head>
+<body>
+
+<h1>FactoryConnect - Potential Leads &amp; Target Customers</h1>
+<p class="subtitle">Market research: Indian export manufacturers needing ERP-to-buyer integration (EDI/Ariba/Coupa) | Generated April 2026</p>
+
+<div class="stats" id="statsBar"></div>
+
+<div class="controls">
+  <input type="text" id="searchBox" placeholder="Search company, city, sector...">
+  <select id="sectorFilter"><option value="">All Sectors</option></select>
+  <select id="priorityFilter"><option value="">All Priorities</option></select>
+  <select id="cbamFilter"><option value="">All CBAM Exposure</option></select>
+  <select id="cityFilter"><option value="">All Cities</option></select>
+  <button id="exportBtn" onclick="exportCSV()">Export CSV</button>
+</div>
+
+<div class="table-wrap">
+  <table id="leadsTable">
+    <thead><tr id="headerRow"></tr></thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+</div>
+
+<p class="footer">FactoryConnect Market Intelligence | Data compiled from DGFT, Zauba Corp, IBEF, company filings &amp; industry directories | April 2026</p>
+
+<script>
+const columns = [
+  { key: 'priority', label: 'Priority', width: '70px' },
+  { key: 'company', label: 'Company Name', width: 'auto' },
+  { key: 'sector', label: 'Sector', width: '120px' },
+  { key: 'city', label: 'City / Cluster', width: '130px' },
+  { key: 'state', label: 'State', width: '110px' },
+  { key: 'revenue', label: 'Est. Revenue (Cr)', width: '110px' },
+  { key: 'exports', label: 'Export %', width: '80px' },
+  { key: 'currentErp', label: 'Current ERP', width: '110px' },
+  { key: 'buyerSystems', label: 'Buyer Systems Needed', width: '160px' },
+  { key: 'exportDest', label: 'Key Export Destinations', width: '170px' },
+  { key: 'cbam', label: 'CBAM Exposure', width: '100px' },
+  { key: 'dealSize', label: 'Est. Deal (INR/mo)', width: '120px' },
+  { key: 'contactApproach', label: 'Contact Approach', width: '170px' },
+  { key: 'notes', label: 'Notes', width: '200px' }
+];
+
+const leads = [
+  // AUTO COMPONENTS - Tier 1
+  { priority: 'P1', company: 'Bharat Forge Ltd', sector: 'Auto Components', city: 'Pune', state: 'Maharashtra', revenue: '14,200', exports: '60%', currentErp: 'SAP ECC', buyerSystems: 'EDI X12, SAP Ariba', exportDest: 'USA, Germany, UK', cbam: 'High', dealSize: '39,999', contactApproach: 'CIO office via LinkedIn; attend ACMA events', notes: 'World\'s largest forging company. Supplies to GM, Ford, Daimler. Complex multi-tier EDI needs.' },
+  { priority: 'P1', company: 'Samvardhana Motherson International', sector: 'Auto Components', city: 'Noida', state: 'Uttar Pradesh', revenue: '89,000', exports: '75%', currentErp: 'SAP S/4HANA', buyerSystems: 'EDI X12, Coupa, Ariba', exportDest: 'USA, EU, Japan', cbam: 'High', dealSize: '39,999', contactApproach: 'Global IT head; major presence at Auto Expo', notes: 'India\'s largest auto component company. 400+ factories globally. Entry point = Indian plants.' },
+  { priority: 'P1', company: 'Sundram Fasteners Ltd', sector: 'Auto Components', city: 'Chennai', state: 'Tamil Nadu', revenue: '5,800', exports: '35%', currentErp: 'SAP B1', buyerSystems: 'EDI X12, Ariba', exportDest: 'USA, Germany, China', cbam: 'Medium', dealSize: '19,999', contactApproach: 'TVS Group; approach via industry body ACMA', notes: 'Supplies to GM (largest Indian supplier to GM). Strong EDI mandate from US buyers.' },
+  { priority: 'P1', company: 'Minda Industries Ltd', sector: 'Auto Components', city: 'Gurugram', state: 'Haryana', revenue: '12,500', exports: '30%', currentErp: 'SAP ECC', buyerSystems: 'EDI X12, Ariba', exportDest: 'EU, USA, Japan', cbam: 'Medium', dealSize: '19,999', contactApproach: 'CTO office; Spark Minda Group IT team', notes: 'Lighting, switches, horns for global OEMs. Growing EU exports = CBAM relevance.' },
+  { priority: 'P1', company: 'Sona BLW Precision Forgings', sector: 'Auto Components', city: 'Gurugram', state: 'Haryana', revenue: '3,200', exports: '72%', currentErp: 'SAP B1', buyerSystems: 'EDI X12, Ariba', exportDest: 'USA, EU, China', cbam: 'High', dealSize: '19,999', contactApproach: 'Direct CIO; active on LinkedIn tech events', notes: 'EV-focused precision parts. 72% export = high EDI dependency. Rapid growth.' },
+
+  // AUTO COMPONENTS - Tier 2 (SME sweet spot)
+  { priority: 'P1', company: 'JBM Group', sector: 'Auto Components', city: 'Faridabad', state: 'Haryana', revenue: '4,500', exports: '25%', currentErp: 'Tally Prime', buyerSystems: 'EDI X12, Ariba', exportDest: 'EU, South America', cbam: 'Medium', dealSize: '14,999', contactApproach: 'MD office; EV bus division expanding exports', notes: 'EV bus maker + auto components. Tally user = ideal FactoryConnect fit.' },
+  { priority: 'P1', company: 'Craftsman Automation', sector: 'Auto Components', city: 'Coimbatore', state: 'Tamil Nadu', revenue: '3,100', exports: '20%', currentErp: 'Tally Prime', buyerSystems: 'EDI X12', exportDest: 'USA, EU', cbam: 'Medium', dealSize: '14,999', contactApproach: 'Direct; attend CII Coimbatore events', notes: 'Precision machining. Tally user with growing export orders. Classic SME target.' },
+  { priority: 'P2', company: 'Endurance Technologies', sector: 'Auto Components', city: 'Pune', state: 'Maharashtra', revenue: '9,400', exports: '45%', currentErp: 'SAP ECC', buyerSystems: 'EDI X12, Ariba, Coupa', exportDest: 'EU (Italy, Germany)', cbam: 'High', dealSize: '19,999', contactApproach: 'IT Director; Pune auto cluster networks', notes: 'Casting, machining for two-wheelers + four-wheelers. Major EU exports.' },
+  { priority: 'P2', company: 'Suprajit Engineering', sector: 'Auto Components', city: 'Bangalore', state: 'Karnataka', revenue: '2,800', exports: '55%', currentErp: 'Tally Prime', buyerSystems: 'EDI X12', exportDest: 'USA, EU, South America', cbam: 'Medium', dealSize: '14,999', contactApproach: 'CEO/CTO direct; Bangalore startup ecosystem', notes: 'Cables & control systems. 55% export on Tally = urgent EDI bridge need.' },
+  { priority: 'P2', company: 'Sharda Motor Industries', sector: 'Auto Components', city: 'Gurugram', state: 'Haryana', revenue: '2,200', exports: '30%', currentErp: 'Tally Prime', buyerSystems: 'EDI X12', exportDest: 'EU, USA', cbam: 'High', dealSize: '14,999', contactApproach: 'Operations head; exhaust systems = CBAM carbon reporting', notes: 'Exhaust systems (high carbon). CBAM reporting is critical selling point.' },
+
+  // PHARMA
+  { priority: 'P1', company: 'MSN Laboratories', sector: 'Pharma', city: 'Hyderabad', state: 'Telangana', revenue: '4,500', exports: '80%', currentErp: 'SAP B1', buyerSystems: 'EDI X12, Ariba', exportDest: 'USA, EU, Africa', cbam: 'Low', dealSize: '19,999', contactApproach: 'IT head; Hyderabad pharma network JALA', notes: '80% export revenue. FDA-approved facilities. High EDI volume with US distributors.' },
+  { priority: 'P1', company: 'Aurobindo Pharma', sector: 'Pharma', city: 'Hyderabad', state: 'Telangana', revenue: '25,400', exports: '85%', currentErp: 'SAP ECC', buyerSystems: 'EDI X12, Ariba, Coupa', exportDest: 'USA, EU, Emerging Markets', cbam: 'Low', dealSize: '39,999', contactApproach: 'Global IT/SCM head; BDMA Hyderabad chapter', notes: 'Top 5 generic pharma globally. Complex multi-country EDI needs.' },
+  { priority: 'P1', company: 'Natco Pharma', sector: 'Pharma', city: 'Hyderabad', state: 'Telangana', revenue: '3,800', exports: '65%', currentErp: 'SAP B1', buyerSystems: 'EDI X12, Ariba', exportDest: 'USA, Canada, Brazil', cbam: 'Low', dealSize: '19,999', contactApproach: 'CIO; pharma industry events BioAsia', notes: 'Specialty pharma with strong US presence. SAP B1 = direct connector fit.' },
+  { priority: 'P2', company: 'Divi\'s Laboratories', sector: 'Pharma', city: 'Hyderabad', state: 'Telangana', revenue: '8,200', exports: '88%', currentErp: 'SAP ECC', buyerSystems: 'EDI X12, Ariba', exportDest: 'USA, EU, Japan', cbam: 'Low', dealSize: '39,999', contactApproach: 'VP IT; premium API supplier to Big Pharma', notes: 'API/intermediates. 88% exports. Suppliers to Pfizer, Merck, GSK.' },
+  { priority: 'P2', company: 'Zydus Lifesciences', sector: 'Pharma', city: 'Ahmedabad', state: 'Gujarat', revenue: '18,000', exports: '50%', currentErp: 'SAP S/4HANA', buyerSystems: 'EDI X12, Ariba, Coupa', exportDest: 'USA, EU, Brazil', cbam: 'Low', dealSize: '39,999', contactApproach: 'Global SCM IT; CII Gujarat pharma events', notes: 'Complex supply chain. Multiple US FDA facilities. Ariba + EDI heavy.' },
+  { priority: 'P2', company: 'Torrent Pharmaceuticals', sector: 'Pharma', city: 'Ahmedabad', state: 'Gujarat', revenue: '10,200', exports: '40%', currentErp: 'SAP ECC', buyerSystems: 'EDI X12, Ariba', exportDest: 'USA, Germany, Brazil, Russia', cbam: 'Low', dealSize: '19,999', contactApproach: 'IT Director; Ahmedabad pharma cluster', notes: 'Strong branded generics. Growing US business = growing EDI needs.' },
+  { priority: 'P2', company: 'Laurus Labs', sector: 'Pharma', city: 'Hyderabad', state: 'Telangana', revenue: '5,600', exports: '70%', currentErp: 'Zoho Books', buyerSystems: 'EDI X12, Ariba', exportDest: 'USA, EU, South Africa', cbam: 'Low', dealSize: '14,999', contactApproach: 'CTO; fast-growing, tech-forward culture', notes: 'Zoho user = direct connector. API + formulation. Rapid export growth.' },
+
+  // STEEL & METALS
+  { priority: 'P1', company: 'Jindal Stainless Ltd', sector: 'Steel & Metals', city: 'Hisar', state: 'Haryana', revenue: '37,000', exports: '25%', currentErp: 'SAP ECC', buyerSystems: 'EDI X12, Ariba, EDIFACT', exportDest: 'EU, USA, Middle East', cbam: 'Critical', dealSize: '39,999', contactApproach: 'CSO/CIO office; CBAM is board-level concern', notes: 'India\'s largest stainless steel producer. CBAM = existential issue. #1 CBAM selling target.' },
+  { priority: 'P1', company: 'JSW Steel Ltd', sector: 'Steel & Metals', city: 'Mumbai', state: 'Maharashtra', revenue: '1,65,000', exports: '20%', currentErp: 'SAP S/4HANA', buyerSystems: 'EDI X12, Ariba, EDIFACT', exportDest: 'EU, USA, ASEAN', cbam: 'Critical', dealSize: '39,999', contactApproach: 'VP Sustainability + CIO; CBAM compliance team', notes: 'India\'s #1 private steel producer. EU CBAM reporting is immediate pain point.' },
+  { priority: 'P1', company: 'Hindalco Industries (Novelis)', sector: 'Steel & Metals', city: 'Mumbai', state: 'Maharashtra', revenue: '2,15,000', exports: '65%', currentErp: 'SAP S/4HANA', buyerSystems: 'EDI X12, Ariba, Coupa', exportDest: 'EU, USA, Japan, Korea', cbam: 'Critical', dealSize: '39,999', contactApproach: 'Aditya Birla Group IT; Novelis sustainability team', notes: 'World\'s largest aluminium rolling company. CBAM = top strategic priority.' },
+  { priority: 'P2', company: 'SAIL (Steel Authority of India)', sector: 'Steel & Metals', city: 'New Delhi', state: 'Delhi', revenue: '1,05,000', exports: '8%', currentErp: 'SAP ECC', buyerSystems: 'EDI X12, EDIFACT', exportDest: 'EU, Nepal, ASEAN', cbam: 'Critical', dealSize: '39,999', contactApproach: 'PSU route via FICCI Steel Committee', notes: 'PSU steel giant. Slow decision cycle but massive volume. CBAM forcing modernization.' },
+  { priority: 'P2', company: 'Tata Steel BSL', sector: 'Steel & Metals', city: 'Mumbai', state: 'Maharashtra', revenue: '22,000', exports: '15%', currentErp: 'SAP ECC', buyerSystems: 'EDI X12, Ariba, EDIFACT', exportDest: 'EU, UK, ASEAN', cbam: 'Critical', dealSize: '39,999', contactApproach: 'Tata Group digital team; UK Tata Steel connection', notes: 'Tata Steel subsidiary with EU export exposure. CBAM + EDI dual need.' },
+  { priority: 'P2', company: 'Vedanta Aluminium', sector: 'Steel & Metals', city: 'Jharsuguda', state: 'Odisha', revenue: '45,000', exports: '40%', currentErp: 'SAP ECC', buyerSystems: 'EDI X12, Ariba', exportDest: 'EU, USA, Japan', cbam: 'Critical', dealSize: '39,999', contactApproach: 'Vedanta Group CTO; aluminium CBAM exposure', notes: 'India\'s largest aluminium producer. 40% exports. CBAM carbon reporting = urgent.' },
+
+  // TEXTILES & GARMENTS
+  { priority: 'P1', company: 'Gokaldas Exports', sector: 'Textiles & Garments', city: 'Bangalore', state: 'Karnataka', revenue: '2,200', exports: '95%', currentErp: 'Tally Prime', buyerSystems: 'EDI X12, Coupa', exportDest: 'USA, EU, UK', cbam: 'Medium', dealSize: '14,999', contactApproach: 'Direct CEO/COO; Bangalore garment exporters assoc', notes: '95% export. Supplies H&M, Gap, Nike. Tally user = perfect FactoryConnect fit.' },
+  { priority: 'P1', company: 'Page Industries (Jockey India)', sector: 'Textiles & Garments', city: 'Bangalore', state: 'Karnataka', revenue: '4,600', exports: '15%', currentErp: 'SAP B1', buyerSystems: 'EDI X12', exportDest: 'Sri Lanka, UAE, Bangladesh', cbam: 'Low', dealSize: '14,999', contactApproach: 'IT head; growing international ops', notes: 'Jockey licensee. Growing exports. SAP B1 connector = ready fit.' },
+  { priority: 'P2', company: 'KPR Mill Ltd', sector: 'Textiles & Garments', city: 'Coimbatore', state: 'Tamil Nadu', revenue: '6,200', exports: '45%', currentErp: 'Tally Prime', buyerSystems: 'EDI X12, Coupa', exportDest: 'USA, EU, UK', cbam: 'Medium', dealSize: '14,999', contactApproach: 'Direct; CII Coimbatore textile events', notes: 'Vertically integrated. Tally user. Supplies to global fashion brands.' },
+  { priority: 'P2', company: 'Welspun Living', sector: 'Textiles & Garments', city: 'Mumbai', state: 'Maharashtra', revenue: '9,500', exports: '70%', currentErp: 'SAP ECC', buyerSystems: 'EDI X12, Ariba, Coupa', exportDest: 'USA, EU, UK, Australia', cbam: 'Medium', dealSize: '19,999', contactApproach: 'SCM/IT Director; Walmart/Target supplier networks', notes: 'Home textiles for Walmart, Target, Costco. Heavy EDI X12 with US retailers.' },
+  { priority: 'P2', company: 'Trident Group', sector: 'Textiles & Garments', city: 'Ludhiana', state: 'Punjab', revenue: '7,400', exports: '60%', currentErp: 'Tally Prime', buyerSystems: 'EDI X12, Coupa', exportDest: 'USA, EU, Australia', cbam: 'Medium', dealSize: '14,999', contactApproach: 'VP Operations; Walmart supplier', notes: 'Towels, bed linen for Walmart, IKEA. Tally user. EDI compliance critical.' },
+
+  // ELECTRONICS & ELECTRICAL
+  { priority: 'P2', company: 'Dixon Technologies', sector: 'Electronics', city: 'Noida', state: 'Uttar Pradesh', revenue: '17,000', exports: '15%', currentErp: 'SAP B1', buyerSystems: 'EDI X12, Ariba', exportDest: 'USA, EU, Middle East', cbam: 'Low', dealSize: '19,999', contactApproach: 'CTO; India\'s largest EMS. PLI scheme beneficiary', notes: 'EMS for Samsung, Xiaomi, Philips. Growing export play under PLI.' },
+  { priority: 'P2', company: 'Kaynes Technology', sector: 'Electronics', city: 'Mysuru', state: 'Karnataka', revenue: '1,800', exports: '20%', currentErp: 'Tally Prime', buyerSystems: 'EDI X12', exportDest: 'USA, EU', cbam: 'Low', dealSize: '14,999', contactApproach: 'Direct CTO; fast-growing EMS startup', notes: 'PCBA, box build. Tally user with growing export orders. Ideal SME target.' },
+  { priority: 'P2', company: 'Amber Enterprises', sector: 'Electronics', city: 'Gurugram', state: 'Haryana', revenue: '7,500', exports: '10%', currentErp: 'SAP B1', buyerSystems: 'EDI X12, Ariba', exportDest: 'Middle East, Africa', cbam: 'Low', dealSize: '14,999', contactApproach: 'VP Manufacturing; AC/electronics ODM', notes: 'India\'s largest AC component OEM. Growing export ambitions. SAP B1 fit.' },
+
+  // CHEMICALS
+  { priority: 'P1', company: 'Aarti Industries', sector: 'Chemicals', city: 'Mumbai', state: 'Maharashtra', revenue: '7,200', exports: '45%', currentErp: 'SAP ECC', buyerSystems: 'EDI X12, Ariba', exportDest: 'USA, EU, Japan', cbam: 'High', dealSize: '19,999', contactApproach: 'CIO; specialty chemicals CBAM impact', notes: 'Specialty chemicals. EU CBAM for chemicals starts 2026. Urgent compliance need.' },
+  { priority: 'P1', company: 'SRF Ltd', sector: 'Chemicals', city: 'Gurugram', state: 'Haryana', revenue: '14,000', exports: '40%', currentErp: 'SAP ECC', buyerSystems: 'EDI X12, Ariba', exportDest: 'USA, EU, Japan', cbam: 'High', dealSize: '19,999', contactApproach: 'VP IT; fluorochemicals + packaging films', notes: 'Fluorochemicals, packaging. High CBAM exposure. Multi-division EDI needs.' },
+  { priority: 'P2', company: 'Navin Fluorine International', sector: 'Chemicals', city: 'Mumbai', state: 'Maharashtra', revenue: '2,100', exports: '55%', currentErp: 'Tally Prime', buyerSystems: 'EDI X12', exportDest: 'USA, EU, Japan', cbam: 'High', dealSize: '14,999', contactApproach: 'Direct CTO; niche fluorine chemistry', notes: 'Specialty fluorochemicals. 55% export on Tally. CBAM + EDI dual selling point.' },
+  { priority: 'P2', company: 'Clean Science and Technology', sector: 'Chemicals', city: 'Pune', state: 'Maharashtra', revenue: '750', exports: '70%', currentErp: 'Tally Prime', buyerSystems: 'EDI X12', exportDest: 'EU, USA, China', cbam: 'High', dealSize: '14,999', contactApproach: 'MD direct; Pune chemicals cluster', notes: 'Performance chemicals. 70% export. Tally user. Clean-tech angle for CBAM.' },
+
+  // FOOD PROCESSING
+  { priority: 'P2', company: 'Allana Group', sector: 'Food Processing', city: 'Mumbai', state: 'Maharashtra', revenue: '8,000', exports: '90%', currentErp: 'Tally Prime', buyerSystems: 'EDI X12, EDIFACT', exportDest: 'Middle East, EU, ASEAN', cbam: 'Low', dealSize: '14,999', contactApproach: 'CIO; India\'s largest meat exporter', notes: 'Largest Indian meat exporter. 90% exports on Tally. FSSAI + EDIFACT needs.' },
+  { priority: 'P2', company: 'LT Foods (Daawat Rice)', sector: 'Food Processing', city: 'Gurugram', state: 'Haryana', revenue: '7,000', exports: '60%', currentErp: 'SAP B1', buyerSystems: 'EDI X12, Ariba', exportDest: 'USA, EU, Middle East', cbam: 'Low', dealSize: '14,999', contactApproach: 'VP Supply Chain; basmati rice export leader', notes: 'Basmati rice to 60+ countries. EDI with US/EU retailers. SAP B1 connector fit.' },
+  { priority: 'P3', company: 'Suguna Foods', sector: 'Food Processing', city: 'Coimbatore', state: 'Tamil Nadu', revenue: '12,000', exports: '5%', currentErp: 'Tally Prime', buyerSystems: 'EDI X12', exportDest: 'Middle East, ASEAN', cbam: 'Low', dealSize: '9,999', contactApproach: 'Direct; growing export ambitions', notes: 'India\'s largest poultry integrator. Low exports now but scaling. Long-term lead.' },
+
+  // CERAMICS & BUILDING MATERIALS
+  { priority: 'P2', company: 'Kajaria Ceramics', sector: 'Building Materials', city: 'Gurugram', state: 'Haryana', revenue: '4,600', exports: '10%', currentErp: 'SAP B1', buyerSystems: 'EDI X12', exportDest: 'Middle East, Africa, EU', cbam: 'Medium', dealSize: '14,999', contactApproach: 'VP International; ceramics export growth', notes: 'India\'s largest tile company. Growing exports. CBAM for cement/ceramics sector.' },
+  { priority: 'P2', company: 'Somany Ceramics', sector: 'Building Materials', city: 'Gurugram', state: 'Haryana', revenue: '2,400', exports: '8%', currentErp: 'Tally Prime', buyerSystems: 'EDI X12', exportDest: 'Middle East, Africa', cbam: 'Medium', dealSize: '9,999', contactApproach: 'Direct; Tally user exploring export growth', notes: 'Tiles + sanitaryware. Tally user. Smaller exports but growing.' },
+];
+
+let sortCol = null, sortAsc = true;
+
+function renderHeaders() {
+  const row = document.getElementById('headerRow');
+  row.innerHTML = columns.map(c =>
+    `<th style="min-width:${c.width}" onclick="sortBy('${c.key}')">${c.label}<span class="sort-arrow" id="sort-${c.key}"></span></th>`
+  ).join('');
+}
+
+function getCbamClass(v) {
+  if (v === 'Critical') return 'tag-high';
+  if (v === 'High') return 'tag-high';
+  if (v === 'Medium') return 'tag-medium';
+  return 'tag-low';
+}
+
+function getPriorityClass(p) {
+  if (p === 'P1') return 'priority-1';
+  if (p === 'P2') return 'priority-2';
+  return 'priority-3';
+}
+
+function renderTable(data) {
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = data.map(r => `<tr class="${getPriorityClass(r.priority)}">
+    <td><strong>${r.priority}</strong></td>
+    <td><strong>${r.company}</strong></td>
+    <td><span class="tag tag-sector">${r.sector}</span></td>
+    <td>${r.city}</td>
+    <td>${r.state}</td>
+    <td style="text-align:right">${r.revenue}</td>
+    <td style="text-align:right">${r.exports}</td>
+    <td>${r.currentErp}</td>
+    <td>${r.buyerSystems}</td>
+    <td>${r.exportDest}</td>
+    <td><span class="tag ${getCbamClass(r.cbam)}">${r.cbam}</span></td>
+    <td style="text-align:right">${r.dealSize}</td>
+    <td>${r.contactApproach}</td>
+    <td>${r.notes}</td>
+  </tr>`).join('');
+
+  // Update stats
+  document.getElementById('statsBar').innerHTML = `
+    <div class="stat-card"><div class="label">Total Leads</div><div class="value">${data.length}</div></div>
+    <div class="stat-card"><div class="label">P1 (Hot)</div><div class="value" style="color:#c0392b">${data.filter(r=>r.priority==='P1').length}</div></div>
+    <div class="stat-card"><div class="label">Sectors</div><div class="value">${new Set(data.map(r=>r.sector)).size}</div></div>
+    <div class="stat-card"><div class="label">Tally Users</div><div class="value" style="color:#27ae60">${data.filter(r=>r.currentErp.includes('Tally')).length}</div></div>
+    <div class="stat-card"><div class="label">CBAM Critical/High</div><div class="value" style="color:#c0392b">${data.filter(r=>r.cbam==='Critical'||r.cbam==='High').length}</div></div>
+    <div class="stat-card"><div class="label">Est. MRR (all P1)</div><div class="value">Rs ${(data.filter(r=>r.priority==='P1').reduce((s,r)=>s+parseInt(r.dealSize.replace(/,/g,'')),0)).toLocaleString('en-IN')}</div></div>
+  `;
+}
+
+function getFiltered() {
+  let d = [...leads];
+  const s = document.getElementById('searchBox').value.toLowerCase();
+  const sec = document.getElementById('sectorFilter').value;
+  const pri = document.getElementById('priorityFilter').value;
+  const cb = document.getElementById('cbamFilter').value;
+  const city = document.getElementById('cityFilter').value;
+  if (s) d = d.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(s)));
+  if (sec) d = d.filter(r => r.sector === sec);
+  if (pri) d = d.filter(r => r.priority === pri);
+  if (cb) d = d.filter(r => r.cbam === cb);
+  if (city) d = d.filter(r => r.city === city);
+  if (sortCol) {
+    d.sort((a, b) => {
+      let va = a[sortCol], vb = b[sortCol];
+      if (sortCol === 'revenue' || sortCol === 'dealSize') { va = parseInt(String(va).replace(/,/g,'')); vb = parseInt(String(vb).replace(/,/g,'')); }
+      if (va < vb) return sortAsc ? -1 : 1;
+      if (va > vb) return sortAsc ? 1 : -1;
+      return 0;
+    });
+  }
+  return d;
+}
+
+function sortBy(col) {
+  if (sortCol === col) sortAsc = !sortAsc; else { sortCol = col; sortAsc = true; }
+  document.querySelectorAll('.sort-arrow').forEach(el => el.textContent = '');
+  document.getElementById('sort-' + col).textContent = sortAsc ? ' \u25B2' : ' \u25BC';
+  renderTable(getFiltered());
+}
+
+function populateFilters() {
+  const sets = { sectorFilter: new Set(), priorityFilter: new Set(), cbamFilter: new Set(), cityFilter: new Set() };
+  leads.forEach(r => { sets.sectorFilter.add(r.sector); sets.priorityFilter.add(r.priority); sets.cbamFilter.add(r.cbam); sets.cityFilter.add(r.city); });
+  Object.entries(sets).forEach(([id, s]) => {
+    const el = document.getElementById(id);
+    [...s].sort().forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v; el.appendChild(o); });
+  });
+}
+
+function exportCSV() {
+  const data = getFiltered();
+  const headers = columns.map(c => c.label);
+  const rows = data.map(r => columns.map(c => '"' + String(r[c.key]).replace(/"/g, '""') + '"'));
+  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'FactoryConnect_Leads_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+}
+
+document.getElementById('searchBox').addEventListener('input', () => renderTable(getFiltered()));
+['sectorFilter','priorityFilter','cbamFilter','cityFilter'].forEach(id =>
+  document.getElementById(id).addEventListener('change', () => renderTable(getFiltered()))
+);
+
+renderHeaders();
+populateFilters();
+renderTable(leads);
+</script>
+</body>
+</html>

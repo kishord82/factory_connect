@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FactoryConnect — Phase 1 Execution Blueprint</title>
+<style>
+:root {
+  --fc-primary: #1a365d;
+  --fc-secondary: #2d3748;
+  --fc-accent: #3182ce;
+  --fc-green: #38a169;
+  --fc-red: #e53e3e;
+  --fc-orange: #dd6b20;
+  --fc-yellow: #d69e2e;
+  --fc-bg: #f7fafc;
+  --fc-card: #ffffff;
+  --fc-border: #e2e8f0;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--fc-bg); color: var(--fc-secondary); line-height: 1.7; }
+.container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+header { background: linear-gradient(135deg, var(--fc-primary) 0%, #2a4a7f 100%); color: white; padding: 3rem 2rem; text-align: center; border-bottom: 4px solid var(--fc-accent); }
+header h1 { font-size: 2.2rem; margin-bottom: 0.5rem; }
+header .subtitle { font-size: 1.1rem; opacity: 0.9; }
+header .date { font-size: 0.9rem; opacity: 0.7; margin-top: 0.5rem; }
+
+.banner { background: linear-gradient(135deg, #1a365d 0%, #2d3748 100%); color: white; padding: 2rem; border-radius: 12px; margin: 2rem 0; border: 2px solid var(--fc-accent); }
+.banner h2 { font-size: 1.5rem; margin-bottom: 0.8rem; }
+.banner p { opacity: 0.95; font-size: 1.05rem; }
+.banner .highlight { color: #68d391; font-weight: 700; font-size: 1.15rem; display: block; margin: 0.8rem 0; }
+
+section { margin: 2.5rem 0; }
+section h2 { font-size: 1.5rem; color: var(--fc-primary); border-bottom: 3px solid var(--fc-accent); padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
+section h3 { font-size: 1.15rem; color: var(--fc-primary); margin: 1.5rem 0 0.8rem; }
+section h4 { font-size: 1rem; color: var(--fc-secondary); margin: 1rem 0 0.5rem; }
+
+.card { background: var(--fc-card); border-radius: 10px; padding: 1.5rem; margin: 1rem 0; border: 1px solid var(--fc-border); box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+
+table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.92rem; }
+th { background: var(--fc-primary); color: white; padding: 0.7rem 0.8rem; text-align: left; font-weight: 600; }
+td { padding: 0.65rem 0.8rem; border-bottom: 1px solid var(--fc-border); vertical-align: top; }
+tr:hover { background: #f0f5ff; }
+
+.tag { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600; margin: 0.1rem; }
+.tag-green { background: #c6f6d5; color: #22543d; }
+.tag-red { background: #fed7d7; color: #742a2a; }
+.tag-orange { background: #feebc8; color: #7b341e; }
+.tag-blue { background: #bee3f8; color: #2a4365; }
+.tag-yellow { background: #fefcbf; color: #744210; }
+.tag-purple { background: #e9d8fd; color: #44337a; }
+
+.callout { border-left: 4px solid var(--fc-accent); background: #ebf8ff; padding: 1.2rem; border-radius: 0 8px 8px 0; margin: 1rem 0; }
+.callout-green { border-color: var(--fc-green); background: #f0fff4; }
+.callout-red { border-color: var(--fc-red); background: #fff5f5; }
+.callout-orange { border-color: var(--fc-orange); background: #fffaf0; }
+
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+.three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+@media (max-width: 768px) { .two-col, .three-col { grid-template-columns: 1fr; } }
+
+.timeline { position: relative; padding-left: 2rem; margin: 1.5rem 0; }
+.timeline::before { content: ''; position: absolute; left: 0.5rem; top: 0; bottom: 0; width: 3px; background: var(--fc-accent); border-radius: 2px; }
+.timeline-item { position: relative; margin: 1.5rem 0; padding-left: 1rem; }
+.timeline-item::before { content: ''; position: absolute; left: -1.65rem; top: 0.5rem; width: 14px; height: 14px; border-radius: 50%; background: var(--fc-accent); border: 3px solid white; box-shadow: 0 0 0 2px var(--fc-accent); }
+.timeline-item h4 { color: var(--fc-primary); margin-bottom: 0.3rem; }
+.timeline-item p { font-size: 0.9rem; color: #4a5568; }
+
+.module-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin: 1rem 0; }
+.module { padding: 0.8rem 1rem; border-radius: 8px; border: 1px solid var(--fc-border); font-size: 0.88rem; }
+.module-p0 { background: #fff5f5; border-color: #fed7d7; }
+.module-p1 { background: #fffaf0; border-color: #feebc8; }
+.module-p2 { background: #f0fff4; border-color: #c6f6d5; }
+.module strong { display: block; font-size: 0.82rem; color: #718096; margin-bottom: 0.2rem; }
+
+p { margin: 0.8rem 0; }
+ul, ol { padding-left: 1.5rem; margin: 0.5rem 0; }
+li { margin: 0.4rem 0; font-size: 0.92rem; }
+strong { color: var(--fc-primary); }
+
+.toc { background: var(--fc-card); padding: 1.5rem; border-radius: 10px; border: 1px solid var(--fc-border); margin: 1.5rem 0; }
+.toc h3 { margin-bottom: 0.8rem; }
+.toc ol { padding-left: 1.5rem; }
+.toc li { margin: 0.3rem 0; }
+.toc a { color: var(--fc-accent); text-decoration: none; }
+.toc a:hover { text-decoration: underline; }
+
+.check { color: var(--fc-green); } .cross { color: var(--fc-red); }
+.disclaimer { background: #edf2f7; padding: 1rem; border-radius: 8px; font-size: 0.85rem; color: #718096; margin: 2rem 0; text-align: center; }
+
+.review-grid { display: grid; grid-template-columns: auto 1fr 1fr 1fr; gap: 0; margin: 1rem 0; }
+.review-grid > div { padding: 0.6rem 0.8rem; border-bottom: 1px solid var(--fc-border); font-size: 0.88rem; }
+</style>
+</head>
+<body>
+
+<header>
+<h1>FactoryConnect — Phase 1 Execution Blueprint</h1>
+<div class="subtitle">Consolidated from Claude Market Viability Analysis + ChatGPT Strategic Review</div>
+<div class="date">April 3, 2026 | Research Document — No Code Written</div>
+</header>
+
+<div class="container">
+
+<!-- ORIGIN -->
+<div class="banner">
+<h2>How This Document Was Built</h2>
+<p>You shared ChatGPT's strategic review of FactoryConnect. I've cross-referenced it against our existing Market Viability Analysis, RAID Analysis, RAID Recommendations, Architecture Blueprint, and Marketing Strategy. This document is the <strong>consolidated Phase 1 execution blueprint</strong> — adopting what's genuinely new and valuable from ChatGPT while noting what we'd already covered.</p>
+<span class="highlight">Bottom line: ChatGPT and our analysis are 85% aligned. The remaining 15% is where ChatGPT adds sharper tactical clarity — especially on scope discipline, exact module list, and team realism.</span>
+</div>
+
+<!-- SECTION 0: CROSS-REVIEW -->
+<section id="cross-review">
+<h2>0. Cross-Review: ChatGPT Feedback vs Our Existing Analysis</h2>
+
+<h3>What ChatGPT Says That We Already Covered</h3>
+<div class="card">
+<table>
+<tr><th>ChatGPT Recommendation</th><th>Our Coverage</th><th>Status</th></tr>
+<tr>
+<td>CBAM as fastest beachhead wedge</td>
+<td>Market Viability §5.2 — CBAM beachhead is our recommended GTM sequence step 1</td>
+<td><span class="tag tag-green">Already Done</span></td>
+</tr>
+<tr>
+<td>Tally first, Zoho second</td>
+<td>RAID Recommendations §Q7 — Tally JSON-first strategy; Architecture Blueprint adapter priority</td>
+<td><span class="tag tag-green">Already Done</span></td>
+</tr>
+<tr>
+<td>Don't build AS2 transport first — use managed VAN</td>
+<td>RAID Recommendations §Q3 — TrueCommerce xChange ISV partnership for Phase 1</td>
+<td><span class="tag tag-green">Already Done</span></td>
+</tr>
+<tr>
+<td>Solo founder burnout is the #1 kill risk</td>
+<td>Market Viability §6 — rated CRITICAL at 60% probability</td>
+<td><span class="tag tag-green">Already Done</span></td>
+</tr>
+<tr>
+<td>Factory owners don't Google "EDI software" — digital marketing is low-yield</td>
+<td>Market Viability §5.1 — digital marketing rated LOW viability</td>
+<td><span class="tag tag-green">Already Done</span></td>
+</tr>
+<tr>
+<td>Buyer-driven adoption is the best scale lever</td>
+<td>Market Viability §5.2 — buyer-driven sales engine in Months 7-12</td>
+<td><span class="tag tag-green">Already Done</span></td>
+</tr>
+<tr>
+<td>Validate before building — talk to factories first</td>
+<td>Market Viability §10 Phase 0 — 10 validation interviews before any code</td>
+<td><span class="tag tag-green">Already Done</span></td>
+</tr>
+<tr>
+<td>Unit economics work if you can sell</td>
+<td>Market Viability §4 — LTV:CAC 9.6x conservative, 92%+ gross margins</td>
+<td><span class="tag tag-green">Already Done</span></td>
+</tr>
+<tr>
+<td>India has no incumbent B2B integration player</td>
+<td>Market Viability §3.1 — SPS Commerce, TrueCommerce, Cleo all have zero India presence</td>
+<td><span class="tag tag-green">Already Done</span></td>
+</tr>
+<tr>
+<td>BullMQ over Temporal for MVP</td>
+<td>Architecture Blueprint — BullMQ + Redis already chosen for Phase 1</td>
+<td><span class="tag tag-green">Already Done</span></td>
+</tr>
+</table>
+</div>
+
+<h3>What ChatGPT Adds That's Genuinely New / Sharper</h3>
+<div class="card">
+<table>
+<tr><th>New Insight</th><th>Value</th><th>Action</th></tr>
+<tr>
+<td><strong>Explicit "NOT in Phase 1" list</strong> — no WhatsApp-first product, no multi-country, no broad AI auto-healing, no SAP B1/Marg/Busy/ERPNext in Phase 1</td>
+<td><span class="tag tag-red">HIGH</span></td>
+<td><strong>ADOPT.</strong> Our docs listed these as lower priority but never explicitly excluded them. ChatGPT's hard "do NOT build" list prevents scope creep. Critical discipline.</td>
+</tr>
+<tr>
+<td><strong>WhatsApp is a separate product motion</strong> — mixing it into the initial SKU creates onboarding chaos, support burden, and data quality problems</td>
+<td><span class="tag tag-red">HIGH</span></td>
+<td><strong>ADOPT.</strong> Our Architecture Blueprint includes WhatsApp channel gateway as Phase 1. ChatGPT is right: WhatsApp-native intake (no-ERP factories) is a different customer segment. Keep WhatsApp for alerts/notifications only in Phase 1. WhatsApp-as-primary-channel becomes Phase 2.</td>
+</tr>
+<tr>
+<td><strong>Exact 15 must-have modules list</strong> — tenant mgmt, factory profile, Tally bridge, Zoho connector, canonical model, mapping UI, buyer templates, pre-validation, queue+DLQ, status dashboard, exception console, CBAM module, sandbox, billing stub, audit log</td>
+<td><span class="tag tag-red">HIGH</span></td>
+<td><strong>ADOPT.</strong> We had these scattered across multiple docs. ChatGPT consolidates them into one prioritized list. Incorporated into Section 3 below.</td>
+</tr>
+<tr>
+<td><strong>Minimum team = 5 people, not solo</strong> — founder + 2 backend + 1 DevOps + 1 EDI specialist. Solo is explicitly called a kill risk for production quality.</td>
+<td><span class="tag tag-orange">MEDIUM-HIGH</span></td>
+<td><strong>PARTIALLY ADOPT.</strong> Reality check: you may not have budget for 5 people on Day 1. But the insight is correct — plan to build this team by Month 4-6 using design-partner revenue + personal savings. Section 7 below addresses this.</td>
+</tr>
+<tr>
+<td><strong>120-day plan with exact deliverables per 30-day block</strong></td>
+<td><span class="tag tag-orange">MEDIUM-HIGH</span></td>
+<td><strong>ADOPT with adjustments.</strong> ChatGPT's 120-day plan assumes a team of 5. Our version is calibrated for a solo-to-small-team reality. Incorporated into Section 5.</td>
+</tr>
+<tr>
+<td><strong>Exact first-10-customer filter criteria</strong> — must have Tally/Zoho, must have immediate compliance/buyer pressure, must provide sample data, must have internal cooperating person</td>
+<td><span class="tag tag-orange">MEDIUM</span></td>
+<td><strong>ADOPT.</strong> More specific than our "steel/pharma/auto" segmentation. Added explicit customer qualification criteria in Section 4.</td>
+</tr>
+<tr>
+<td><strong>Two-lane GTM only</strong> — Lane A: CBAM urgency, Lane B: Tally dealer network. Nothing else until these prove out.</td>
+<td><span class="tag tag-orange">MEDIUM</span></td>
+<td><strong>ADOPT.</strong> Sharper than our 5-strategy assessment. Focus = speed. Incorporated into Section 6.</td>
+</tr>
+<tr>
+<td><strong>Non-negotiable launch gates</strong> — 10 specific requirements before any customer goes "live"</td>
+<td><span class="tag tag-blue">MEDIUM</span></td>
+<td><strong>ADOPT.</strong> Our Architecture Blueprint has these scattered. Consolidating into a launch checklist in Section 8.</td>
+</tr>
+<tr>
+<td><strong>JSONata for mapping MVP</strong> — specific mapping technology recommendation</td>
+<td><span class="tag tag-blue">MEDIUM</span></td>
+<td><strong>EVALUATE.</strong> Our architecture uses a custom mapping engine. JSONata is simpler for MVP but may limit advanced transforms. Worth testing. Noted in Section 3.</td>
+</tr>
+<tr>
+<td><strong>Skip K8s initially if you can't operate it well</strong></td>
+<td><span class="tag tag-yellow">LOW</span></td>
+<td><strong>NOTED but disagree partially.</strong> GKE Autopilot (already in our architecture) removes most K8s operational burden. KEDA + Autopilot is actually simpler to operate than managing VMs with process managers. Keep current plan.</td>
+</tr>
+<tr>
+<td><strong>DPDP Rules 2025 notified Nov 2025</strong> — privacy compliance cannot wait</td>
+<td><span class="tag tag-blue">MEDIUM</span></td>
+<td><strong>Already covered</strong> in RAID Recommendations §Q16, but ChatGPT correctly emphasizes the timing. Added to launch gates.</td>
+</tr>
+</table>
+</div>
+
+<div class="callout callout-green">
+<strong>Summary:</strong> Our existing analysis had the right strategic direction. ChatGPT's primary value-add is <strong>sharper scope discipline</strong> (explicit "do NOT build" list), <strong>tactical consolidation</strong> (one module list, one 120-day plan, one customer filter), and <strong>team realism</strong> (solo founder cannot ship production quality). All adopted below.
+</div>
+</section>
+
+<!-- SECTION 1: PRODUCT DEFINITION -->
+<section id="product">
+<h2>1. Phase 1 Product Definition — The One-Sentence Version</h2>
+
+<div class="banner">
+<span class="highlight">"Keep your ERP. FactoryConnect handles buyer-ready documents, onboarding, and export-compliance workflows."</span>
+<p>Phase 1 is NOT a universal integration platform. It is an <strong>India-first export-enablement SaaS</strong> for Tally/Zoho-based exporters needing buyer integration and CBAM-driven export compliance.</p>
+</div>
+
+<h3>1.1 What Phase 1 Sells</h3>
+<div class="card">
+<table>
+<tr><th>Capability</th><th>Description</th><th>Why It Matters</th></tr>
+<tr>
+<td><strong>CBAM carbon reporting</strong></td>
+<td>Automated data extraction from ERP → EU-compliant quarterly CBAM reports</td>
+<td>Mandatory since Jan 2026. Factories spending Rs 2-5 lakh/quarter on consultants. Immediate urgent pain.</td>
+</tr>
+<tr>
+<td><strong>Buyer document generation</strong></td>
+<td>PO intake → sales order → invoice → shipment/ASN → buyer-format output</td>
+<td>Replaces manual re-keying (2-3 hrs/order). Eliminates buyer chargebacks for format errors.</td>
+</tr>
+<tr>
+<td><strong>Tally/Zoho integration</strong></td>
+<td>Bridge agent (Tally) or API connector (Zoho) reads/writes ERP data</td>
+<td>"Keep your ERP" is the key message. No ERP migration. Just plug in.</td>
+</tr>
+<tr>
+<td><strong>Buyer template library</strong></td>
+<td>Pre-built templates for 5-10 buyer document specs (EDI X12, cXML, Ariba)</td>
+<td>Factory doesn't need to understand EDI. Templates handle translation.</td>
+</tr>
+<tr>
+<td><strong>Managed transport</strong></td>
+<td>AS2/VAN delivery via TrueCommerce xChange partnership</td>
+<td>No factory needs to manage AS2 certificates. FC handles transport.</td>
+</tr>
+</table>
+</div>
+
+<h3>1.2 The Narrow Workflow Corridor</h3>
+<div class="card">
+<p>Phase 1 supports ONE transaction flow end-to-end:</p>
+<div style="background: #edf2f7; padding: 1.2rem; border-radius: 8px; text-align: center; font-size: 1.05rem; margin: 1rem 0;">
+<strong>PO Intake</strong> → <strong>Sales Order Sync/Create in ERP</strong> → <strong>Invoice Output</strong> → <strong>Shipment/Dispatch Output</strong> → <strong>Buyer-Format Delivery</strong>
+</div>
+<p>Plus: <strong>CBAM compliance overlay</strong> — emissions data extraction from shipment/production records → quarterly EU report generation.</p>
+<p style="color: var(--fc-red); font-weight: 600;">That's it. No inventory forecasting, no analytics dashboards, no AI auto-healing, no WhatsApp order intake, no multi-country expansion. Those are Phase 2+.</p>
+</div>
+</section>
+
+<!-- SECTION 2: SCOPE BOUNDARIES -->
+<section id="scope">
+<h2>2. Hard Scope Boundaries — What's IN vs OUT</h2>
+
+<div class="two-col">
+<div class="card" style="border-left: 4px solid var(--fc-green);">
+<h3 style="color: var(--fc-green);">✅ IN Phase 1 — Build This</h3>
+<ul>
+<li><strong>Source ERPs:</strong> Tally Prime (JSON-first, XML fallback) + Zoho Books/Inventory</li>
+<li><strong>Core entities:</strong> Order, Invoice, Shipment, Party, Product, Inventory</li>
+<li><strong>Workflow:</strong> PO → SO → Invoice → Shipment (one corridor)</li>
+<li><strong>Compliance:</strong> CBAM carbon reporting module</li>
+<li><strong>Buyer delivery:</strong> Template-driven document generation, managed AS2/VAN</li>
+<li><strong>Buyer templates:</strong> 5-10 buyer specs, manually curated</li>
+<li><strong>Mapping:</strong> Configuration UI with AI-suggested, human-approved mappings</li>
+<li><strong>Operations:</strong> Audit trail, retry queues, DLQ, status dashboard, exception console</li>
+<li><strong>Notifications:</strong> WhatsApp + email for alerts and onboarding ONLY</li>
+<li><strong>Security:</strong> Multi-tenant with RLS, parameterized queries, PII redaction, FLE for sensitive fields</li>
+<li><strong>Onboarding:</strong> Ops-heavy, human-assisted with product checklists</li>
+<li><strong>Billing:</strong> Stub for Phase 1 (manual invoicing OK for first 50 customers)</li>
+<li><strong>Sandbox/demo:</strong> Prospects can see the product working with sample data</li>
+</ul>
+</div>
+<div class="card" style="border-left: 4px solid var(--fc-red);">
+<h3 style="color: var(--fc-red);">❌ NOT in Phase 1 — Explicitly Deferred</h3>
+<ul>
+<li><strong>ERPs:</strong> SAP B1, Marg, Busy, ERPNext — wait for paying demand</li>
+<li><strong>WhatsApp-first product:</strong> No-ERP factories using WhatsApp as primary channel — this is a SEPARATE product motion, not Phase 1</li>
+<li><strong>Full AI auto-healing:</strong> AI suggests mappings, but no autonomous correction in Phase 1</li>
+<li><strong>In-house AS2 transport:</strong> Use managed VAN only. Build own AS2 in Phase 2 when volume justifies</li>
+<li><strong>Buyer self-serve onboarding:</strong> Factory onboarding is human-assisted in Phase 1</li>
+<li><strong>Multi-country expansion:</strong> India only. No EDIFACT/EU-specific buyer formats beyond CBAM</li>
+<li><strong>Advanced analytics:</strong> No AI forecasting, no demand planning, no BI dashboards</li>
+<li><strong>Full field-sales org:</strong> Founder-led sales + 1 hire max in Phase 1</li>
+<li><strong>Buyer network partnerships at scale:</strong> 1-2 buyer design partners max</li>
+<li><strong>Direct buyer portal / white-labeling:</strong> Phase 2</li>
+<li><strong>Deep workflow engine:</strong> No saga orchestrator with 15 states. Simple state machine with manual exception handling.</li>
+</ul>
+</div>
+</div>
+
+<div class="callout callout-red">
+<strong>Scope Discipline Rule:</strong> If any feature request or "good idea" doesn't directly serve the narrow workflow corridor (PO → SO → Invoice → Shipment + CBAM), it goes on the Phase 2 backlog. No exceptions. This is the single most important discipline for a solo/small-team startup. Every feature you DON'T build buys you time to get the ones you DO build right.
+</div>
+</section>
+
+<!-- SECTION 3: MODULE LIST -->
+<section id="modules">
+<h2>3. Exact Module List — P0 / P1 / P2</h2>
+
+<h3>P0 — Must Ship Before First Customer (15 modules)</h3>
+<div class="module-grid">
+<div class="module module-p0"><strong>P0-1: Tenant + Org Management</strong>Multi-tenant schema, RLS policies, tenant context middleware, org profile CRUD</div>
+<div class="module module-p0"><strong>P0-2: Auth + IAM</strong>Keycloak integration, JWT middleware, role-based access (admin, ops, viewer)</div>
+<div class="module module-p0"><strong>P0-3: Factory Profile + Onboarding Workspace</strong>Factory setup wizard, ERP selection, connection config, onboarding checklist UI</div>
+<div class="module module-p0"><strong>P0-4: Tally Bridge Agent</strong>Windows-side agent, TallyPrime JSON API (7.0+) + XML fallback (6.x), adaptive polling, local SQLite queue, health probes</div>
+<div class="module module-p0"><strong>P0-5: Zoho Connector</strong>OAuth2 integration, Zoho Books/Inventory APIs, rate limiting (100 req/min), webhook subscriptions</div>
+<div class="module module-p0"><strong>P0-6: Canonical Model Service</strong>6 entities (Order, Invoice, Shipment, Party, Product, Inventory), Extensions map for industry-specific data, validation</div>
+<div class="module module-p0"><strong>P0-7: Mapping Configuration UI</strong>Visual field mapper, AI-suggested mappings (human-approved), three-layer architecture (base spec → buyer template → connection override). Consider JSONata for MVP transforms.</div>
+<div class="module module-p0"><strong>P0-8: Buyer Template Library</strong>5-10 pre-built buyer document specs, template versioning, template CRUD for ops team</div>
+<div class="module module-p0"><strong>P0-9: Pre-Validation Engine</strong>Validates outbound documents against buyer spec BEFORE sending. Catches errors before they reach buyer. Validation rules per template.</div>
+<div class="module module-p0"><strong>P0-10: Message Queue + Retries + DLQ</strong>BullMQ + Redis, configurable retry with exponential backoff, dead-letter queue for failed messages, idempotency keys</div>
+<div class="module module-p0"><strong>P0-11: Document Status Dashboard</strong>Real-time status of all messages per factory, filter by status/date/buyer, drill into individual message details</div>
+<div class="module module-p0"><strong>P0-12: Manual Exception Handling Console</strong>View and resolve failed messages, manual retry, manual override mapping, assign to ops team member</div>
+<div class="module module-p0"><strong>P0-13: CBAM Compliance Module</strong>Emissions data collection from ERP production/shipment data, calculation engine per product category, EU quarterly report generation (XML format), CBAM dashboard</div>
+<div class="module module-p0"><strong>P0-14: Sandbox / Demo Mode</strong>Pre-loaded sample data (steel exporter scenario), simulated Tally bridge, simulated buyer responses, allows prospects to experience the product</div>
+<div class="module module-p0"><strong>P0-15: Audit Log</strong>Every data mutation logged with user, timestamp, before/after, correlation ID. Hash-chain SHA-256 for tamper evidence.</div>
+</div>
+
+<h3>P1 — Build During First 3 Pilots (Months 4-6)</h3>
+<div class="module-grid">
+<div class="module module-p1"><strong>P1-1: Managed Transport Integration</strong>TrueCommerce xChange API integration for AS2/VAN document delivery</div>
+<div class="module module-p1"><strong>P1-2: Billing Stub</strong>Invoice generation, plan assignment, usage tracking. Manual collection OK for Phase 1.</div>
+<div class="module module-p1"><strong>P1-3: Notification Service</strong>WhatsApp (via Gupshup) + email alerts for: message failures, buyer rejections, CBAM report deadlines, onboarding steps</div>
+<div class="module module-p1"><strong>P1-4: Monitoring + Alerting</strong>Grafana + Prometheus dashboards, Tally bridge health monitoring, message throughput, error rate alerts</div>
+<div class="module module-p1"><strong>P1-5: Support Runbook</strong>Documented troubleshooting procedures for top 20 expected issues</div>
+<div class="module module-p1"><strong>P1-6: Onboarding Playbook</strong>Standardized onboarding checklist, factory data collection templates, timeline expectations</div>
+</div>
+
+<h3>P2 — After First 10 Paying Customers (Phase 2)</h3>
+<div class="module-grid">
+<div class="module module-p2"><strong>P2: SAP B1 Connector</strong>Only if paying demand exists</div>
+<div class="module module-p2"><strong>P2: Marg ERP Connector</strong>Pharma segment expansion</div>
+<div class="module module-p2"><strong>P2: WhatsApp Order Intake</strong>No-ERP factory channel — separate product motion</div>
+<div class="module module-p2"><strong>P2: Full Saga Orchestrator</strong>15-state workflow with auto-healing</div>
+<div class="module module-p2"><strong>P2: In-house AS2 Transport</strong>Replace managed VAN when volume > 50K msg/month</div>
+<div class="module module-p2"><strong>P2: Buyer Self-Serve Portal</strong>Buyers can onboard their suppliers directly</div>
+<div class="module module-p2"><strong>P2: Analytics + AI Forecasting</strong>Demand planning, inventory optimization</div>
+<div class="module module-p2"><strong>P2: SOC 2 Type I</strong>5-6 months, $25-35K via Drata</div>
+</div>
+</section>
+
+<!-- SECTION 4: TARGET CUSTOMERS -->
+<section id="customers">
+<h2>4. First 10 Customers — Exact Profile & Qualification Filter</h2>
+
+<h3>4.1 Ideal First Customer Profile (ICP)</h3>
+<div class="card">
+<table>
+<tr><th>Criterion</th><th>Requirement</th><th>Why</th></tr>
+<tr><td>Business type</td><td>Export manufacturer in India</td><td>Export = buyer compliance pain = urgent need</td></tr>
+<tr><td>ERP</td><td>Already using Tally Prime or Zoho Books/Inventory</td><td>These are the only two connectors in Phase 1</td></tr>
+<tr><td>Compliance pressure</td><td>Immediate CBAM obligation (EU exports) OR active buyer EDI requirement</td><td>Externally imposed deadline = fastest sales cycle</td></tr>
+<tr><td>Sample data readiness</td><td>Can provide real sample PO/invoice data within 2 weeks</td><td>Factories that can't provide data = 6-month onboarding nightmare</td></tr>
+<tr><td>Internal champion</td><td>Has a finance/ops person willing to cooperate during onboarding</td><td>Owner-only shops stall when the owner is busy</td></tr>
+<tr><td>Buyer count</td><td>1-3 buyers needing integration (not 10)</td><td>Manageable scope for first implementations</td></tr>
+<tr><td>Revenue size</td><td>Rs 5+ crore annual revenue (can absorb Rs 15K-40K/month)</td><td>Below this, price sensitivity kills the deal</td></tr>
+</table>
+</div>
+
+<h3>4.2 Best Customer Segments (in priority order)</h3>
+<div class="card">
+<table>
+<tr><th>#</th><th>Segment</th><th>Count for Phase 1</th><th>Why First</th></tr>
+<tr>
+<td>1</td>
+<td><strong>Steel / metal exporters to EU</strong></td>
+<td>4-5 customers</td>
+<td>CBAM is mandatory NOW. Rs 55-80/tonne penalty if non-compliant. Fastest path to revenue. Clusters: Hyderabad, Coimbatore, Ludhiana, Rajkot.</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>Auto component exporters</strong></td>
+<td>3-4 customers</td>
+<td>Bosch/Toyota/Hyundai EDI mandates. High willingness to pay. Lost POs cost lakhs. Clusters: Pune, Chennai, Bangalore.</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>Chemical exporters with EU exposure</strong></td>
+<td>1-2 customers</td>
+<td>CBAM/REACH-linked compliance pain. Good fit if active EU demand.</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>Pharma exporters</strong></td>
+<td>1 design partner max</td>
+<td>High value but operationally heavy (batch tracking, drug schedules). Take as design partner, not primary sales target.</td>
+</tr>
+</table>
+</div>
+
+<h3>4.3 Anti-Patterns — Customers to AVOID in Phase 1</h3>
+<div class="card" style="border-left: 4px solid var(--fc-red);">
+<table>
+<tr><th>Avoid</th><th>Why</th></tr>
+<tr><td>Factories with no ERP</td><td>WhatsApp-first is a separate product motion. Mixing it in creates data quality problems.</td></tr>
+<tr><td>Factories needing 4+ buyer systems on day one</td><td>Scope explosion. Phase 1 supports 1-3 buyers per factory.</td></tr>
+<tr><td>Highly customized SAP landscapes</td><td>SAP B1 connector isn't in Phase 1. Don't promise it.</td></tr>
+<tr><td>Factories that can't provide clean sample data</td><td>If they can't give you sample data in 2 weeks, onboarding will take 6 months.</td></tr>
+<tr><td>Customers wanting "full digital transformation"</td><td>FC Phase 1 is not analytics + procurement + ERP modernization. It's buyer compliance + CBAM.</td></tr>
+</table>
+</div>
+</section>
+
+<!-- SECTION 5: 120-DAY PLAN -->
+<section id="plan">
+<h2>5. 120-Day Execution Plan</h2>
+
+<div class="callout">
+<strong>Assumption:</strong> This plan is calibrated for a realistic trajectory: solo founder in Month 1, growing to 3-4 people by Month 4. Not ChatGPT's 5-person team from Day 1 (that's ideal but unlikely without funding). Adjusted deliverables accordingly.
+</div>
+
+<div class="timeline">
+<div class="timeline-item">
+<h4>Days 1-15: Validation Sprint (BEFORE any code)</h4>
+<p><strong>Goal:</strong> Confirm factories will pay before building anything.</p>
+<ul>
+<li>Cold-message 50 steel/metal exporters on LinkedIn + WhatsApp</li>
+<li>Complete 10 validation interviews: "How do you handle CBAM? What do you pay? Would you pay Rs 5K/month?"</li>
+<li>Talk to 3-5 CBAM consultants: "What do clients struggle with? What would an automated tool need?"</li>
+<li>Create landing page with pricing + waitlist. Run Rs 10K Google Ads targeting "CBAM compliance India"</li>
+<li><strong>GO/NO-GO gate:</strong> If 7+ interviews show strong interest AND 15+ waitlist signups → PROCEED. If not → REASSESS.</li>
+</ul>
+</div>
+
+<div class="timeline-item">
+<h4>Days 15-30: Foundation + CBAM Module Start</h4>
+<p><strong>Goal:</strong> Core infrastructure + CBAM module skeleton.</p>
+<ul>
+<li>Finalize wedge: CBAM-first exporters on Tally</li>
+<li>Set up monorepo, Docker Compose, CI pipeline</li>
+<li>Design tenant model, core DB schema (PostgreSQL + RLS), audit/event model</li>
+<li>Build auth (Keycloak integration) + tenant context middleware</li>
+<li>Start Tally bridge agent MVP (JSON API for TallyPrime 7.0+)</li>
+<li>Start CBAM emissions data collection module</li>
+<li>Start canonical order/invoice/shipment pipeline</li>
+<li><strong>Hire decision:</strong> Post for 1 backend engineer (Go). Needed by Day 30-45.</li>
+</ul>
+</div>
+
+<div class="timeline-item">
+<h4>Days 31-60: Core Product Build</h4>
+<p><strong>Goal:</strong> Tally connector working + CBAM module functional + mapping UI.</p>
+<ul>
+<li>Complete Tally bridge agent (JSON-first + XML fallback for pre-7.0)</li>
+<li>Build canonical model service with validation</li>
+<li>Build mapping configuration UI (AI-suggested, human-approved)</li>
+<li>Build CBAM calculation engine + EU report generation</li>
+<li>Add pre-validation engine</li>
+<li>Add idempotency + retry queues + DLQ (BullMQ)</li>
+<li>Build manual mapping review UI</li>
+<li>Create 3 buyer templates (maximum)</li>
+<li>Start outreach to first 3-5 design partner factories</li>
+<li>Set up sandbox/demo environment with sample steel exporter data</li>
+</ul>
+</div>
+
+<div class="timeline-item">
+<h4>Days 61-90: Design Partner Pilots</h4>
+<p><strong>Goal:</strong> 3-5 factories in controlled pilot. First real data flowing.</p>
+<ul>
+<li>Onboard 3-5 design partners (steel exporters, free or discounted)</li>
+<li>Complete document status dashboard + exception handling console</li>
+<li>Add audit log with hash-chain</li>
+<li>Add Zoho connector if demand exists from pilots</li>
+<li>Add buyer-specific template overrides based on pilot feedback</li>
+<li>Build monitoring + alerting (Grafana + Prometheus)</li>
+<li>First CBAM quarterly reports generated for pilot factories</li>
+<li>Run first CBAM webinar / outreach cycle</li>
+<li>Instrument: onboarding time, mapping accuracy, message failure rates</li>
+<li><strong>Hire decision:</strong> Need 1 EDI/integration specialist or strong contractor by now.</li>
+</ul>
+</div>
+
+<div class="timeline-item">
+<h4>Days 91-120: First Revenue</h4>
+<p><strong>Goal:</strong> Convert pilots to paid. 5-10 paying customers.</p>
+<ul>
+<li>Convert design partners to paid subscriptions (Rs 5K-15K/month)</li>
+<li>Add 5 more factories from CBAM outreach pipeline</li>
+<li>Harden: retry logic, error handling, Tally bridge stability</li>
+<li>Add billing stub and pricing experiments</li>
+<li>Package onboarding as standardized service</li>
+<li>Write support runbook for top 20 issues</li>
+<li>Publish first case study from pilot success</li>
+<li>Start Tally dealer partner recruitment in 2 export-hub cities</li>
+<li>Decide: does CBAM remain primary wedge or become upsell layer?</li>
+<li><strong>TARGET:</strong> 5-10 paying customers, Rs 50K-1.5L MRR</li>
+</ul>
+</div>
+</div>
+</section>
+
+<!-- SECTION 6: GTM -->
+<section id="gtm">
+<h2>6. Go-to-Market — Two Lanes Only</h2>
+
+<div class="callout callout-orange">
+<strong>ChatGPT's sharpest insight:</strong> Don't run 5 GTM strategies. Run TWO. Everything else is noise until these two prove out.
+</div>
+
+<div class="two-col">
+<div class="card" style="border-top: 4px solid var(--fc-green);">
+<h3>Lane A: CBAM Urgency (Fastest to Revenue)</h3>
+<p><strong>Target:</strong> Steel/aluminium/chemical exporters to EU</p>
+<p><strong>Message:</strong> "CBAM is mandatory since Jan 2026. You're paying consultants Rs 2-5 lakh/quarter. We automate it for Rs 5K/month."</p>
+<p><strong>Tactics:</strong></p>
+<ul>
+<li>Free CBAM readiness audit (lead magnet)</li>
+<li>WhatsApp/LinkedIn direct outreach to exporters in Hyderabad, Coimbatore, Ludhiana, Rajkot</li>
+<li>Webinars: "CBAM 2026: What Indian Steel Exporters Must Do Now"</li>
+<li>Partner with 2-3 CBAM consultants as referral sources</li>
+</ul>
+<p><strong>Expected conversion:</strong> 4-6 weeks from first contact (urgency-driven)</p>
+<p><strong>Revenue target:</strong> 5-8 customers by Month 4</p>
+</div>
+<div class="card" style="border-top: 4px solid var(--fc-accent);">
+<h3>Lane B: Tally Dealer Network (Leverage After First Wins)</h3>
+<p><strong>Target:</strong> Tally implementation partners in export-hub cities</p>
+<p><strong>Message:</strong> "Your clients export. They need buyer compliance. You earn commission on every FC signup."</p>
+<p><strong>Tactics:</strong></p>
+<ul>
+<li>Identify top Tally dealers in Pune, Chennai, Hyderabad, Coimbatore</li>
+<li>Offer 15-20% referral commission on first-year subscription</li>
+<li>Provide co-branded materials and demo access</li>
+<li>Joint webinars with Tally dealer for their client base</li>
+</ul>
+<p><strong>Expected conversion:</strong> 2-3 months to recruit first dealers, then 1-2 customers/month/dealer</p>
+<p><strong>Revenue target:</strong> 10-20 customers via dealers by Month 8</p>
+</div>
+</div>
+
+<h3>6.1 What NOT to Spend Time On Yet</h3>
+<div class="card" style="border-left: 4px solid var(--fc-red);">
+<ul>
+<li><strong>SEO / content marketing</strong> — factory owners don't Google "EDI software." Defer.</li>
+<li><strong>Paid digital ads beyond validation</strong> — Rs 10K validation test is fine. Don't pour money into Google Ads.</li>
+<li><strong>PLG / self-serve signups</strong> — this isn't a self-serve product. Onboarding needs humans.</li>
+<li><strong>Industry association partnerships (CII, FIEO)</strong> — bureaucratic, 6+ months. Start after proving revenue.</li>
+<li><strong>Trade show booths</strong> — expensive. Attend as visitor for networking, don't buy booths until Month 8+.</li>
+</ul>
+</div>
+</section>
+
+<!-- SECTION 7: TEAM -->
+<section id="team">
+<h2>7. Team — Realistic Build-Up</h2>
+
+<div class="callout">
+<strong>ChatGPT says:</strong> Minimum 5 people (founder + 2 backend + 1 DevOps + 1 EDI specialist). <strong>Our reality check:</strong> You probably can't afford 5 people on Day 1. Here's the realistic ramp.
+</div>
+
+<div class="card">
+<table>
+<tr><th>Timeline</th><th>Team Size</th><th>Roles</th><th>Monthly Burn</th></tr>
+<tr>
+<td><strong>Month 1-2</strong></td>
+<td>1 (solo)</td>
+<td>Founder: product + architecture + core backend + sales outreach</td>
+<td>~Rs 1.5-2 lakh (infra + personal)</td>
+</tr>
+<tr>
+<td><strong>Month 2-3</strong></td>
+<td>2</td>
+<td>+ 1 Backend Engineer (Go) — remote contractor or junior hire in India (Rs 80K-1.2L/month)</td>
+<td>~Rs 3-3.5 lakh</td>
+</tr>
+<tr>
+<td><strong>Month 4-5</strong></td>
+<td>3</td>
+<td>+ 1 EDI/Integration Specialist — contractor OK (Rs 1-1.5L/month). Handles buyer template creation, transport config, pre-validation rules.</td>
+<td>~Rs 4.5-5 lakh</td>
+</tr>
+<tr>
+<td><strong>Month 6-8</strong></td>
+<td>4</td>
+<td>+ 1 Onboarding/Support Lead — handles factory onboarding, exception resolution, customer communication (Rs 50-70K/month)</td>
+<td>~Rs 5.5-6.5 lakh</td>
+</tr>
+<tr>
+<td><strong>Month 9-12</strong></td>
+<td>5-6</td>
+<td>+ 1 Sales rep (field, Pune or Chennai) + 1 Frontend engineer for portal improvements</td>
+<td>~Rs 8-10 lakh</td>
+</tr>
+</table>
+</div>
+
+<div class="callout callout-orange">
+<strong>Funding the Team:</strong> Month 1-8 burn totals approximately Rs 25-35 lakh. If you maintain USA remote income during Month 1-4 (before India move), and have Rs 15-20 lakh savings, you can reach the point where revenue (Rs 5-10 lakh MRR at 30-50 customers) starts covering team costs. The critical gap is Month 5-10 when expenses grow but revenue hasn't caught up.
+</div>
+</section>
+
+<!-- SECTION 8: LAUNCH GATES -->
+<section id="gates">
+<h2>8. Non-Negotiable Launch Gates</h2>
+
+<p>Before ANY customer goes "live" (receiving real buyer documents), ALL of these must be working:</p>
+
+<div class="card">
+<table>
+<tr><th>#</th><th>Gate</th><th>Test</th></tr>
+<tr><td>1</td><td><strong>Idempotency</strong></td><td>Send same message twice → only processed once. Verified with integration test.</td></tr>
+<tr><td>2</td><td><strong>Retry + DLQ flows</strong></td><td>Simulate transport failure → message retries with backoff → lands in DLQ after max retries. Ops can reprocess.</td></tr>
+<tr><td>3</td><td><strong>Pre-flight validation</strong></td><td>Send intentionally malformed document → caught before reaching buyer → error shown in dashboard with clear fix instructions.</td></tr>
+<tr><td>4</td><td><strong>Audit trail complete</strong></td><td>Every message mutation has before/after + user + timestamp + correlation ID. Hash-chain verifiable.</td></tr>
+<tr><td>5</td><td><strong>Mapping approval workflow</strong></td><td>AI-suggested mapping → human reviews → approves/rejects → only approved mappings go live.</td></tr>
+<tr><td>6</td><td><strong>Buyer template versioning</strong></td><td>Template v1.0 → update to v1.1 → existing connections still use v1.0 until explicitly migrated.</td></tr>
+<tr><td>7</td><td><strong>Monitoring + alerting</strong></td><td>Message failure rate > 5% triggers alert. Tally bridge offline > 5 min triggers alert. Dashboard shows real-time stats.</td></tr>
+<tr><td>8</td><td><strong>Rollback path</strong></td><td>Bad deployment → rollback to previous version in < 5 min. DB migrations have working down scripts.</td></tr>
+<tr><td>9</td><td><strong>Support runbook</strong></td><td>Top 20 expected issues documented with step-by-step resolution. Accessible to ops team.</td></tr>
+<tr><td>10</td><td><strong>Security baseline</strong></td><td>RLS verified (cross-tenant access returns zero rows). PII redacted in all logs. FLE on GSTIN/PAN/bank fields. Parameterized queries only.</td></tr>
+<tr><td>11</td><td><strong>Onboarding checklist standardized</strong></td><td>Documented step-by-step: factory data collection → ERP connection → mapping config → buyer template selection → test message → go-live.</td></tr>
+<tr><td>12</td><td><strong>DPDP compliance baseline</strong></td><td>Data processing agreement template ready. Consent collection mechanism. DPO contact published. Breach notification runbook drafted.</td></tr>
+</table>
+</div>
+</section>
+
+<!-- SECTION 9: METRICS -->
+<section id="metrics">
+<h2>9. Phase 1 Metrics That Matter</h2>
+
+<div class="callout">
+<strong>ChatGPT's good point:</strong> Ignore vanity metrics. Track only what proves or disproves product-market fit.
+</div>
+
+<div class="card">
+<table>
+<tr><th>Metric</th><th>Target</th><th>Why It Matters</th></tr>
+<tr><td><strong>Time: signed pilot → first successful document flow</strong></td><td>< 3 weeks</td><td>If onboarding takes 2+ months, you can't scale. This is THE operational health metric.</td></tr>
+<tr><td><strong>Mapping approval time</strong></td><td>< 2 days</td><td>Slow mapping = slow onboarding = churning customers</td></tr>
+<tr><td><strong>Message success rate</strong></td><td>> 95%</td><td>Below 90%, product isn't reliable enough for mission-critical B2B</td></tr>
+<tr><td><strong>Buyer rejection rate</strong></td><td>< 5%</td><td>Above 10%, pre-validation isn't catching enough errors</td></tr>
+<tr><td><strong>Manual intervention rate per customer</strong></td><td>< 2/week</td><td>If ops team is firefighting every customer daily, you can't scale</td></tr>
+<tr><td><strong>Tally bridge uptime</strong></td><td>> 99%</td><td>Bridge offline = factory dark. This is the single-point-of-failure metric.</td></tr>
+<tr><td><strong>Reusable buyer templates created</strong></td><td>5-10 by Month 4</td><td>Each template is an asset that onboards the NEXT customer faster</td></tr>
+<tr><td><strong>Paid conversion rate from pilot</strong></td><td>> 60%</td><td>Below 40%, product isn't delivering enough value to justify payment</td></tr>
+<tr><td><strong>Monthly churn</strong></td><td>< 5%</td><td>Above 8%, product isn't sticky. Investigate immediately.</td></tr>
+<tr><td><strong>MRR</strong></td><td>Rs 1.5L by Month 8, Rs 10L by Month 14-18</td><td>Break-even requires ~50 customers at blended Rs 20K/month</td></tr>
+<tr><td><strong>Net onboarding cost per customer</strong></td><td>< Rs 25,000</td><td>Above Rs 50K, onboarding erodes unit economics</td></tr>
+</table>
+</div>
+
+<h3>9.1 Proof Standard — When Is Product-Market Fit Proven?</h3>
+<div class="card">
+<p>Don't ask "do customers like this?" Ask these specific questions:</p>
+<ul>
+<li>Did a factory go live with one buyer? <strong>(Technical proof)</strong></li>
+<li>Did messages flow without buyer rejection? <strong>(Quality proof)</strong></li>
+<li>Did the factory reduce manual work measurably? <strong>(Value proof)</strong></li>
+<li>Did the buyer accept the format without custom firefighting? <strong>(Scalability proof)</strong></li>
+<li>Did the compliance output unblock shipments or reduce cost? <strong>(ROI proof)</strong></li>
+<li>Did the factory agree to pay after the pilot? <strong>(Willingness-to-pay proof)</strong></li>
+</ul>
+<p>If all 6 are YES for 5+ customers → <strong>product-market fit confirmed. Scale.</strong></p>
+</div>
+</section>
+
+<!-- SECTION 10: TECH DECISIONS -->
+<section id="tech">
+<h2>10. Key Technical Decisions for Phase 1</h2>
+
+<div class="card">
+<table>
+<tr><th>Decision</th><th>Phase 1 Choice</th><th>Rationale</th></tr>
+<tr>
+<td>Backend language</td>
+<td><strong>Go 1.22 + Gin</strong> (adapters + core services)</td>
+<td>Already chosen in architecture. Performance, concurrency, single binary deploys.</td>
+</tr>
+<tr>
+<td>CBAM/AI module</td>
+<td><strong>Python 3.12 + FastAPI</strong></td>
+<td>Better library ecosystem for emissions calculations and AI/LLM integration.</td>
+</tr>
+<tr>
+<td>Queue system</td>
+<td><strong>BullMQ 5 + Redis 7</strong></td>
+<td>Simple, proven. Queue interface abstraction from day 1 for future migration to NATS/Kafka.</td>
+</tr>
+<tr>
+<td>Database</td>
+<td><strong>PostgreSQL 16 + RLS</strong></td>
+<td>Multi-tenant with row-level security. Raw SQL with pg — no ORM.</td>
+</tr>
+<tr>
+<td>Mapping engine</td>
+<td><strong>Custom with JSONata evaluation</strong></td>
+<td>JSONata for simple transforms (ChatGPT's suggestion — good for MVP). Custom logic for complex multi-step transforms. Evaluate after first 5 buyer templates.</td>
+</tr>
+<tr>
+<td>AS2 transport</td>
+<td><strong>TrueCommerce xChange ISV (managed)</strong></td>
+<td>Don't build. Rent. Phase 2 re-evaluate based on volume and economics.</td>
+</tr>
+<tr>
+<td>Infrastructure</td>
+<td><strong>GKE Autopilot + KEDA</strong></td>
+<td>Keep our plan. GKE Autopilot removes K8s operational burden. Disagree with ChatGPT's "skip K8s" — Autopilot IS the simple option.</td>
+</tr>
+<tr>
+<td>Auth</td>
+<td><strong>Keycloak 24</strong></td>
+<td>OIDC/JWT. Self-hosted on same GKE cluster.</td>
+</tr>
+<tr>
+<td>Secrets</td>
+<td><strong>HashiCorp Vault (dev: env vars)</strong></td>
+<td>Transit engine for FLE. Production only. Dev uses .env.</td>
+</tr>
+<tr>
+<td>Monitoring</td>
+<td><strong>Grafana + Prometheus + Loki</strong></td>
+<td>Already in architecture. Open-source, self-hosted on GKE.</td>
+</tr>
+<tr>
+<td>Frontend</td>
+<td><strong>React 19 + Vite 6 + shadcn/ui + Tailwind v4</strong></td>
+<td>Already chosen. Portal for factory dashboard + ops console.</td>
+</tr>
+<tr>
+<td>Workflow complexity</td>
+<td><strong>Simple state machine, NOT full saga orchestrator</strong></td>
+<td>ChatGPT is right: 15-state saga is Phase 2. Phase 1 needs PO→SO→Invoice→Shipment with manual exception handling. Keep it simple.</td>
+</tr>
+</table>
+</div>
+
+<div class="callout">
+<strong>One key ChatGPT adoption:</strong> Simplify the workflow engine for Phase 1. Our architecture designed a 15-state saga coordinator. That's the right long-term design, but for Phase 1 with 10-50 customers, a simple state machine with manual exception resolution is sufficient and much faster to build. Implement the full saga in Phase 2 when message volume and customer count justify the complexity.
+</div>
+</section>
+
+<!-- SECTION 11: COMMERCIAL PACKAGING -->
+<section id="pricing">
+<h2>11. Phase 1 Commercial Packaging</h2>
+
+<div class="card">
+<table>
+<tr><th>Component</th><th>Price</th><th>Notes</th></tr>
+<tr><td><strong>Pilot/onboarding fee</strong></td><td>Rs 15,000 one-time</td><td>Covers data collection, mapping config, test message, go-live support. Filters unserious prospects.</td></tr>
+<tr><td><strong>CBAM Standalone</strong></td><td>Rs 5,000/month</td><td>CBAM reporting only (no buyer integration). Lowest barrier entry point.</td></tr>
+<tr><td><strong>Starter (1-2 buyers)</strong></td><td>Rs 9,999/month</td><td>CBAM + 1-2 buyer connections + order/invoice flow + WhatsApp alerts.</td></tr>
+<tr><td><strong>Growth (3-5 buyers)</strong></td><td>Rs 19,999/month</td><td>+ more buyer connections + priority support + advanced mapping.</td></tr>
+<tr><td><strong>Extra buyer connection</strong></td><td>Rs 2,000/month</td><td>Per additional buyer beyond tier limit.</td></tr>
+<tr><td><strong>EDI setup fee</strong></td><td>Rs 15,000 one-time per buyer</td><td>AS2 cert exchange + EDI testing + go-live per new trading partner.</td></tr>
+</table>
+</div>
+
+<div class="callout callout-orange">
+<strong>Pricing philosophy for Phase 1:</strong> Don't optimize for pricing elegance. Optimize for: (1) recovering onboarding cost, (2) filtering unserious prospects, (3) learning willingness-to-pay. Adjust pricing aggressively based on first 10 customers' feedback. The Rs 5K CBAM standalone is the foot-in-the-door; upsell to Starter/Growth once they see value.
+</div>
+</section>
+
+<!-- SECTION 12: MILESTONE DECISION GATES -->
+<section id="decisions">
+<h2>12. Milestone Decision Gates</h2>
+
+<div class="card">
+<table>
+<tr><th>Milestone</th><th>Target Date</th><th>GO Signal</th><th>STOP/PIVOT Signal</th></tr>
+<tr>
+<td>Validation interviews</td>
+<td>Day 15</td>
+<td>7+ of 10 express strong interest + pain</td>
+<td>< 3 interested → problem isn't urgent enough</td>
+</tr>
+<tr>
+<td>Waitlist signups</td>
+<td>Day 30</td>
+<td>15+ signups with Rs 10K ad spend</td>
+<td>< 5 signups → demand is weaker than assumed</td>
+</tr>
+<tr>
+<td>First design partner live</td>
+<td>Month 3</td>
+<td>Real data flowing through Tally → FC → buyer format</td>
+<td>Can't connect to Tally reliably → ERP integration harder than expected</td>
+</tr>
+<tr>
+<td>5 paying customers</td>
+<td>Month 4-5</td>
+<td>5 factories paying Rs 5K+/month</td>
+<td>< 2 paying → product-market fit not there yet</td>
+</tr>
+<tr>
+<td>Rs 1.5L MRR</td>
+<td>Month 8-10</td>
+<td>Covers infrastructure + first hire</td>
+<td>< Rs 50K MRR → growth too slow, reassess strategy</td>
+</tr>
+<tr>
+<td>Monthly churn</td>
+<td>Month 10+</td>
+<td>< 5%</td>
+<td>> 8% → product isn't sticky, investigate root cause</td>
+</tr>
+<tr>
+<td>Break-even</td>
+<td>Month 14-18</td>
+<td>Rs 10L MRR, 50 customers</td>
+<td>Not reached by Month 18 → need external funding or pivot</td>
+</tr>
+</table>
+</div>
+</section>
+
+<!-- SECTION 13: WHAT'S NEXT -->
+<section id="next">
+<h2>13. What Comes After Phase 1</h2>
+
+<div class="card">
+<p>Phase 1 success (50+ paying customers, Rs 10L+ MRR) unlocks:</p>
+<table>
+<tr><th>Phase 2 Item</th><th>Trigger</th></tr>
+<tr><td>SAP B1 / Marg connectors</td><td>3+ customers requesting it with signed LOI</td></tr>
+<tr><td>WhatsApp-first product (no-ERP factories)</td><td>Separate product decision — different ICP, different onboarding, different pricing</td></tr>
+<tr><td>Full saga orchestrator (15 states)</td><td>Message volume > 10K/day and manual exceptions > 50/week</td></tr>
+<tr><td>In-house AS2 transport</td><td>Monthly VAN costs > Rs 2L and volume > 50K messages/month</td></tr>
+<tr><td>Buyer self-serve portal</td><td>3+ buyers requesting ability to onboard their own suppliers</td></tr>
+<tr><td>AI auto-healing</td><td>Enough training data from manual exceptions to build reliable models</td></tr>
+<tr><td>SOC 2 Type I</td><td>First enterprise customer or buyer requiring it</td></tr>
+<tr><td>Multi-country (EDIFACT for EU)</td><td>5+ customers with EU buyer integration needs beyond CBAM</td></tr>
+</table>
+</div>
+</section>
+
+<!-- FINAL -->
+<section>
+<h2>Final Word</h2>
+<div class="card" style="border: 2px solid var(--fc-accent); padding: 2rem;">
+<p style="font-size: 1.1rem; line-height: 1.8;">Both Claude's Market Viability Analysis and ChatGPT's strategic review converge on the same conclusion: <strong>FactoryConnect is a viable product in a real market, but only if you ship a narrow wedge first.</strong></p>
+
+<p style="font-size: 1.1rem; line-height: 1.8;">The Phase 1 product is: <strong>"CBAM-led export-enablement SaaS for Tally-based Indian exporters, with buyer-document integration for a small set of buyer formats and heavy human-assisted onboarding."</strong></p>
+
+<p style="font-size: 1.1rem; line-height: 1.8;">That is the smallest version of FactoryConnect that is commercially legible, technically survivable, differentiated enough for India, and realistic for a solo-to-small-team build.</p>
+
+<p style="font-size: 1.1rem; line-height: 1.8; color: var(--fc-green); font-weight: 600;">Next step: Start the 15-day validation sprint. Talk to 10 factories. Everything else follows from what they tell you.</p>
+</div>
+</section>
+
+<div class="disclaimer">
+<strong>Sources:</strong> This document consolidates analysis from Claude (Market Viability Analysis, RAID Analysis, RAID Recommendations, Architecture Blueprint, Marketing Strategy) and ChatGPT (Strategic Review, April 2026). External data sources include: MSME Dashboard, EU CBAM Taxation & Customs Union, TallyHelp Integration docs, PIB DPDP Rules notification, SPS Commerce SEC filings, Market Research Future (India EDI market), IBEF (India manufacturing/exports). All projections are estimates for planning purposes.
+</div>
+
+</div>
+</body>
+</html>

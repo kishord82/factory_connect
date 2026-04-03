@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FactoryConnect - Cloud Hosting Comparison</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f6f9; color: #1a1a2e; padding: 24px; max-width: 1200px; margin: 0 auto; }
+  h1 { font-size: 1.5rem; color: #0f3460; margin-bottom: 4px; }
+  h2 { font-size: 1.15rem; color: #0f3460; margin: 28px 0 12px; border-bottom: 2px solid #0f3460; padding-bottom: 6px; }
+  h3 { font-size: 1rem; color: #16213e; margin: 18px 0 8px; }
+  .subtitle { color: #555; font-size: 0.88rem; margin-bottom: 24px; }
+  .card { background: #fff; border-radius: 8px; padding: 20px 24px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin: 12px 0; }
+  th { background: #0f3460; color: #fff; padding: 10px 12px; text-align: left; }
+  td { padding: 9px 12px; border-bottom: 1px solid #eee; vertical-align: top; }
+  tr:hover td { background: #f0f4ff; }
+  .winner { background: #d4edda !important; font-weight: 600; }
+  .tag { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+  .tag-green { background: #d4edda; color: #155724; }
+  .tag-yellow { background: #fff3cd; color: #856404; }
+  .tag-red { background: #ffe0e0; color: #c0392b; }
+  .tag-blue { background: #e8f0fe; color: #1a73e8; }
+  .verdict { background: #0f3460; color: #fff; border-radius: 8px; padding: 20px 24px; margin: 20px 0; }
+  .verdict h2 { color: #fff; border-bottom-color: #4a7ab5; }
+  .pro { color: #155724; } .con { color: #c0392b; }
+  p, li { font-size: 0.88rem; line-height: 1.6; }
+  ul { margin: 6px 0 12px 20px; }
+  .footer { margin-top: 24px; font-size: 0.78rem; color: #888; text-align: center; }
+  @media print { body { padding: 8px; } }
+</style>
+</head>
+<body>
+
+<h1>Cloud Hosting Comparison for FactoryConnect</h1>
+<p class="subtitle">From the factory customer's perspective: which cloud is best for an integration SaaS serving Indian SME manufacturers? | April 2026</p>
+
+<h2>1. The Decision Context</h2>
+<div class="card">
+<p>FactoryConnect's customers are Indian factories (mostly SMEs) connecting to global buyers. The cloud choice affects them directly through latency to their ERP systems, data residency compliance, and the reliability of real-time EDI/Ariba transactions. This comparison evaluates AWS, Azure, GCP, and Indian alternatives (Jio Cloud, Airtel Cloud) from the <strong>factory customer's experience perspective</strong>, not just FactoryConnect's engineering convenience.</p>
+</div>
+
+<h2>2. Head-to-Head Comparison</h2>
+<div class="card">
+<table>
+<tr>
+  <th style="width:18%">Criteria</th>
+  <th style="width:16%">AWS</th>
+  <th style="width:16%">Azure</th>
+  <th style="width:16%">GCP</th>
+  <th style="width:16%">Jio Cloud</th>
+  <th style="width:16%">Airtel Cloud</th>
+</tr>
+<tr>
+  <td><strong>India Regions</strong></td>
+  <td>Mumbai (2016), Hyderabad (2022)</td>
+  <td>Pune (Central), Chennai (South), Jamnagar (West) — 3 regions</td>
+  <td>Mumbai (2017), Delhi (2021)</td>
+  <td>Jamnagar, Mumbai, Hyderabad — 3 AZs</td>
+  <td>Mumbai, Noida — 2 DCs</td>
+</tr>
+<tr>
+  <td><strong>Latency to Factory Hubs</strong></td>
+  <td class="winner">Hyderabad region = &lt;5ms to Telangana pharma cluster. Mumbai covers West India. <span class="tag tag-green">Best</span></td>
+  <td>Chennai covers South well. Pune for Maharashtra. 3 regions = widest spread. <span class="tag tag-green">Good</span></td>
+  <td>Mumbai only for West/South. Delhi for North. Gap in South India. <span class="tag tag-yellow">Okay</span></td>
+  <td>Hyderabad AZ is good. Limited global edge. <span class="tag tag-yellow">Okay</span></td>
+  <td>Mumbai/Noida only. No South India presence. <span class="tag tag-red">Weak</span></td>
+</tr>
+<tr>
+  <td><strong>Latency to Global Buyers (US/EU)</strong></td>
+  <td class="winner">16 US regions, 8 EU regions. Global backbone. <span class="tag tag-green">Best</span></td>
+  <td>60+ regions globally. Strong US/EU. <span class="tag tag-green">Best</span></td>
+  <td>40+ regions. Premium tier network. <span class="tag tag-green">Best</span></td>
+  <td>No global regions. <span class="tag tag-red">None</span></td>
+  <td>No global regions. <span class="tag tag-red">None</span></td>
+</tr>
+<tr>
+  <td><strong>Compute (equiv. 4vCPU/16GB)</strong></td>
+  <td>m6i.xlarge: ~$140/mo (Mumbai)</td>
+  <td>D4s_v5: ~$135/mo (Pune)</td>
+  <td class="winner">n2-standard-4: ~$125/mo (Mumbai) + sustained use discount auto-applied <span class="tag tag-green">Cheapest</span></td>
+  <td>~$95/mo (estimated) <span class="tag tag-green">Cheap</span></td>
+  <td>~$100/mo (estimated)</td>
+</tr>
+<tr>
+  <td><strong>Managed PostgreSQL 16</strong></td>
+  <td>RDS: db.r6g.xlarge ~$350/mo</td>
+  <td>Flexible Server: ~$330/mo</td>
+  <td class="winner">Cloud SQL: ~$290/mo (committed use = ~$200/mo) <span class="tag tag-green">Cheapest</span></td>
+  <td>No managed PG. Self-managed only. <span class="tag tag-red">DIY</span></td>
+  <td>No managed PG. <span class="tag tag-red">DIY</span></td>
+</tr>
+<tr>
+  <td><strong>Managed Redis 7</strong></td>
+  <td>ElastiCache: ~$160/mo (r6g.large)</td>
+  <td>Azure Cache: ~$170/mo</td>
+  <td class="winner">Memorystore: ~$140/mo <span class="tag tag-green">Cheapest</span></td>
+  <td>No managed Redis. <span class="tag tag-red">DIY</span></td>
+  <td>No managed Redis. <span class="tag tag-red">DIY</span></td>
+</tr>
+<tr>
+  <td><strong>Kubernetes (GKE/EKS/AKS)</strong></td>
+  <td>EKS: $73/mo cluster fee + nodes</td>
+  <td class="winner">AKS: $0 cluster fee (free control plane) + nodes <span class="tag tag-green">Free CP</span></td>
+  <td>GKE Autopilot: pay-per-pod, no node mgmt. Standard: $73/mo + nodes</td>
+  <td>No managed K8s. <span class="tag tag-red">None</span></td>
+  <td>No managed K8s. <span class="tag tag-red">None</span></td>
+</tr>
+<tr>
+  <td><strong>Object Storage (MinIO replacement)</strong></td>
+  <td>S3: $0.023/GB/mo</td>
+  <td>Blob: $0.018/GB/mo</td>
+  <td class="winner">GCS: $0.020/GB/mo (Autoclass) <span class="tag tag-blue">Balanced</span></td>
+  <td>JioCloud Storage: $0.015/GB/mo <span class="tag tag-green">Cheapest</span></td>
+  <td>~$0.018/GB/mo</td>
+</tr>
+<tr>
+  <td><strong>Data Residency Compliance</strong></td>
+  <td class="winner">RBI, SEBI, CERT-In compliant. DPDPA ready. SOC2, ISO27001. <span class="tag tag-green">Full</span></td>
+  <td class="winner">RBI, MeitY empaneled. Azure Govt for PSU. <span class="tag tag-green">Full</span></td>
+  <td>RBI compliant. ISO27001. Growing India compliance. <span class="tag tag-green">Good</span></td>
+  <td>MeitY empaneled. India-only data. <span class="tag tag-green">India Native</span></td>
+  <td>India data only. Basic compliance. <span class="tag tag-yellow">Basic</span></td>
+</tr>
+<tr>
+  <td><strong>AS2/EDI Integration Support</strong></td>
+  <td class="winner">AWS Transfer Family supports AS2 natively. Amazon MQ for EDI queues. B2Bi service. <span class="tag tag-green">Best</span></td>
+  <td>Azure Integration Services + Logic Apps for EDI. B2B gateway. <span class="tag tag-green">Good</span></td>
+  <td>No native AS2. Apigee for API management. Cloud Tasks for queues. <span class="tag tag-yellow">Build Own</span></td>
+  <td>None. <span class="tag tag-red">None</span></td>
+  <td>None. <span class="tag tag-red">None</span></td>
+</tr>
+<tr>
+  <td><strong>AI/ML for NLP (WhatsApp)</strong></td>
+  <td>Bedrock (Claude, Titan). SageMaker. Comprehend for NLP.</td>
+  <td>Azure OpenAI (GPT-4). Cognitive Services.</td>
+  <td class="winner">Vertex AI (Gemini, Claude). Best price/performance for NLP tasks. <span class="tag tag-green">Best Value</span></td>
+  <td>None. <span class="tag tag-red">None</span></td>
+  <td>None. <span class="tag tag-red">None</span></td>
+</tr>
+<tr>
+  <td><strong>Free Tier / Startup Credits</strong></td>
+  <td>$10K via AWS Activate for startups</td>
+  <td>$5K-150K via Microsoft for Startups (Founders Hub)</td>
+  <td class="winner">$200K via Google for Startups Cloud Program <span class="tag tag-green">Most Credits</span></td>
+  <td>Limited. Custom deals. <span class="tag tag-yellow">Negotiate</span></td>
+  <td>Limited. <span class="tag tag-yellow">Negotiate</span></td>
+</tr>
+<tr>
+  <td><strong>Support for Indian SMEs</strong></td>
+  <td>Strong partner network. Hindi support. AWS India office.</td>
+  <td>Hyderabad engineering center. Strong partner ecosystem in India.</td>
+  <td>Growing India team. GCP partner network smaller but quality.</td>
+  <td class="winner">Native Indian company. Hindi/regional language support. <span class="tag tag-green">Best Local</span></td>
+  <td>Indian company. Telecom bundle deals.</td>
+</tr>
+</table>
+</div>
+
+<h2>3. Estimated Monthly Cost: FactoryConnect Production Stack</h2>
+<div class="card">
+<p>Based on FactoryConnect's architecture (Node.js microservices, PostgreSQL 16, Redis 7, BullMQ, Kong, Keycloak, MinIO, monitoring stack) serving 500 factories:</p>
+<table>
+<tr>
+  <th>Component</th>
+  <th>AWS (Mumbai)</th>
+  <th>Azure (Pune)</th>
+  <th>GCP (Mumbai)</th>
+</tr>
+<tr><td>Compute (6 nodes, 4vCPU/16GB each)</td><td>$840</td><td>$810</td><td class="winner">$750</td></tr>
+<tr><td>Managed PostgreSQL (HA, 8vCPU/32GB)</td><td>$700</td><td>$660</td><td class="winner">$580</td></tr>
+<tr><td>Managed Redis (HA, 13GB)</td><td>$320</td><td>$340</td><td class="winner">$280</td></tr>
+<tr><td>Kubernetes Control Plane</td><td>$73</td><td class="winner">$0</td><td>$73</td></tr>
+<tr><td>Object Storage (500GB + CDN)</td><td>$35</td><td>$30</td><td>$32</td></tr>
+<tr><td>Load Balancer + WAF</td><td>$50</td><td>$55</td><td>$45</td></tr>
+<tr><td>Monitoring (Prometheus/Grafana managed)</td><td>$120</td><td>$140</td><td class="winner">$95</td></tr>
+<tr><td>Egress (500GB/mo to global buyers)</td><td>$45</td><td>$43</td><td class="winner">$40</td></tr>
+<tr><td>Secrets Manager / Vault</td><td>$15</td><td>$12</td><td>$12</td></tr>
+<tr><td>Message Queue (BullMQ on Redis)</td><td>Included in Redis</td><td>Included in Redis</td><td>Included in Redis</td></tr>
+<tr style="font-weight:700; background:#f0f4ff;">
+  <td><strong>TOTAL MONTHLY</strong></td>
+  <td>$2,198 (~Rs 1.85L)</td>
+  <td>$2,090 (~Rs 1.76L)</td>
+  <td class="winner"><strong>$1,907 (~Rs 1.60L)</strong> <span class="tag tag-green">Lowest</span></td>
+</tr>
+<tr style="font-weight:700; background:#f0f4ff;">
+  <td><strong>ANNUAL (with committed use)</strong></td>
+  <td>$22,000 (~Rs 18.5L)</td>
+  <td>$20,800 (~Rs 17.5L)</td>
+  <td class="winner"><strong>$17,200 (~Rs 14.5L)</strong> <span class="tag tag-green">Lowest</span></td>
+</tr>
+</table>
+<p style="margin-top:8px; font-size:0.82rem; color:#555;">GCP's committed use discounts (1-year) bring costs down significantly. AWS Reserved Instances and Azure Reserved VMs close the gap but require upfront payment.</p>
+</div>
+
+<h2>4. What Matters Most to Factory Customers</h2>
+<div class="card">
+<table>
+<tr><th style="width:25%">Customer Concern</th><th style="width:25%">What It Means</th><th style="width:25%">Best Cloud</th><th style="width:25%">Why</th></tr>
+<tr>
+  <td><strong>"Will my Tally data stay in India?"</strong></td>
+  <td>Data residency under DPDPA 2023 and RBI norms</td>
+  <td><span class="tag tag-green">All 3 major clouds</span></td>
+  <td>AWS, Azure, GCP all have India regions with data residency guarantees. Jio Cloud = India-only by default.</td>
+</tr>
+<tr>
+  <td><strong>"Will EDI reach my US buyer fast?"</strong></td>
+  <td>Sub-200ms latency India → US for real-time EDI/Ariba</td>
+  <td><span class="tag tag-green">GCP Premium Tier</span></td>
+  <td>GCP Premium Tier routes traffic onto Google's private backbone at the nearest PoP. Consistently lowest latency India→US in benchmarks.</td>
+</tr>
+<tr>
+  <td><strong>"My factory internet is unreliable"</strong></td>
+  <td>Need retry, store-and-forward, offline tolerance</td>
+  <td><span class="tag tag-blue">Application-level</span></td>
+  <td>This is solved by FactoryConnect's architecture (BullMQ retry queues, Tally bridge agent with local cache), not the cloud provider.</td>
+</tr>
+<tr>
+  <td><strong>"Is my data safe from competitors?"</strong></td>
+  <td>Multi-tenant isolation, encryption at rest/transit</td>
+  <td><span class="tag tag-green">AWS / Azure</span></td>
+  <td>Most mature IAM, KMS, and compliance certifications. GCP is close but AWS/Azure have longer enterprise track record.</td>
+</tr>
+<tr>
+  <td><strong>"My IT team doesn't know cloud"</strong></td>
+  <td>Need managed services, zero factory-side infra</td>
+  <td><span class="tag tag-green">GCP Autopilot</span></td>
+  <td>GKE Autopilot = fully managed K8s. Cloud SQL fully managed. Minimal ops overhead for FactoryConnect team = lower costs passed to customer.</td>
+</tr>
+<tr>
+  <td><strong>"We need CBAM reports for EU"</strong></td>
+  <td>Carbon data aggregation, EU regulatory reporting</td>
+  <td><span class="tag tag-blue">GCP (Carbon Footprint)</span></td>
+  <td>GCP provides per-project carbon footprint data natively. Useful for FactoryConnect's CBAM module to include cloud infra emissions.</td>
+</tr>
+</table>
+</div>
+
+<h2>5. Hybrid / Multi-Cloud Strategy</h2>
+<div class="card">
+<h3>Recommended Architecture: GCP Primary + AWS for EDI</h3>
+<p>Given FactoryConnect's unique requirements, a pragmatic hybrid approach works best:</p>
+<table>
+<tr><th style="width:20%">Layer</th><th style="width:30%">Cloud</th><th style="width:50%">Rationale</th></tr>
+<tr><td>Core Platform</td><td><strong>GCP Mumbai</strong></td><td>Best price/performance. GKE Autopilot. Cloud SQL PostgreSQL. Startup credits up to $200K.</td></tr>
+<tr><td>EDI/AS2 Transport</td><td><strong>AWS Mumbai</strong></td><td>AWS Transfer Family is the only cloud-native AS2 service. Run AS2 gateway on AWS, connect to GCP core via private interconnect or VPN.</td></tr>
+<tr><td>AI/NLP Gateway</td><td><strong>GCP Mumbai</strong></td><td>Vertex AI for Claude API. Best pricing for LLM inference. WhatsApp NLP runs here.</td></tr>
+<tr><td>CDN / Edge</td><td><strong>Cloudflare</strong></td><td>Cloudflare Workers for edge caching. Free tier generous. India PoPs in Mumbai, Chennai, Delhi, Kolkata.</td></tr>
+<tr><td>Monitoring</td><td><strong>GCP (Grafana Cloud)</strong></td><td>Grafana Cloud free tier covers early stage. Prometheus remote write to GCP.</td></tr>
+<tr><td>Disaster Recovery</td><td><strong>Azure (Pune/Chennai)</strong></td><td>Cold standby on Azure for geographic DR. Azure's 3 India regions provide best multi-region coverage.</td></tr>
+</table>
+</div>
+
+<h2>6. Indian Cloud Alternatives: When to Consider</h2>
+<div class="card">
+<table>
+<tr><th>Provider</th><th>Good For</th><th>Not Good For</th><th>FactoryConnect Verdict</th></tr>
+<tr>
+  <td><strong>Jio Cloud Platform</strong></td>
+  <td>PSU/govt factory customers who mandate India-only cloud. Cost-sensitive deployments. Data sovereignty.</td>
+  <td>Global buyer connectivity. Managed PaaS services. Kubernetes. Enterprise compliance certs.</td>
+  <td><span class="tag tag-yellow">Future option</span> — worth watching. Offer as optional deployment target for govt/PSU customers in Phase 3.</td>
+</tr>
+<tr>
+  <td><strong>Airtel Cloud</strong></td>
+  <td>Bundled with Airtel enterprise connectivity (MPLS, SD-WAN). Telecom-integrated.</td>
+  <td>Managed databases. Global reach. Modern PaaS. Limited services.</td>
+  <td><span class="tag tag-red">Skip</span> — too limited for SaaS platform needs.</td>
+</tr>
+<tr>
+  <td><strong>CtrlS / Yotta (Adani)</strong></td>
+  <td>Colocation + bare metal for factories wanting on-prem feel in a DC. GPU hosting.</td>
+  <td>Managed PaaS. Kubernetes. Developer experience.</td>
+  <td><span class="tag tag-yellow">Niche</span> — potential for hosting Tally bridge agent relay in their DCs for factory clusters.</td>
+</tr>
+</table>
+</div>
+
+<div class="verdict">
+<h2>Final Recommendation</h2>
+<p style="font-size:1rem; margin-top:10px;"><strong>Start on GCP</strong> with Mumbai region as primary. Apply for Google for Startups Cloud Program ($200K credits). Use GKE Autopilot for zero-ops Kubernetes, Cloud SQL for PostgreSQL, Memorystore for Redis.</p>
+<p style="margin-top:10px;">Add <strong>AWS Transfer Family</strong> in Mumbai region specifically for AS2/EDI transport — it's the only cloud-native AS2 service and avoids building custom AS2 infrastructure.</p>
+<p style="margin-top:10px;">Use <strong>Cloudflare</strong> for CDN, DDoS protection, and edge caching (free tier is sufficient for Year 1).</p>
+<p style="margin-top:10px;">Keep <strong>Azure as DR option</strong> for Phase 2 — its 3 India regions (Pune, Chennai, Jamnagar) give the best geographic disaster recovery spread.</p>
+<p style="margin-top:14px; font-size:0.9rem; opacity:0.9;">Estimated Year 1 cost (500 factories): <strong>Rs 14.5L/year on GCP</strong> + Rs 2.5L/year AWS AS2 = <strong>Rs 17L total</strong> vs Rs 22L all-AWS. Savings: Rs 5L/year (~23%).</p>
+</div>
+
+<p class="footer">FactoryConnect Cloud Strategy | Pricing as of April 2026 (verify current rates) | Generated by FactoryConnect Research</p>
+</body>
+</html>

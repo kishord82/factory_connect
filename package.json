@@ -1,0 +1,31 @@
+{
+  "name": "factory-connect",
+  "private": true,
+  "packageManager": "pnpm@9.15.4",
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "dev": "pnpm -r --parallel run dev",
+    "dev:api": "pnpm --filter @fc/api run dev",
+    "dev:portal": "pnpm --filter @fc/portal run dev",
+    "dev:bridge": "pnpm --filter @fc/bridge run dev",
+    "build": "pnpm -r run build",
+    "test": "pnpm -r run test",
+    "test:api": "pnpm --filter @fc/api run test",
+    "test:portal": "pnpm --filter @fc/portal run test",
+    "test:bridge": "pnpm --filter @fc/bridge run test",
+    "test:database": "pnpm --filter @fc/database run test",
+    "test:shared": "pnpm --filter @fc/shared run test",
+    "lint": "pnpm -r run lint",
+    "fmt": "prettier --write \"**/*.{ts,tsx,json,md,yaml,yml}\"",
+    "fmt:check": "prettier --check \"**/*.{ts,tsx,json,md,yaml,yml}\"",
+    "typecheck": "pnpm -r run typecheck",
+    "clean": "pnpm -r run clean"
+  },
+  "devDependencies": {
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.3"
+  }
+}

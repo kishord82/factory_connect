@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FactoryConnect — Master Architecture Blueprint</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f6f9; color: #1a1a2e; padding: 24px; max-width: 1400px; margin: 0 auto; }
+  h1 { font-size: 1.6rem; color: #0f3460; margin-bottom: 4px; }
+  h2 { font-size: 1.18rem; color: #0f3460; margin: 32px 0 12px; border-bottom: 2px solid #0f3460; padding-bottom: 6px; }
+  h3 { font-size: 0.95rem; color: #16213e; margin: 18px 0 8px; }
+  h4 { font-size: 0.88rem; color: #333; margin: 12px 0 6px; }
+  .subtitle { color: #555; font-size: 0.88rem; margin-bottom: 24px; }
+  .card { background: #fff; border-radius: 8px; padding: 20px 24px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.78rem; margin: 12px 0; }
+  th { background: #0f3460; color: #fff; padding: 8px 10px; text-align: left; font-size: 0.75rem; }
+  td { padding: 7px 10px; border-bottom: 1px solid #eee; vertical-align: top; }
+  tr:hover td { background: #f0f4ff; }
+  .tag { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.7rem; font-weight: 600; margin: 1px 2px; }
+  .tag-red { background: #ffe0e0; color: #c0392b; }
+  .tag-green { background: #d4edda; color: #155724; }
+  .tag-blue { background: #e8f0fe; color: #1a73e8; }
+  .tag-purple { background: #f3e5f5; color: #7b1fa2; }
+  .tag-orange { background: #fff3cd; color: #856404; }
+  .callout { background: #e8f0fe; border-left: 4px solid #1a73e8; padding: 14px 18px; margin: 14px 0; border-radius: 0 6px 6px 0; font-size: 0.84rem; }
+  .callout-red { background: #fce4ec; border-left-color: #c62828; }
+  .callout-green { background: #d4edda; border-left-color: #27ae60; }
+  .callout-warn { background: #fff3cd; border-left-color: #e67e22; }
+  .solution-box { background: #0f3460; color: #fff; border-radius: 8px; padding: 18px 22px; margin: 14px 0; }
+  .solution-box h3 { color: #82aaff; margin-top: 0; }
+  .solution-box h4 { color: #c3e88d; }
+  .solution-box p, .solution-box li { color: #e0e0e0; }
+  pre { background: #1a1a2e; color: #e0e0e0; padding: 16px; border-radius: 6px; overflow-x: auto; font-size: 0.76rem; line-height: 1.55; margin: 10px 0; }
+  pre .comment { color: #546e7a; }
+  code { background: #f0f0f0; padding: 2px 6px; border-radius: 3px; font-size: 0.78rem; }
+  p, li { font-size: 0.85rem; line-height: 1.6; }
+  ul, ol { margin: 6px 0 12px 20px; }
+  .flow-box { background: #16213e; color: #fff; border-radius: 8px; padding: 18px 22px; margin: 14px 0; font-family: 'Courier New', monospace; font-size: 0.76rem; line-height: 1.6; white-space: pre-wrap; overflow-x: auto; }
+  .section-header { background: linear-gradient(135deg, #0f3460, #16213e); color: #fff; padding: 14px 20px; border-radius: 8px 8px 0 0; font-weight: 700; font-size: 0.9rem; }
+  .section-body { background: #fff; padding: 16px 20px; border-radius: 0 0 8px 8px; border: 1px solid #e0e0e0; border-top: none; margin-bottom: 20px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  @media (max-width: 900px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+  .principle-box { background: #fff; border: 2px solid #0f3460; border-radius: 8px; padding: 14px; text-align: center; }
+  .principle-box .num { font-size: 1.6rem; font-weight: 800; color: #0f3460; }
+  .principle-box .label { font-size: 0.8rem; color: #555; margin-top: 4px; }
+  .footer { margin-top: 24px; font-size: 0.78rem; color: #888; text-align: center; }
+  .version-badge { background: #0f3460; color: #fff; padding: 4px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; }
+  .toc { background: #fff; padding: 16px 24px; border-radius: 8px; margin-bottom: 24px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); columns: 2; }
+  .toc a { color: #0f3460; text-decoration: none; font-size: 0.82rem; display: block; padding: 2px 0; }
+  .toc a:hover { text-decoration: underline; }
+  @media (max-width: 800px) { .toc { columns: 1; } }
+</style>
+</head>
+<body>
+
+<h1>FactoryConnect — Master Architecture Blueprint</h1>
+<p class="subtitle"><span class="version-badge">v2.0</span> &nbsp; The definitive architecture document for FactoryConnect — a multi-tenant SaaS integration platform connecting Indian SME factories to global buyer procurement systems. This blueprint consolidates all research, design decisions, and implementation specifications into a single source of truth. | April 2026</p>
+
+<div class="callout-red callout">
+<strong>SaaS Commitment:</strong> FactoryConnect is a SaaS product. Customers entrust us with their mission-critical buyer communications — purchase orders, invoices, shipment notices. Every component described here must be built to production-grade reliability. No shortcuts. No "it works in demo" code. If we can't do it right, we document it as unsupported and ship what we can guarantee.
+</div>
+
+<!-- ═══════════════ TOC ═══════════════ -->
+<div class="toc">
+<a href="#s1">1. Mission & Product Definition</a>
+<a href="#s2">2. Architecture Principles</a>
+<a href="#s3">3. System Layers</a>
+<a href="#s4">4. Canonical Data Model (6 Entities)</a>
+<a href="#s5">5. Source Adapters (Factory ERPs)</a>
+<a href="#s6">6. Target Adapters (Buyer Systems)</a>
+<a href="#s7">7. Routing Engine & N×M Resolution</a>
+<a href="#s8">8. AI Mapping Engine</a>
+<a href="#s9">9. Onboarding Configuration Engine</a>
+<a href="#s10">10. Three-Layer Mapping Architecture</a>
+<a href="#s11">11. Versioned Adapter Lifecycle</a>
+<a href="#s12">12. Load-Based Auto-Scaling</a>
+<a href="#s13">13. Network Security Layer</a>
+<a href="#s14">14. Order-to-Cash Flow</a>
+<a href="#s15">15. Three-Way Matching Engine</a>
+<a href="#s16">16. Error Handling & Resilience</a>
+<a href="#s17">17. Database Schema (Core Tables)</a>
+<a href="#s18">18. Infrastructure & Cloud</a>
+<a href="#s19">19. Monitoring & Observability</a>
+<a href="#s20">20. Compliance & Regulatory</a>
+<a href="#s21">21. Phase-Wise Build Plan</a>
+<a href="#docs">Document Cross-References</a>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2 id="s1">1. Mission & Product Definition</h2>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<div class="card">
+<p><strong>FactoryConnect</strong> is a multi-tenant SaaS platform that connects Indian SME factory ERPs (Tally, Zoho, SAP B1, ERPNext, Busy, Marg) to global buyer procurement systems (EDI X12, SAP Ariba, Coupa, Oracle Fusion, EDIFACT) through a canonical data model and AI-powered mapping engine.</p>
+
+<p><strong>The Problem:</strong> Indian factories export $200B+ annually but most run local ERPs (Tally, Busy) with no way to electronically communicate with global buyers who demand EDI/cXML/API integration. Today, this is done manually — emails, phone calls, Excel sheets — leading to errors, delays, and lost business.</p>
+
+<p><strong>The Solution:</strong> FC sits between factory and buyer, translating between any source format and any target format. AI auto-maps fields. Configuration replaces coding. One factory can connect to unlimited buyers through one FC subscription.</p>
+
+<div class="grid-3" style="margin-top: 16px;">
+  <div class="principle-box"><div class="num">N×M</div><div class="label">N factories × M buyers<br>via 6 canonical entities</div></div>
+  <div class="principle-box"><div class="num">13+</div><div class="label">Source connectors<br>(ERP + WhatsApp + CSV)</div></div>
+  <div class="principle-box"><div class="num">12+</div><div class="label">Target connectors<br>(EDI + cXML + REST + SOAP)</div></div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2 id="s2">2. Architecture Principles</h2>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<div class="card">
+<table>
+<thead><tr><th>#</th><th>Principle</th><th>What It Means</th><th>Why It Matters</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><strong>One Adapter = One Container</strong></td><td>Each source/target version is a single Docker container. 400-800 lines of Go.</td><td>Deploy, scale, decommission independently. One developer can own an adapter.</td></tr>
+<tr><td>2</td><td><strong>Canonical Model is the Contract</strong></td><td>6 entities (Product, Inventory, Order, Shipment, Invoice, Party) are the universal language.</td><td>Eliminates N×M mapping complexity. Source adapters produce canonical; target adapters consume canonical.</td></tr>
+<tr><td>3</td><td><strong>Configuration Over Code</strong></td><td>New factory-buyer connections are configured, not coded. Three-layer mappings, not custom scripts.</td><td>SaaS scalability. Onboard a new factory in hours, not weeks.</td></tr>
+<tr><td>4</td><td><strong>AI-Assisted, Human-Verified</strong></td><td>AI suggests mappings (Claude API). Humans review and approve. AI confidence threshold: 90%.</td><td>Speed of AI + reliability of human oversight. No hallucinated mappings reach production.</td></tr>
+<tr><td>5</td><td><strong>Scale by Load</strong></td><td>Kubernetes HPA + KEDA. Each adapter scales independently based on message queue depth.</td><td>Busy adapters get more pods. Idle adapters scale to zero. Cost-efficient.</td></tr>
+<tr><td>6</td><td><strong>Security is Non-Negotiable</strong></td><td>TLS 1.3, mTLS, AEAD ciphers only, Vault for secrets, zero-trust internal network.</td><td>B2B integration handles financial data. Buyers require enterprise-grade security.</td></tr>
+<tr><td>7</td><td><strong>Idempotency Everywhere</strong></td><td>Every mutation carries an idempotency key. Duplicate messages are safely ignored.</td><td>Network retries, AS2 MDN failures, and manual retransmissions are common in B2B. Duplicates must never create double orders.</td></tr>
+<tr><td>8</td><td><strong>No State Machine Skipping</strong></td><td>Documents follow strict dependency chains: PO → Ack → ASN → Invoice. No shortcuts.</td><td>An ASN without a confirmed PO Ack gets rejected by buyers. Cascade failures are the #1 EDI error.</td></tr>
+<tr><td>9</td><td><strong>Price Always Re-Verified Server-Side</strong></td><td>FC re-validates prices against PO before any invoice delivery.</td><td>Price mismatches cause payment holds. Three-way matching catches this before buyer sees it.</td></tr>
+<tr><td>10</td><td><strong>Honest About Limitations</strong></td><td>What FC cannot do is documented as clearly as what it can.</td><td>SaaS trust. Customers need to know boundaries. Overpromise = churn.</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2 id="s3">3. System Layers</h2>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<div class="flow-box">
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│                            FACTORYCONNECT PLATFORM                                   │
+│                                                                                     │
+│  LAYER 1: INGESTION                  LAYER 2: CORE ENGINE              LAYER 3: DELIVERY           │
+│  ┌──────────────────┐               ┌──────────────────┐              ┌──────────────────┐        │
+│  │ Source Adapters   │               │ Canonical Model   │              │ Target Adapters   │        │
+│  │                  │               │ Engine            │              │                  │        │
+│  │ src-tally-3/4    │──────▶        │                  │        ──────▶│ tgt-x12-4010/5010│        │
+│  │ src-zoho-v2/v3   │  Canonical    │ ┌──────────────┐ │  Canonical    │ tgt-ariba-23/24  │        │
+│  │ src-sapb1-10     │  Model In     │ │ Routing      │ │  Model Out    │ tgt-coupa-31/34  │        │
+│  │ src-erpnext-14   │──────▶        │ │ Engine       │ │        ──────▶│ tgt-oracle-v2    │        │
+│  │ src-busy-21      │               │ ├──────────────┤ │              │ tgt-edifact-d01b │        │
+│  │ src-marg-9       │               │ │ AI Mapping   │ │              │ tgt-generic-rest │        │
+│  │ src-whatsapp-v1  │               │ │ Engine       │ │              │ tgt-generic-soap │        │
+│  │ src-csv-v1       │               │ ├──────────────┤ │              └──────────────────┘        │
+│  │ src-generic-rest │               │ │ Validation   │ │                                          │
+│  │ src-generic-soap │               │ │ Gate         │ │              LAYER 4: PROTOCOL            │
+│  └──────────────────┘               │ ├──────────────┤ │              ┌──────────────────┐        │
+│                                     │ │ Three-Way    │ │              │ AS2 (AWS Transfer)│        │
+│  LAYER 0: MULTI-MODAL              │ │ Match Engine │ │              │ HTTPS/REST        │        │
+│  ┌──────────────────┐               │ └──────────────┘ │              │ cXML/HTTPS        │        │
+│  │ WhatsApp OCR     │               └──────────────────┘              │ SFTP/SSH          │        │
+│  │ Email Parser     │                                                │ OFTP2/TLS         │        │
+│  │ CSV/Excel Upload │               LAYER 5: DATA & STATE             │ SOAP/WS-Security  │        │
+│  │ FC Lite Portal   │               ┌──────────────────┐              └──────────────────┘        │
+│  │ NLP Text Input   │               │ PostgreSQL 16    │                                          │
+│  └──────────────────┘               │ Redis 7 (queues) │              LAYER 6: SECURITY            │
+│                                     │ Vault (secrets)  │              ┌──────────────────┐        │
+│  LAYER 7: ONBOARDING               │ S3 (documents)   │              │ TLS 1.3 / mTLS   │        │
+│  ┌──────────────────┐               └──────────────────┘              │ Cipher allowlist  │        │
+│  │ Config Engine    │                                                │ Vault PKI         │        │
+│  │ AI Auto-Detect   │               LAYER 8: OBSERVABILITY            │ IP allowlisting   │        │
+│  │ Sandbox Testing  │               ┌──────────────────┐              │ Per-connection sec│        │
+│  │ Buyer Simulator  │               │ Prometheus/Grafana│              └──────────────────┘        │
+│  │ Cert Lifecycle   │               │ Jaeger (tracing)  │                                          │
+│  └──────────────────┘               │ Structured logs   │              LAYER 9: SCALING             │
+│                                     └──────────────────┘              ┌──────────────────┐        │
+│                                                                      │ K8s HPA per adapter│        │
+│                                                                      │ KEDA scale-to-zero │        │
+│                                                                      │ Redis queue-based  │        │
+│                                                                      └──────────────────┘        │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2 id="s4">4. Canonical Data Model (6 Entities)</h2>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<div class="card">
+<p>The Canonical Model is the universal translator. Every source adapter produces these entities. Every target adapter consumes them. This is how N×M becomes N+M.</p>
+<table>
+<thead><tr><th>Entity</th><th>Purpose</th><th>Key Fields</th><th>Maps From (Source)</th><th>Maps To (Target)</th></tr></thead>
+<tbody>
+<tr><td><strong>Order</strong></td><td>Purchase orders / sales orders</td><td>order_id, buyer_id, factory_id, lines[], total, currency, payment_terms, delivery_date</td><td>Tally Sales Voucher, Zoho Sales Order, SAP B1 Order, ERPNext Sales Order</td><td>EDI 850, cXML OrderRequest, Coupa PO, Oracle PO, EDIFACT ORDERS</td></tr>
+<tr><td><strong>Product</strong></td><td>Item/product master data</td><td>product_id, name, sku, hsn_code, hts_code, unit_of_measure, description, category</td><td>Tally Stock Item, Zoho Item, SAP B1 Item, ERPNext Item</td><td>EDI catalog segments, cXML ItemDetail, Coupa Item</td></tr>
+<tr><td><strong>Inventory</strong></td><td>Stock levels and availability</td><td>product_id, warehouse_id, qty_available, qty_reserved, last_updated</td><td>Tally Godown stock, Zoho inventory, SAP B1 Warehouse</td><td>EDI 846, Ariba availability, Coupa inventory</td></tr>
+<tr><td><strong>Shipment</strong></td><td>Shipping / despatch notices</td><td>shipment_id, order_ref, carrier, tracking, ship_date, delivery_date, packages[]</td><td>Tally Delivery Note, SAP B1 DeliveryNote, ERPNext Delivery Note</td><td>EDI 856, cXML ShipNoticeRequest, EDIFACT DESADV</td></tr>
+<tr><td><strong>Invoice</strong></td><td>Commercial invoices</td><td>invoice_id, order_ref, lines[], subtotal, tax, total, currency, payment_terms, due_date</td><td>Tally Sales Invoice, Zoho Invoice, SAP B1 Invoice, ERPNext Sales Invoice</td><td>EDI 810, cXML InvoiceDetailRequest, Coupa Invoice, EDIFACT INVOIC</td></tr>
+<tr><td><strong>Party</strong></td><td>Business entities (buyer, seller, ship-to, bill-to)</td><td>party_id, name, gstin, duns, address, contact, tax_id, ariba_anid, coupa_supplier_id</td><td>Tally Ledger, Zoho Contact, SAP B1 BusinessPartner, ERPNext Customer</td><td>EDI N1/N2/N3/N4, cXML Address, Coupa Supplier</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2 id="s5">5. Source Adapters (Factory ERPs)</h2>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<div class="card">
+<table>
+<thead><tr><th>Adapter</th><th>ERP</th><th>Protocol</th><th>Auth</th><th>Rate Limit</th><th>Webhooks</th><th>Key Challenge</th></tr></thead>
+<tbody>
+<tr><td><code>src-tally-3/4</code></td><td>Tally Prime 3.x/4.x</td><td>XML/HTTP POST :9000</td><td>JWT / HMAC-SHA256</td><td>100 req/min</td><td>No</td><td>Windows-only, local network, field changes between versions</td></tr>
+<tr><td><code>src-zoho-v2/v3</code></td><td>Zoho Books API v2/v3</td><td>REST HTTPS</td><td>OAuth 2.0 (1hr token)</td><td>100 req/min</td><td>Yes</td><td>Strictest rate limit among accounting platforms</td></tr>
+<tr><td><code>src-sapb1-10</code></td><td>SAP B1 10.0</td><td>OData REST</td><td>Session (30min timeout)</td><td>Not published</td><td>No</td><td>Session management, OData 3→4 migration, no webhooks</td></tr>
+<tr><td><code>src-erpnext-14/15</code></td><td>ERPNext v14/v15</td><td>Frappe REST</td><td>API Key / OAuth</td><td>Configurable</td><td>Yes</td><td>v15 custom field naming broken, custom_ prefix required</td></tr>
+<tr><td><code>src-busy-21</code></td><td>Busy 21</td><td>ODBC → MSSQL</td><td>SQL auth</td><td>N/A</td><td>No</td><td>No API at all. ODBC read + RootFi or bridge agent for write.</td></tr>
+<tr><td><code>src-marg-9</code></td><td>Marg ERP 9.x</td><td>API Gateway</td><td>API Key / JWT</td><td>Unknown</td><td>Unknown</td><td>Limited public documentation. Contact Marg for details.</td></tr>
+<tr><td><code>src-whatsapp-v1</code></td><td>WhatsApp NLP</td><td>WhatsApp Business API</td><td>API Token</td><td>Per Meta limits</td><td>Yes</td><td>Unstructured input. OCR + NLP required. Lowest data quality.</td></tr>
+<tr><td><code>src-csv-v1</code></td><td>CSV/Excel Upload</td><td>File upload / Email</td><td>FC auth</td><td>N/A</td><td>N/A</td><td>No standard format. AI column detection needed.</td></tr>
+<tr><td><code>src-generic-rest/soap</code></td><td>Any ERP</td><td>Configurable</td><td>Configurable</td><td>Varies</td><td>Varies</td><td>Requires OpenAPI spec or WSDL during onboarding.</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2 id="s6">6. Target Adapters (Buyer Systems)</h2>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<div class="card">
+<table>
+<thead><tr><th>Adapter</th><th>System</th><th>Protocol</th><th>Auth</th><th>Key Documents</th><th>Key Challenge</th></tr></thead>
+<tbody>
+<tr><td><code>tgt-x12-4010/5010</code></td><td>EDI X12</td><td>AS2 / SFTP</td><td>S/MIME + AS2 certs</td><td>850, 855, 856, 810, 820, 997</td><td>Buyer-specific implementation guides. Every buyer's 850 is different.</td></tr>
+<tr><td><code>tgt-ariba-23/24</code></td><td>SAP Ariba</td><td>cXML/HTTPS</td><td>SharedSecret + ANID</td><td>OrderRequest, OrderConfirmation, ShipNotice, Invoice</td><td>cXML version compatibility (1.2.053 → 1.2.069)</td></tr>
+<tr><td><code>tgt-coupa-31/34</code></td><td>Coupa</td><td>REST + cXML</td><td>OAuth 2.0 / API Key</td><td>POs, Invoices, Receipts, Suppliers</td><td>Dual integration (REST API + cXML). Rate limits unpublished.</td></tr>
+<tr><td><code>tgt-oracle-v2</code></td><td>Oracle Fusion</td><td>REST HTTPS</td><td>OAuth 2.0 (OCI)</td><td>POs, Receipts, Invoices, 3-way match</td><td>500 record pagination limit. Version-specific endpoint paths.</td></tr>
+<tr><td><code>tgt-edifact-d01b/d19a</code></td><td>EDIFACT</td><td>OFTP2 / AS2</td><td>X.509 certs</td><td>ORDERS, INVOIC, DESADV, ORDRSP, CONTRL</td><td>EU automotive mandatory (Odette). UNOA/UNOB/UNOC character encoding.</td></tr>
+<tr><td><code>tgt-generic-rest/soap</code></td><td>Any buyer</td><td>Configurable</td><td>Configurable</td><td>Configurable</td><td>Requires endpoint spec + sample messages during onboarding.</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2 id="s7">7. Routing Engine & N×M Resolution</h2>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<div class="card">
+<p>The Routing Engine is a stateless Go service. It reads the <code>connections</code>, <code>routing_rules</code>, and <code>connection_adapter_bindings</code> tables to determine: for this message from this factory, which buyer(s) should receive it, and which target adapter version should process it.</p>
+<pre>
+<span class="comment">// Core routing: 5 lines of logic, everything else is lookup</span>
+connections := getActiveConnections(msg.FactoryID)
+for _, conn := range connections {
+    binding := getAdapterBinding(conn.ConnectionID)  <span class="comment">// Which target adapter?</span>
+    mapping := loadMapping(conn.ConnectionID)          <span class="comment">// Three-layer mapping</span>
+    enqueue("outbound."+binding.TargetAdapterID, TransformJob{msg, mapping, idempotencyKey})
+}
+</pre>
+<p><strong>Queue-based decoupling:</strong> Source adapters → Routing Engine → Redis queue → Target adapters. No direct calls. Natural backpressure. Target adapter restarts don't affect sources.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2 id="s8">8. AI Mapping Engine</h2>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<div class="card">
+<p>Claude API analyzes sample data from factories and auto-generates field mappings to the Canonical Model. Three AI tasks:</p>
+<ol>
+<li><strong>Source Detection:</strong> Given sample data (Tally XML, Zoho JSON, CSV), detect which ERP, which version, and map fields to canonical entities.</li>
+<li><strong>Target Detection:</strong> Given buyer info, detect which procurement system (EDI X12 version, Ariba cXML version, Coupa API version) and map canonical entities to target format.</li>
+<li><strong>Field Matching:</strong> For each canonical field, find the corresponding source field and target field. Confidence score per mapping.</li>
+</ol>
+<p><strong>Confidence threshold: 90%.</strong> Above 90% → auto-applied mapping. Below 90% → flagged for human review. <strong>Zero mappings reach production without human verification during onboarding.</strong></p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2 id="s9">9. Onboarding Configuration Engine</h2>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<div class="card">
+<p>The 10-step onboarding workflow. Detailed in <code>FC_Onboarding_Configuration_Engine.html</code>.</p>
+<table>
+<thead><tr><th>Step</th><th>Who Acts</th><th>What Happens</th><th>State</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Factory</td><td>Registration: company info, GSTIN, ERP type/version, buyer list</td><td>FACTORY_SETUP</td></tr>
+<tr><td>2</td><td>FC</td><td>ERP connection: API credentials, bridge agent install (if on-prem)</td><td>FACTORY_SETUP</td></tr>
+<tr><td>3</td><td>Factory</td><td>Sample data upload (invoice, PO, stock report)</td><td>FACTORY_SETUP</td></tr>
+<tr><td>4</td><td>AI</td><td>Source mapping: detect ERP version, map fields to canonical</td><td>AI_MAPPING</td></tr>
+<tr><td>5</td><td>AI</td><td>Target detection: identify buyer system type from buyer info</td><td>AI_MAPPING</td></tr>
+<tr><td>6</td><td>Buyer</td><td>Buyer credentials: EDI params (ISA/GS IDs, AS2 URL), Ariba ANID, Coupa OAuth</td><td>BUYER_SETUP</td></tr>
+<tr><td>7</td><td>Human</td><td>Mapping review: approve/correct AI-generated mappings</td><td>MAPPING_REVIEW</td></tr>
+<tr><td>8</td><td>FC</td><td>Sandbox testing: send test messages through FC Buyer Simulator</td><td>TESTING</td></tr>
+<tr><td>9</td><td>Buyer</td><td>Buyer certification: buyer validates test messages in their system</td><td>CERTIFICATION</td></tr>
+<tr><td>10</td><td>FC</td><td>Go-live: flip connection to LIVE, enable monitoring</td><td>LIVE</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2 id="s10">10. Three-Layer Mapping Architecture</h2>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<div class="solution-box">
+<h3>Layer 1: Base Spec → Layer 2: Buyer Template → Layer 3: Connection Overrides</h3>
+<pre>
+<span class="comment">// Example: Canonical Invoice → EDI X12 810 for Walmart</span>
+
+LAYER 1 — BASE SPEC (X12 5010 standard):
+  canonical.invoice_id  →  BIG02 (Invoice Number)
+  canonical.order_ref   →  BIG04 (Purchase Order Number)
+  canonical.total       →  TDS01 (Total Invoice Amount, in cents)
+  canonical.lines[].qty →  IT102 (Quantity Invoiced)
+
+LAYER 2 — BUYER TEMPLATE (Walmart-specific):
+  ISA06 qualifier       =  "ZZ"
+  ISA08 qualifier       =  "01" (DUNS)
+  GS02 sender code      =  factory's assigned Walmart vendor code
+  IT106 (Product ID)    =  Walmart GTIN-14 (not factory SKU)
+  REF*DP (Department)   =  Walmart department number (REQUIRED)
+
+LAYER 3 — CONNECTION OVERRIDES (Factory A → Walmart):
+  ISA06 sender ID       =  "FACTORYCONNECT01"
+  GS02 sender code      =  "FC-VENDOR-4521"
+  REF*DP value          =  "072" (Factory A ships to Dept 72)
+  Custom field mapping: factory's internal SKU → Walmart GTIN lookup table
+</pre>
+<p>Change Walmart's template once → propagates to all Walmart connections. Change one factory's specifics at Layer 3 → doesn't affect other factories.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2 id="s11">11. Versioned Adapter Lifecycle</h2>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<div class="card">
+<p>Every adapter follows: <span class="tag tag-blue">DEV</span> → <span class="tag tag-green">ACTIVE</span> → <span class="tag tag-orange">DEPRECATED</span> → <span class="tag tag-red">SUNSET</span>. The "Two in Production" pattern: deploy new version alongside old. Both run. No forced migrations. Old version decommissioned when zero connections remain for 30 days. Detailed in <code>FC_Versioned_Adapter_Architecture.html</code>.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2 id="s12">12. Load-Based Auto-Scaling</h2>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<div class="card">
+<p>Kubernetes HPA for high-traffic adapters (min 1+ pods). KEDA ScaledObjects for low-traffic adapters (scale to zero). Scale metric: Redis queue depth per adapter. Scale-to-zero saves ~30% infra cost. Detailed in <code>FC_Versioned_Adapter_Architecture.html</code>.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2 id="s13">13. Network Security Layer</h2>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<div class="card">
+<table>
+<thead><tr><th>Zone</th><th>Security Controls</th></tr></thead>
+<tbody>
+<tr><td><strong>Factory → FC</strong></td><td>TLS 1.3, mTLS (bridge agents), API Key + JWT (cloud ERPs), webhook HMAC-SHA256 verification, optional IP allowlisting</td></tr>
+<tr><td><strong>Internal Mesh</strong></td><td>Istio/Linkerd mTLS between all pods, K8s NetworkPolicy (source→routing→target only), Redis TLS, Vault for all secrets</td></tr>
+<tr><td><strong>FC → Buyer</strong></td><td>AS2 (S/MIME AES-256 + RSA-2048+ signing), cXML SharedSecret over TLS 1.3, OAuth 2.0 for REST, OFTP2 + X.509, SOAP WS-Security</td></tr>
+</tbody>
+</table>
+<p><strong>Cipher allowlist:</strong> TLS_AES_256_GCM_SHA384 (primary), TLS_CHACHA20_POLY1305_SHA256 (mobile/old hardware), TLS_AES_128_GCM_SHA256 (fallback). CBC, RC4, 3DES: <span class="tag tag-red">BLOCKED</span>. Detailed in <code>FC_Versioned_Adapter_Architecture.html</code>.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2 id="s14">14. Order-to-Cash Flow</h2>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<div class="card">
+<p>The complete business document flow, with FC in the middle translating between source and target formats at every step. Detailed with API endpoints in <code>FC_Integration_Specs_Reference.html</code>.</p>
+<table>
+<thead><tr><th>Step</th><th>Buyer Action</th><th>FC Action</th><th>Factory Action</th><th>SLA</th></tr></thead>
+<tbody>
+<tr><td>1. PO</td><td>Sends 850 / OrderRequest / API</td><td>Parse, validate, route, create Sales Order</td><td>Receives in ERP</td><td>—</td></tr>
+<tr><td>2. Ack</td><td>Receives 997 (immediate)</td><td>Auto-generate 997 on receipt</td><td>—</td><td>≤1 hour</td></tr>
+<tr><td>3. PO Ack</td><td>Receives 855 / OrderConfirmation</td><td>Transform from canonical</td><td>Confirms order in ERP</td><td>24-48 hours</td></tr>
+<tr><td>4. Ship</td><td>Receives 856 / ShipNotice</td><td>Transform + SSCC-18 if EDI</td><td>Creates Delivery Note</td><td>24hr before delivery</td></tr>
+<tr><td>5. Invoice</td><td>Receives 810 / InvoiceDetail</td><td>Three-way match, then deliver</td><td>Creates Sales Invoice</td><td>Per contract terms</td></tr>
+<tr><td>6. Payment</td><td>Sends 820 / bank transfer</td><td>Match to invoice, notify factory</td><td>Updates AR in ERP</td><td>Per payment terms</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2 id="s15">15. Three-Way Matching Engine</h2>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<div class="card">
+<p>FC runs three-way matching (PO + Receipt + Invoice) before delivering invoices to buyers. Industry standard tolerances: Quantity ≤3%, Price ≤3% or $100. Exceptions flagged for manual review. This catches errors before the buyer sees them — a major differentiator vs competitors who leave matching to the ERP. Detailed in <code>FC_Integration_Specs_Reference.html</code>.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2 id="s16">16. Error Handling & Resilience</h2>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<div class="card">
+<table>
+<thead><tr><th>Error Type</th><th>Action</th><th>Retry</th></tr></thead>
+<tbody>
+<tr><td>Network failure</td><td>Exponential backoff: 1s → 2s → 4s → 8s → 16s</td><td>Up to 5 retries</td></tr>
+<tr><td>Auth failure</td><td>Refresh token/cert, retry once. If fails, alert ops + factory.</td><td>1 retry</td></tr>
+<tr><td>Validation failure</td><td>No retry. Alert factory with specific field errors.</td><td>None</td></tr>
+<tr><td>Business error (inventory, price)</td><td>Hold. Alert. Retry after 24-48 hours or manual fix.</td><td>Delayed</td></tr>
+<tr><td>Buyer rejection (997 R)</td><td>Parse AK3/AK4 errors. Fix and retransmit.</td><td>After fix only</td></tr>
+<tr><td>Three-way match failure</td><td>Hold invoice. Alert factory. Never deliver unmatched invoice.</td><td>After resolution</td></tr>
+</tbody>
+</table>
+<p><strong>Store-and-forward:</strong> All messages are durably stored in Redis + PostgreSQL before delivery. If delivery fails, the message is not lost. Retry from the queue. Idempotency key prevents duplicates on retry.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2 id="s17">17. Database Schema (Core Tables)</h2>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<div class="card">
+<pre>
+<span class="comment">-- Core routing tables (from Master Prompt)</span>
+connections              <span class="comment">-- Factory-to-buyer connection definitions</span>
+routing_rules            <span class="comment">-- Which document types flow where</span>
+mapping_configs          <span class="comment">-- Three-layer mapping configurations</span>
+message_specs            <span class="comment">-- Expected message formats per connection</span>
+
+<span class="comment">-- Adapter management (from Versioned Adapter Architecture)</span>
+adapter_versions         <span class="comment">-- Registry of all adapters with lifecycle status</span>
+connection_adapter_bindings  <span class="comment">-- Which adapter pair serves each connection</span>
+
+<span class="comment">-- Onboarding (from Onboarding Configuration Engine)</span>
+connection_configs       <span class="comment">-- Extended config per connection (ERP creds, buyer params)</span>
+protocol_registry        <span class="comment">-- Supported protocols and their configurations</span>
+onboarding_events        <span class="comment">-- Audit trail for onboarding steps</span>
+
+<span class="comment">-- Security (from Versioned Adapter Architecture)</span>
+connection_security      <span class="comment">-- Per-connection TLS, mTLS, OAuth, AS2 security config</span>
+
+<span class="comment">-- Operational</span>
+message_log              <span class="comment">-- Every message: in/out, status, timestamps, idempotency key</span>
+idempotency_keys         <span class="comment">-- Processed idempotency keys with cached responses (7-day TTL)</span>
+schema_fingerprints      <span class="comment">-- Source schema hashes for drift detection</span>
+three_way_matches        <span class="comment">-- PO + Receipt + Invoice match results</span>
+</pre>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2 id="s18">18. Infrastructure & Cloud</h2>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<div class="card">
+<p>Primary: <strong>GCP Mumbai</strong> (Rs 14.5L/year at 500 factories). AS2 transport: <strong>AWS Transfer Family</strong>. CDN: <strong>Cloudflare</strong>. DR: <strong>Azure</strong> (optional). Detailed in <code>FC_Cloud_Hosting_Comparison.html</code>.</p>
+<table>
+<thead><tr><th>Service</th><th>Provider</th><th>Purpose</th><th>Estimated Cost (Year 1)</th></tr></thead>
+<tbody>
+<tr><td>GKE (Kubernetes)</td><td>GCP</td><td>Adapter mesh, routing engine, all microservices</td><td>~$900/mo (with KEDA)</td></tr>
+<tr><td>Cloud SQL (PostgreSQL)</td><td>GCP</td><td>Primary database</td><td>~$200/mo</td></tr>
+<tr><td>Memorystore (Redis)</td><td>GCP</td><td>Message queues, caching, idempotency</td><td>~$100/mo</td></tr>
+<tr><td>AWS Transfer Family</td><td>AWS</td><td>AS2 transport for EDI buyers</td><td>~$150/mo</td></tr>
+<tr><td>Vault</td><td>Self-hosted on GKE</td><td>Secrets management, PKI</td><td>Included in GKE</td></tr>
+<tr><td>Cloudflare</td><td>Cloudflare</td><td>CDN, DDoS protection, WAF</td><td>~$50/mo</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2 id="s19">19. Monitoring & Observability</h2>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<div class="card">
+<p>Every adapter exposes <code>/metrics</code> (Prometheus), <code>/health</code> (liveness/readiness). Standard metrics: <code>fc_adapter_messages_total</code>, <code>fc_adapter_transform_duration_seconds</code>, <code>fc_adapter_queue_depth</code>, <code>fc_adapter_errors_total</code>, <code>fc_adapter_tls_version</code>. Grafana dashboards auto-discover adapters. Jaeger for distributed tracing across the message flow.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2 id="s20">20. Compliance & Regulatory</h2>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<div class="card">
+<p>Roadmap from <code>FC_Security_BestPractices_RACI.html</code>:</p>
+<table>
+<thead><tr><th>Phase</th><th>Timeline</th><th>Certification</th></tr></thead>
+<tbody>
+<tr><td>Phase 1</td><td>Month 1-6</td><td>DPDPA (India Data Protection) compliance</td></tr>
+<tr><td>Phase 2</td><td>Month 6-12</td><td>SOC 2 Type I</td></tr>
+<tr><td>Phase 3</td><td>Year 2</td><td>SOC 2 Type II + ISO 27001</td></tr>
+<tr><td>Phase 4</td><td>Year 3</td><td>ISO 27701 (Privacy) + HIPAA (if healthcare buyers)</td></tr>
+</tbody>
+</table>
+<p><strong>EU CBAM:</strong> FactoryConnect tracks Carbon Border Adjustment Mechanism data for EU-bound exports. This is a regulatory requirement effective 2026 and a key selling point for factories exporting to EU.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2 id="s21">21. Phase-Wise Build Plan</h2>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<div class="card">
+<table>
+<thead><tr><th>Phase</th><th>Duration</th><th>Deliverables</th><th>Customers</th></tr></thead>
+<tbody>
+<tr><td><strong>Phase 1: MVP</strong></td><td>Months 1-3</td><td>src-tally-3, src-tally-4, tgt-x12-5010, tgt-ariba-23. Routing engine. Canonical model. Basic onboarding. Bridge agent. Sandbox testing.</td><td>5 pilot factories</td></tr>
+<tr><td><strong>Phase 2: Expand</strong></td><td>Months 4-6</td><td>src-zoho-v3, src-sapb1-10, tgt-x12-4010, tgt-coupa-31. AI mapping engine. Three-way matching. WhatsApp ingestion.</td><td>20 factories</td></tr>
+<tr><td><strong>Phase 3: Scale</strong></td><td>Months 7-12</td><td>src-erpnext-14, src-busy-21, tgt-edifact-d01b, tgt-oracle-v2, generic adapters. KEDA scaling. Full security suite. SOC 2 prep.</td><td>100 factories</td></tr>
+<tr><td><strong>Phase 4: Global</strong></td><td>Year 2</td><td>Indonesia connectors (Accurate Online, Mekari Jurnal). EDIFACT D.19A. Multi-currency. Multi-regulation engine.</td><td>500 factories (India + Indonesia)</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2 id="docs">Document Cross-References</h2>
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<div class="card">
+<table>
+<thead><tr><th>Document</th><th>What It Contains</th></tr></thead>
+<tbody>
+<tr><td><strong>FC_Architecture_Blueprint.html</strong></td><td><em>This document.</em> Master architecture. Single source of truth.</td></tr>
+<tr><td><strong>FC_Integration_Specs_Reference.html</strong></td><td>Ground-truth API docs for all 13+ source ERPs and 12+ target systems. Order-to-cash flow with code samples. Best-class recommendations.</td></tr>
+<tr><td><strong>FC_Versioned_Adapter_Architecture.html</strong></td><td>Versioned microservice adapter pattern. Load-based auto-scaling. Network security layer. Cipher allowlists. Adapter lifecycle.</td></tr>
+<tr><td><strong>FC_Onboarding_Configuration_Engine.html</strong></td><td>10-step onboarding workflow. What factory provides, what FC provisions, what buyer provides. AI auto-detection. Database schema.</td></tr>
+<tr><td><strong>FC_Grey_Areas_MultiVersion_Strategy.html</strong></td><td>14 grey areas (blind spots). Multi-version challenges. Schema drift, no-ERP factories, credential lifecycle, SOAP legacy, bidirectional sync conflicts.</td></tr>
+<tr><td><strong>FC_Security_BestPractices_RACI.html</strong></td><td>35+ security controls. RACI matrix. Factory onboarding security checklist. Compliance roadmap.</td></tr>
+<tr><td><strong>FC_Cloud_Hosting_Comparison.html</strong></td><td>AWS vs Azure vs GCP vs Indian clouds. Cost breakdown. Recommendation: GCP + AWS Transfer Family.</td></tr>
+<tr><td><strong>FC_Marketing_Strategy.html</strong></td><td>3-phase GTM. CBAM fear campaign. Tally dealer network. Year 1 budget.</td></tr>
+<tr><td><strong>FC_Leads_Potential_Customers.html</strong></td><td>42 companies across 7 sectors. Sortable, filterable lead database.</td></tr>
+<tr><td><strong>FC_Global_Market_Potential.html</strong></td><td>8-country expansion analysis. Indonesia as primary international market. 5-year $63M ARR projection.</td></tr>
+<tr><td><strong>FactoryConnect_Research_Report.md</strong></td><td>Initial comprehensive research. TAM/SAM/SOM. Competitor analysis.</td></tr>
+<tr><td><strong>FC_Report1_Connector_DeepDive.md</strong></td><td>17 connectors deep-dive technical specification.</td></tr>
+<tr><td><strong>FC_Report2_Market_Revenue_Model.md</strong></td><td>3-year P&L. Revenue model. Pricing tiers.</td></tr>
+<tr><td><strong>FactoryConnect_TestData_Samples.md</strong></td><td>Sample payloads for all connectors (test data).</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="footer">
+FactoryConnect — Master Architecture Blueprint v2.0 | April 2026<br>
+Confidential — For Internal Strategy & Engineering Use Only
+</div>
+
+</body>
+</html>
