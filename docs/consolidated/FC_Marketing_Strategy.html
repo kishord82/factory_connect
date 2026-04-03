@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FactoryConnect — Unified Go-to-Market Strategy</title>
+<style>
+  :root {
+    --fc-blue: #1a3a5c;
+    --fc-teal: #0d8a8a;
+    --fc-accent: #e8a838;
+    --fc-light: #f4f7fa;
+    --fc-dark: #1c2331;
+    --fc-border: #d1d9e6;
+    --fc-green: #22a55d;
+    --fc-red: #d94040;
+    --fc-orange: #e07020;
+    --fc-purple: #6c5ce7;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: #2d3748;
+    background: var(--fc-light);
+    line-height: 1.65;
+    font-size: 15px;
+  }
+  .cover {
+    background: linear-gradient(135deg, var(--fc-blue) 0%, #0f2840 60%, var(--fc-teal) 100%);
+    color: white;
+    padding: 80px 60px 60px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cover::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(13,138,138,0.15) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .cover .tag {
+    display: inline-block;
+    background: rgba(232,168,56,0.2);
+    border: 1px solid var(--fc-accent);
+    color: var(--fc-accent);
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 20px;
+  }
+  .cover h1 {
+    font-size: 42px;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 12px;
+    position: relative;
+    z-index: 1;
+  }
+  .cover .subtitle {
+    font-size: 18px;
+    opacity: 0.85;
+    max-width: 700px;
+    margin-bottom: 30px;
+  }
+  .cover .meta {
+    font-size: 13px;
+    opacity: 0.6;
+  }
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 40px;
+  }
+  .toc {
+    background: white;
+    border: 1px solid var(--fc-border);
+    border-radius: 10px;
+    padding: 30px 40px;
+    margin: 40px auto;
+    max-width: 1100px;
+  }
+  .toc h2 {
+    font-size: 18px;
+    color: var(--fc-blue);
+    margin-bottom: 16px;
+  }
+  .toc-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 40px;
+  }
+  .toc a {
+    color: #4a5568;
+    text-decoration: none;
+    font-size: 14px;
+    padding: 4px 0;
+    display: block;
+    border-bottom: 1px dotted #e2e8f0;
+  }
+  .toc a:hover { color: var(--fc-teal); }
+  .toc a span { color: var(--fc-teal); font-weight: 600; margin-right: 8px; }
+
+  section {
+    background: white;
+    border-radius: 10px;
+    border: 1px solid var(--fc-border);
+    padding: 40px 48px;
+    margin: 30px auto;
+    max-width: 1100px;
+  }
+  section h2 {
+    font-size: 24px;
+    color: var(--fc-blue);
+    border-bottom: 3px solid var(--fc-teal);
+    padding-bottom: 10px;
+    margin-bottom: 24px;
+  }
+  section h3 {
+    font-size: 18px;
+    color: var(--fc-dark);
+    margin: 24px 0 12px;
+  }
+  section h4 {
+    font-size: 15px;
+    color: var(--fc-teal);
+    margin: 18px 0 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  p { margin-bottom: 12px; }
+
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin: 20px 0;
+  }
+  .kpi {
+    background: var(--fc-light);
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    border-left: 4px solid var(--fc-teal);
+  }
+  .kpi .value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--fc-blue);
+  }
+  .kpi .label {
+    font-size: 12px;
+    color: #718096;
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .cluster-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin: 20px 0;
+  }
+  .cluster-card {
+    background: var(--fc-light);
+    border-radius: 8px;
+    padding: 20px 24px;
+    border-top: 4px solid var(--fc-teal);
+  }
+  .cluster-card h4 {
+    color: var(--fc-blue);
+    margin: 0 0 6px;
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 16px;
+  }
+  .cluster-card .exports {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--fc-teal);
+    margin: 4px 0;
+  }
+  .cluster-card .detail {
+    font-size: 13px;
+    color: #718096;
+  }
+
+  .motion-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+  }
+  .motion-card {
+    border: 1px solid var(--fc-border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    position: relative;
+  }
+  .motion-card .num {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    font-size: 36px;
+    font-weight: 800;
+    color: rgba(13,138,138,0.1);
+  }
+  .motion-card h4 {
+    color: var(--fc-blue);
+    margin: 0 0 8px;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .motion-card .priority {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .priority.high { background: #fef5f5; color: var(--fc-red); border: 1px solid #fecaca; }
+  .priority.med { background: #fffaf0; color: var(--fc-orange); border: 1px solid #fed7aa; }
+  .priority.low { background: #f0fff4; color: var(--fc-green); border: 1px solid #c6f6d5; }
+
+  .timeline {
+    position: relative;
+    margin: 30px 0;
+    padding-left: 30px;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, var(--fc-teal), var(--fc-blue));
+    border-radius: 3px;
+  }
+  .timeline-item {
+    position: relative;
+    margin-bottom: 24px;
+    padding: 16px 20px;
+    background: var(--fc-light);
+    border-radius: 8px;
+    border-left: 3px solid var(--fc-teal);
+  }
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -27px;
+    top: 22px;
+    width: 12px;
+    height: 12px;
+    background: var(--fc-teal);
+    border-radius: 50%;
+    border: 3px solid white;
+  }
+  .timeline-item .phase {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--fc-teal);
+    font-weight: 600;
+  }
+  .timeline-item h4 {
+    margin: 4px 0 8px;
+    color: var(--fc-blue);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  th {
+    background: var(--fc-blue);
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  tr:nth-child(even) td { background: #f8fafc; }
+
+  .risk-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 20px 0;
+  }
+  .risk-card {
+    border: 1px solid var(--fc-border);
+    border-radius: 8px;
+    padding: 16px 20px;
+  }
+  .risk-card .severity {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .sev-high { background: #fef5f5; color: var(--fc-red); }
+  .sev-med { background: #fffaf0; color: var(--fc-orange); }
+  .sev-low { background: #f0fff4; color: var(--fc-green); }
+
+  .callout {
+    background: linear-gradient(135deg, #ebf8ff, #f0fff4);
+    border-left: 4px solid var(--fc-teal);
+    border-radius: 0 8px 8px 0;
+    padding: 16px 20px;
+    margin: 20px 0;
+    font-style: italic;
+    color: var(--fc-dark);
+  }
+  .callout strong { color: var(--fc-teal); }
+
+  .pricing-table {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin: 20px 0;
+  }
+  .price-card {
+    border: 2px solid var(--fc-border);
+    border-radius: 10px;
+    padding: 24px;
+    text-align: center;
+    position: relative;
+    transition: border-color 0.2s;
+  }
+  .price-card.featured {
+    border-color: var(--fc-teal);
+    box-shadow: 0 4px 20px rgba(13,138,138,0.15);
+  }
+  .price-card.featured::after {
+    content: 'MOST POPULAR';
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--fc-teal);
+    color: white;
+    font-size: 10px;
+    padding: 3px 14px;
+    border-radius: 10px;
+    letter-spacing: 1px;
+    font-weight: 600;
+  }
+  .price-card .tier-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--fc-blue);
+    margin-bottom: 4px;
+  }
+  .price-card .price {
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--fc-teal);
+    margin: 10px 0;
+  }
+  .price-card .price span {
+    font-size: 14px;
+    font-weight: 400;
+    color: #718096;
+  }
+  .price-card .features {
+    text-align: left;
+    font-size: 13px;
+    color: #4a5568;
+    margin-top: 14px;
+    list-style: none;
+    padding: 0;
+  }
+  .price-card .features li {
+    padding: 5px 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .price-card .features li::before {
+    content: '✓ ';
+    color: var(--fc-green);
+    font-weight: 700;
+  }
+
+  .budget-bar {
+    display: flex;
+    height: 28px;
+    border-radius: 6px;
+    overflow: hidden;
+    margin: 12px 0;
+  }
+  .budget-bar div {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: white;
+  }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .highlight-box {
+    background: var(--fc-light);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 10px 0;
+  }
+
+  .footer {
+    text-align: center;
+    padding: 40px;
+    color: #a0aec0;
+    font-size: 12px;
+  }
+
+  @media (max-width: 768px) {
+    .kpi-row, .cluster-grid, .pricing-table, .risk-grid, .two-col, .toc-grid { grid-template-columns: 1fr; }
+    .cover { padding: 40px 24px; }
+    .cover h1 { font-size: 28px; }
+    section { padding: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="tag">Confidential — Strategic Planning Document</div>
+  <h1>FactoryConnect<br>Unified Go-to-Market Strategy</h1>
+  <p class="subtitle">A research-backed, synthesized marketing and channel strategy for India's first multi-tenant SaaS platform bridging factory ERPs to global buyer procurement systems — with EU CBAM carbon compliance built in.</p>
+  <p class="meta">Prepared: April 2026 &nbsp;|&nbsp; Author: Claude (Anthropic) for Kishor Dama &nbsp;|&nbsp; Version 1.0</p>
+</div>
+
+<!-- TOC -->
+<div class="toc">
+  <h2>Contents</h2>
+  <div class="toc-grid">
+    <a href="#exec"><span>01</span> Executive Summary</a>
+    <a href="#market"><span>02</span> Market Landscape &amp; Research</a>
+    <a href="#clusters"><span>03</span> Target Export Clusters</a>
+    <a href="#motions"><span>04</span> Five GTM Motions</a>
+    <a href="#channels"><span>05</span> Channel Partner Strategy</a>
+    <a href="#pricing"><span>06</span> Pricing Strategy</a>
+    <a href="#managed"><span>07</span> Managed SaaS Playbook</a>
+    <a href="#timeline"><span>08</span> 90-Day Execution Plan</a>
+    <a href="#budget"><span>09</span> Budget Allocation</a>
+    <a href="#compliance"><span>10</span> Regulatory &amp; Compliance</a>
+    <a href="#risks"><span>11</span> Risk Mitigation</a>
+    <a href="#metrics"><span>12</span> Success Metrics &amp; KPIs</a>
+  </div>
+</div>
+
+<!-- 01 EXECUTIVE SUMMARY -->
+<section id="exec">
+  <h2>01 &mdash; Executive Summary</h2>
+  <p>FactoryConnect occupies a unique position at the intersection of three converging forces: India's $116.7B engineering exports sector needing digital procurement connectivity, the EU's CBAM definitive phase (Jan 2026) creating mandatory carbon reporting obligations, and Indian SME factories still running on Tally/Zoho with zero EDI capability. No existing solution bridges all three.</p>
+
+  <p>This strategy synthesizes two independent AI-generated GTM frameworks — a "Cluster + Channel + Trigger" model and a "CBAM Compliance Wedge" model — with primary research on Indian export institutions, cluster economics, and regulatory timelines. The result is a <strong>five-motion GTM engine</strong> that sequences motions by urgency: CBAM compliance creates the door-opener, Tally partner embedding delivers the distribution, buyer mandates create pull, cluster blitzes create local density, and digital inbound scales the funnel.</p>
+
+  <div class="callout">
+    <strong>Core Thesis:</strong> FactoryConnect is not a self-serve SaaS product. It is a "productized service with SaaS inside" — a managed integration platform that hand-holds Indian SME factories from paper/Tally workflows into digital procurement compliance. The GTM must reflect this reality.
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="value">$116.7B</div>
+      <div class="label">India Engineering Exports FY25</div>
+    </div>
+    <div class="kpi">
+      <div class="value">$8.2B</div>
+      <div class="label">India CBAM-Exposed Exports to EU</div>
+    </div>
+    <div class="kpi">
+      <div class="value">11L+</div>
+      <div class="label">Tally Businesses in India</div>
+    </div>
+    <div class="kpi">
+      <div class="value">6L+</div>
+      <div class="label">IEC Holders on DGFT</div>
+    </div>
+  </div>
+</section>
+
+<!-- 02 MARKET LANDSCAPE -->
+<section id="market">
+  <h2>02 &mdash; Market Landscape &amp; Research Findings</h2>
+
+  <h3>EU CBAM: The Compliance Catalyst</h3>
+  <p>The EU's Carbon Border Adjustment Mechanism entered its <strong>definitive phase on January 1, 2026</strong>. This is the single most important market catalyst for FactoryConnect. Key facts from research:</p>
+  <div class="highlight-box">
+    <p><strong>What changed:</strong> Reporting shifted from quarterly (transitional) to annual declarations. Reported emissions must now be independently verified by third parties. EU importers must purchase and surrender CBAM certificates — at current EU ETS prices, approximately €173.8/tonne for steel exports.</p>
+    <p><strong>Sectors covered:</strong> Cement, iron &amp; steel, aluminium, fertilisers, electricity, hydrogen. Iron and steel + aluminium represent 27% of India's CBAM-covered exports to the EU.</p>
+    <p><strong>India impact:</strong> EEPC India projects a 10% decline in engineering exports to Europe if CBAM issues are unresolved. World Bank estimates export losses of $771M. Indian steel MSMEs are especially vulnerable — they lack the systems to measure, report, or reduce embedded carbon.</p>
+    <p><strong>Omnibus simplifications (Oct 2025):</strong> The EU adopted simplifications to reduce administrative burden, but core obligations remain. This actually helps FactoryConnect — simplified rules make a standardized SaaS approach more viable than custom consulting.</p>
+  </div>
+
+  <h3>Indian Export Institutions: Partnership Landscape</h3>
+  <div class="two-col">
+    <div class="highlight-box">
+      <h4>FIEO</h4>
+      <p>30,000+ direct members. Apex body of Indian exporters since 1965. Runs 100+ international MoUs. Hosts trade fairs, training programmes, and the Indian Trade Portal. Key events: India Fashion &amp; Lifestyle Show (Tokyo), CHWE Spring (Shenzhen), Thaifex-Anuga (Bangkok) in 2026. <strong>Partnership angle:</strong> Co-branded CBAM compliance workshops at FIEO events. Offer FactoryConnect as a "recommended digital trade tool" via the Indian Trade Portal.</p>
+    </div>
+    <div class="highlight-box">
+      <h4>EEPC India</h4>
+      <p>12,000+ members, 60% SMEs. Sponsored by Ministry of Commerce. Focuses specifically on engineering exports — the sector most exposed to CBAM. Membership is digital via DGFT portal. <strong>Partnership angle:</strong> EEPC is actively concerned about CBAM's 10% export decline projection. Position FactoryConnect as their technology solution partner for CBAM readiness.</p>
+    </div>
+    <div class="highlight-box">
+      <h4>DGFT Trade Connect</h4>
+      <p>New e-Platform connecting 6L+ IEC holders with Indian Missions, Export Promotion Councils, and trade experts. Features include "Source from India" (a public showcase of verified exporters for foreign buyers), tariff/certification data, and multilingual export training courses. <strong>Partnership angle:</strong> Apply to be listed as a verified technology provider on Trade Connect. Integrate with the "Source from India" feature to make FC-connected factories more discoverable to global buyers.</p>
+    </div>
+    <div class="highlight-box">
+      <h4>Tally Solutions Ecosystem</h4>
+      <p>11 lakh+ businesses use Tally in India. Partner ecosystem has two tiers: 3-Star (basic accounting/inventory) and 5-Star (deep integration/customization). TallyPrime supports two-way data transfer via integration framework. <strong>Partnership angle:</strong> Become a certified Tally integration partner. Build a TallyPrime extension that syncs invoice/PO data to FactoryConnect. Distribute through Tally's existing partner network of 5-Star certified partners.</p>
+    </div>
+  </div>
+
+  <h3>Competitor Landscape</h3>
+  <p>Research reveals a <strong>significant market gap</strong>. The India-to-global-buyer integration space is fragmented across multiple point solutions:</p>
+  <table>
+    <tr><th>Category</th><th>Players</th><th>Gap FactoryConnect Fills</th></tr>
+    <tr><td>EDI/Procurement</td><td>SPS Commerce, TrueCommerce, SEEBURGER, Commercient</td><td>All are US/EU-focused. None have Tally/Zoho connectors or India pricing. No CBAM features.</td></tr>
+    <tr><td>Tally Integration</td><td>PrecisionTech, various 5-Star partners</td><td>Build device/e-commerce integrations, not EDI X12 or Ariba/Coupa procurement flows.</td></tr>
+    <tr><td>CBAM Compliance</td><td>EnCarbonSys, CleanCarbon.ai, Coolset</td><td>Carbon reporting SaaS only — no ERP integration, no EDI bridge, no procurement connectivity.</td></tr>
+    <tr><td>Ariba/Coupa Integration</td><td>Commercient, APIworx, BSI EDI</td><td>Integrate SAP B1→Ariba but not Tally→Ariba. No India-specific pricing or support.</td></tr>
+  </table>
+  <div class="callout">
+    <strong>White Space:</strong> No competitor offers a unified Tally/Zoho → EDI X12 → Ariba/Coupa bridge with embedded CBAM carbon reporting. FactoryConnect is the only platform attempting this full stack for Indian SME exporters.
+  </div>
+</section>
+
+<!-- 03 TARGET CLUSTERS -->
+<section id="clusters">
+  <h2>03 &mdash; Target Export Clusters</h2>
+  <p>India's export economy is geographically concentrated in industrial clusters. FactoryConnect's GTM should focus on four priority clusters, sequenced by CBAM exposure and digital readiness.</p>
+
+  <div class="cluster-grid">
+    <div class="cluster-card">
+      <h4>Tiruppur, Tamil Nadu — Textiles/Knitwear</h4>
+      <div class="exports">₹44,747 Cr ($5.4B)</div>
+      <div class="detail">FY25 knitwear exports, +16.5% YoY. 9,000+ garment manufacturers. 55% of India's total knitwear exports. 69% of national knitwear exports come from the Tiruppur-Coimbatore 50km radius. EU is a top destination. CBAM indirect exposure through energy-intensive dyeing processes. <strong>Association:</strong> Tiruppur Exporters' Association (TEA).</div>
+    </div>
+    <div class="cluster-card">
+      <h4>Ludhiana, Punjab — Auto Parts &amp; Engineering</h4>
+      <div class="exports">~$3.5B</div>
+      <div class="detail">Major hub for bicycle parts, hand tools, auto components, and hosiery. "Manchester of India." Significant EU export exposure for engineering goods. <strong>Direct CBAM exposure</strong> for steel/iron-based auto components. Many SMEs still use Tally for invoicing. <strong>Association:</strong> Ludhiana Hand Tools Association, CICU.</div>
+    </div>
+    <div class="cluster-card">
+      <h4>Surat, Gujarat — Diamonds &amp; Textiles</h4>
+      <div class="exports">~$22B (diamonds) + $5B (textiles)</div>
+      <div class="detail">Processes 85-90% of the world's rough diamonds. Major synthetic textile hub. Diamond sector has sophisticated IT systems; textile sector has Tally-heavy SMEs. Diamond exports face buyer compliance mandates from EU luxury brands. <strong>Association:</strong> SGCCI, GJEPC.</div>
+    </div>
+    <div class="cluster-card">
+      <h4>Rajkot, Gujarat — Engineering Goods</h4>
+      <div class="exports">~$2B</div>
+      <div class="detail">Machine tools, bearings, castings, forgings, auto parts. Heavy steel/iron usage = <strong>maximum CBAM exposure</strong>. Many factories are family-run with basic Tally setups. High urgency for CBAM compliance tools. Also serves as entry point for broader Saurashtra industrial belt. <strong>Association:</strong> Rajkot Engineering Association, REA.</div>
+    </div>
+  </div>
+
+  <h3>Cluster Sequencing Strategy</h3>
+  <table>
+    <tr><th>Priority</th><th>Cluster</th><th>Why First</th><th>Entry Approach</th></tr>
+    <tr><td><strong>P0</strong></td><td>Rajkot</td><td>Highest CBAM urgency (steel/iron exports). Maximum pain, fastest conversion.</td><td>CBAM compliance workshop → Shadow mode pilot</td></tr>
+    <tr><td><strong>P0</strong></td><td>Ludhiana</td><td>Auto parts to EU buyers. Buyer mandate opportunities (Bosch, Continental).</td><td>Buyer mandate push + CBAM compliance</td></tr>
+    <tr><td><strong>P1</strong></td><td>Tiruppur</td><td>Largest cluster by volume. EU textile regulations incoming. High density.</td><td>TEA partnership + EU buyer compliance pull</td></tr>
+    <tr><td><strong>P2</strong></td><td>Surat</td><td>Diamond sector has IT maturity; textiles are CBAM-adjacent.</td><td>GJEPC partnership + buyer mandate from EU luxury brands</td></tr>
+  </table>
+</section>
+
+<!-- 04 FIVE GTM MOTIONS -->
+<section id="motions">
+  <h2>04 &mdash; Five GTM Motions</h2>
+  <p>The unified strategy sequences five complementary motions. Each motion has a distinct trigger, channel, and conversion path. They compound: CBAM opens the door, Tally distributes, buyers pull, clusters densify, and digital scales.</p>
+
+  <div class="motion-cards">
+    <div class="motion-card">
+      <div class="num">01</div>
+      <span class="priority high">Highest Priority</span>
+      <h4>CBAM Compliance Pull</h4>
+      <p><strong>Trigger:</strong> EU CBAM definitive phase is live. Indian steel/aluminium/cement exporters face mandatory third-party verified carbon reporting and certificate costs of ~€174/tonne.</p>
+      <p><strong>Message:</strong> "Your EU buyer now pays a carbon tax on your shipments. If you can't report your embedded emissions, they'll switch to a supplier who can."</p>
+      <p><strong>Channel:</strong> EEPC India, FIEO, industry association workshops, CA/tax consultant referrals.</p>
+      <p><strong>Conversion:</strong> Free CBAM readiness assessment → 30-day shadow mode → paid subscription.</p>
+    </div>
+    <div class="motion-card">
+      <div class="num">02</div>
+      <span class="priority high">Highest Priority</span>
+      <h4>Tally Partner Embed</h4>
+      <p><strong>Trigger:</strong> 11 lakh businesses use Tally. Every factory that exports eventually needs to generate EDI-compliant documents. Tally can't do this natively.</p>
+      <p><strong>Message:</strong> "FactoryConnect turns your Tally into an EDI-ready export platform. No migration, no new software to learn."</p>
+      <p><strong>Channel:</strong> Tally 5-Star Certified Partners, TallyPrime Extensions marketplace, Tally partner events.</p>
+      <p><strong>Conversion:</strong> Tally partner demo → co-sold installation → managed onboarding.</p>
+    </div>
+    <div class="motion-card">
+      <div class="num">03</div>
+      <span class="priority med">Medium Priority</span>
+      <h4>Buyer Mandate Push</h4>
+      <p><strong>Trigger:</strong> When a global buyer (Walmart, Bosch, H&M) mandates digital POs/ASNs from Indian suppliers, those factories have no choice. This is the most powerful conversion trigger.</p>
+      <p><strong>Message:</strong> "Your buyer requires EDI 850/856/810. FactoryConnect gets you compliant in 2 weeks, not 6 months."</p>
+      <p><strong>Channel:</strong> Direct outreach to procurement heads at 2-3 anchor buyers. Offer FactoryConnect as "supplier enablement" at zero cost to the buyer.</p>
+      <p><strong>Conversion:</strong> Buyer partnership → mandate letter to suppliers → FactoryConnect as the recommended platform.</p>
+    </div>
+    <div class="motion-card">
+      <div class="num">04</div>
+      <span class="priority med">Medium Priority</span>
+      <h4>Cluster Blitz</h4>
+      <p><strong>Trigger:</strong> Export clusters are tight-knit communities. One factory's success spreads by word of mouth at chai stalls and association meetings.</p>
+      <p><strong>Message:</strong> Cluster-specific, local language. "Rajkot's engineering exporters are losing EU orders to CBAM non-compliance. 12 factories in your industrial estate are already on FactoryConnect."</p>
+      <p><strong>Channel:</strong> Local industry association events, cluster-level workshops, on-ground sales team (1-2 people per cluster).</p>
+      <p><strong>Conversion:</strong> Workshop → 5-factory cohort pilot → case study → cluster-wide rollout.</p>
+    </div>
+    <div class="motion-card">
+      <div class="num">05</div>
+      <span class="priority low">Scale Phase</span>
+      <h4>Digital Inbound</h4>
+      <p><strong>Trigger:</strong> Factory owners/managers searching for "CBAM compliance for Indian exporters", "Tally EDI integration", "Ariba supplier onboarding India".</p>
+      <p><strong>Message:</strong> Content-led — blog posts, webinars, CBAM calculators, Tally integration guides.</p>
+      <p><strong>Channel:</strong> SEO, Google Ads (high-intent keywords), LinkedIn (targeting export managers), YouTube (Tally integration tutorials in Hindi/regional languages).</p>
+      <p><strong>Conversion:</strong> Content → CBAM assessment tool → demo request → managed onboarding.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 05 CHANNEL PARTNER STRATEGY -->
+<section id="channels">
+  <h2>05 &mdash; Channel Partner Strategy</h2>
+
+  <table>
+    <tr><th>Channel</th><th>Partnership Model</th><th>Revenue Share</th><th>Target by Day 90</th></tr>
+    <tr>
+      <td><strong>Tally 5-Star Partners</strong></td>
+      <td>Co-sell agreement. FC provides training + demo kit. Partner sells FC alongside Tally installations. FC handles onboarding.</td>
+      <td>20% of first-year revenue per referred customer</td>
+      <td>3-5 partner MOUs signed, 1 active co-selling</td>
+    </tr>
+    <tr>
+      <td><strong>CA / Tax Consultants</strong></td>
+      <td>Referral network. CAs advise exporters on GST, CBAM, compliance. FC becomes a "prescribed solution" for CBAM reporting.</td>
+      <td>15% referral fee for 12 months</td>
+      <td>10 CA referral agreements in P0 clusters</td>
+    </tr>
+    <tr>
+      <td><strong>FIEO</strong></td>
+      <td>Institutional MoU. FC sponsors CBAM workshops at FIEO events. Listed as recommended technology partner on Indian Trade Portal.</td>
+      <td>Brand exposure + lead generation (no rev share)</td>
+      <td>MoU signed, 1 co-branded workshop delivered</td>
+    </tr>
+    <tr>
+      <td><strong>EEPC India</strong></td>
+      <td>Technology partner for CBAM readiness. Joint whitepaper on "Digital CBAM Compliance for Indian Engineering Exporters."</td>
+      <td>Brand exposure + lead generation</td>
+      <td>Partnership proposal submitted, 1 joint event</td>
+    </tr>
+    <tr>
+      <td><strong>DGFT Trade Connect</strong></td>
+      <td>Apply for listing on "Source from India" platform. Integrate FC-verified exporters into the Trade Connect ecosystem.</td>
+      <td>Government credibility + inbound leads</td>
+      <td>Application submitted</td>
+    </tr>
+    <tr>
+      <td><strong>Cluster Associations</strong></td>
+      <td>Local partnerships with TEA (Tiruppur), REA (Rajkot), CICU (Ludhiana), SGCCI (Surat). Offer association members a discounted rate.</td>
+      <td>10% discount for association members</td>
+      <td>2 association MOUs in P0 clusters</td>
+    </tr>
+  </table>
+
+  <h3>Buyer-Side Partnerships (Demand Pull)</h3>
+  <p>The most powerful channel is convincing 2-3 anchor buyers to mandate FactoryConnect. Target profile: large EU/US buyer sourcing from Indian SME clusters, already using Ariba/Coupa, and concerned about CBAM reporting from their supply chain.</p>
+  <div class="highlight-box">
+    <p><strong>Target Buyers (illustrative):</strong> A European auto OEM sourcing forged parts from Ludhiana. An EU fashion retailer sourcing knitwear from Tiruppur. A US industrial distributor buying engineering goods from Rajkot. In each case, the buyer benefits from: automated PO/invoice flow (reduces their procurement cost), CBAM-ready supply chain data, and supplier reliability scores.</p>
+    <p><strong>Pitch to buyer:</strong> "We'll onboard your top 20 Indian suppliers at no cost to you. You get EDI-compliant, CBAM-ready supply chain data. We monetize through supplier subscriptions."</p>
+  </div>
+</section>
+
+<!-- 06 PRICING STRATEGY -->
+<section id="pricing">
+  <h2>06 &mdash; Pricing Strategy</h2>
+  <p>Indian SME pricing requires extreme sensitivity. Research confirms B2B SaaS adoption among Indian SMEs is price-constrained. The strategy uses a "land cheap, expand with value" approach, with CBAM compliance as the wedge and EDI/procurement as the upsell.</p>
+
+  <div class="pricing-table">
+    <div class="price-card">
+      <div class="tier-name">Starter</div>
+      <p style="font-size:13px;color:#718096;">CBAM Compliance Only</p>
+      <div class="price">₹2,999<span>/mo</span></div>
+      <ul class="features">
+        <li>CBAM emissions reporting dashboard</li>
+        <li>Pre-built templates for EU declaration</li>
+        <li>Single Tally/Zoho connection</li>
+        <li>Email support</li>
+        <li>Up to 50 transactions/month</li>
+      </ul>
+      <p style="font-size:12px;color:#718096;margin-top:12px;"><strong>Target:</strong> Small exporters just starting EU compliance. <br><strong>Annual option:</strong> ₹29,990/yr (2 months free)</p>
+    </div>
+    <div class="price-card featured">
+      <div class="tier-name">Standard</div>
+      <p style="font-size:13px;color:#718096;">CBAM + EDI Bridge</p>
+      <div class="price">₹9,999<span>/mo</span></div>
+      <ul class="features">
+        <li>Everything in Starter</li>
+        <li>EDI X12 document generation (850/856/810)</li>
+        <li>Ariba/Coupa supplier portal integration</li>
+        <li>Up to 3 buyer connections</li>
+        <li>Managed onboarding (included)</li>
+        <li>Phone + WhatsApp support</li>
+        <li>Up to 500 transactions/month</li>
+      </ul>
+      <p style="font-size:12px;color:#718096;margin-top:12px;"><strong>Target:</strong> Active EU/US exporters with buyer mandates. <br><strong>Annual option:</strong> ₹99,990/yr</p>
+    </div>
+    <div class="price-card">
+      <div class="tier-name">Premium</div>
+      <p style="font-size:13px;color:#718096;">Full Platform + White Glove</p>
+      <div class="price">₹24,999<span>/mo</span></div>
+      <ul class="features">
+        <li>Everything in Standard</li>
+        <li>Unlimited buyer connections</li>
+        <li>SAP B1 / advanced ERP integration</li>
+        <li>Custom EDI maps &amp; EDIFACT</li>
+        <li>Dedicated account manager</li>
+        <li>CBAM audit-ready reports</li>
+        <li>API access for custom workflows</li>
+        <li>Unlimited transactions</li>
+      </ul>
+      <p style="font-size:12px;color:#718096;margin-top:12px;"><strong>Target:</strong> Mid-size exporters with multiple EU buyers. <br><strong>Annual option:</strong> ₹2,49,990/yr</p>
+    </div>
+  </div>
+
+  <h3>Pricing Rationale</h3>
+  <p><strong>₹2,999 Starter</strong> is positioned at the "no-brainer" threshold for any exporter facing CBAM obligations. It's less than what they'd pay a CA for a single CBAM consultation. The CBAM-only tier is the wedge — once they see the value, upgrading to Standard (which adds the EDI bridge) is the natural next step when a buyer mandate arrives.</p>
+  <p><strong>₹9,999 Standard</strong> is the core revenue driver. At ~$120/month, it's 1/10th the cost of US-based EDI solutions (SPS Commerce charges ~$300-500/user/month). The managed onboarding inclusion is critical — Indian SMEs won't self-serve.</p>
+  <p><strong>₹24,999 Premium</strong> targets exporters doing ₹50Cr+ in EU trade, where CBAM certificate costs alone could be ₹10-20L/year. At ₹3L/year, FactoryConnect is trivial compared to the compliance cost they're already paying.</p>
+
+  <div class="callout">
+    <strong>Pilot Pricing (Days 1-60):</strong> Offer the first 20 factories in each P0 cluster 3 months free on Standard tier in exchange for case study rights and feedback. This creates the "12 factories in your industrial estate" social proof needed for cluster blitz.
+  </div>
+</section>
+
+<!-- 07 MANAGED SAAS PLAYBOOK -->
+<section id="managed">
+  <h2>07 &mdash; Managed SaaS Playbook</h2>
+  <p>Indian SME factories are not self-serve SaaS buyers. The typical factory owner is 45-60, runs Tally on a desktop, communicates via WhatsApp, and makes decisions based on trust (their CA's recommendation, their association president's endorsement). The "managed SaaS" model must account for this reality.</p>
+
+  <h3>The Shadow Mode Trial</h3>
+  <p>This is the single most important onboarding innovation. Instead of asking factories to switch systems, FactoryConnect runs in <strong>shadow mode</strong> — parallel to their existing process — for 30 days.</p>
+  <div class="highlight-box">
+    <p><strong>How it works:</strong> FC connects to Tally via the integration framework (read-only). For 30 days, FC mirrors every invoice and PO, generating the EDI equivalent alongside. At the end of 30 days, the factory owner sees a side-by-side: "Here's what your buyer received via email/fax. Here's what FactoryConnect would have sent via EDI. Same data, zero manual entry, CBAM-compliant." Zero risk. No process change. No disruption.</p>
+  </div>
+
+  <h3>Onboarding Workflow (Post-Shadow)</h3>
+  <table>
+    <tr><th>Step</th><th>Duration</th><th>Who Does It</th><th>What Happens</th></tr>
+    <tr><td>1. Discovery Call</td><td>30 min</td><td>FC sales + factory owner</td><td>Understand current workflow, buyer requirements, Tally setup. WhatsApp-first communication.</td></tr>
+    <tr><td>2. Tally Connection</td><td>1-2 hours</td><td>FC onboarding engineer (remote or on-site)</td><td>Install TallyPrime extension. Configure data sync. Test with sample transactions.</td></tr>
+    <tr><td>3. Shadow Mode</td><td>30 days</td><td>FC automated + weekly check-in</td><td>Mirror all export transactions. Generate EDI + CBAM reports. Weekly WhatsApp summary to factory owner.</td></tr>
+    <tr><td>4. Buyer Activation</td><td>1-2 weeks</td><td>FC onboarding + buyer's IT team</td><td>Connect to buyer's Ariba/Coupa portal. Map EDI documents. Test with live transactions.</td></tr>
+    <tr><td>5. Go Live</td><td>1 day</td><td>FC onboarding engineer</td><td>Switch from shadow to live. Factory owner sees no change in their Tally workflow — FC handles the rest.</td></tr>
+    <tr><td>6. Ongoing Support</td><td>Continuous</td><td>FC customer success (WhatsApp)</td><td>WhatsApp-based support. Monthly CBAM report review. Quarterly business review for Premium customers.</td></tr>
+  </table>
+
+  <h3>Key Managed SaaS Principles</h3>
+  <p><strong>WhatsApp-first support:</strong> 80% of Indian SME communication happens on WhatsApp. FC's support, onboarding updates, and even CBAM reports should be delivered via WhatsApp Business API. No email-heavy workflows.</p>
+  <p><strong>Regional language:</strong> Onboarding materials and support in Hindi, Tamil (Tiruppur), Punjabi (Ludhiana), and Gujarati (Surat/Rajkot).</p>
+  <p><strong>On-site first 5:</strong> For the first 5 customers in each cluster, send an onboarding engineer on-site. This builds trust and creates local references who can vouch for FC at association meetings.</p>
+  <p><strong>CA as co-pilot:</strong> Train the factory's CA to use FC's CBAM dashboard. The CA becomes the ongoing champion because it makes their compliance work easier.</p>
+</section>
+
+<!-- 08 90-DAY PLAN -->
+<section id="timeline">
+  <h2>08 &mdash; 90-Day Execution Plan</h2>
+
+  <div class="timeline">
+    <div class="timeline-item">
+      <div class="phase">Days 1–30 — Foundation</div>
+      <h4>Cluster Selection, Partner MOUs, Product Readiness</h4>
+      <p><strong>Week 1-2:</strong> Finalize P0 cluster selection (Rajkot + Ludhiana). Identify 3 local CAs per cluster. Begin EEPC India partnership outreach. Submit DGFT Trade Connect application.</p>
+      <p><strong>Week 3-4:</strong> Sign first 2 Tally 5-Star partner MOUs. Build CBAM readiness assessment tool (web-based, free). Create cluster-specific landing pages (Hindi + Gujarati for Rajkot, Hindi + Punjabi for Ludhiana). Begin CA training program development.</p>
+      <p><strong>Deliverables:</strong> 2 partner MOUs, CBAM assessment tool live, landing pages live, EEPC proposal submitted.</p>
+    </div>
+    <div class="timeline-item">
+      <div class="phase">Days 31–60 — Pilot &amp; Proof</div>
+      <h4>First Customers, Shadow Mode, Case Studies</h4>
+      <p><strong>Week 5-6:</strong> Launch CBAM compliance workshop in Rajkot (co-hosted with local CA network + industry association). Target: 30 factory owners attend, 10 sign up for shadow mode trial.</p>
+      <p><strong>Week 7-8:</strong> Repeat in Ludhiana. Begin shadow mode for first cohort. First Tally partner co-sell attempt. Initiate buyer-side outreach to 2 EU procurement heads.</p>
+      <p><strong>Deliverables:</strong> 20 factories in shadow mode, 2 workshops completed, first buyer conversation initiated.</p>
+    </div>
+    <div class="timeline-item">
+      <div class="phase">Days 61–90 — Activation &amp; Scale</div>
+      <h4>Conversions, Channel Activation, Digital Launch</h4>
+      <p><strong>Week 9-10:</strong> Convert shadow mode factories to paid Standard tier. Target: 50% conversion (10 paying customers). Produce 2 video case studies (one per cluster). Activate CA referral program.</p>
+      <p><strong>Week 11-12:</strong> Launch SEO content strategy (CBAM guides, Tally EDI tutorials). Begin Google Ads on high-intent keywords. Host first webinar: "CBAM 2026: What Indian Exporters Must Do Now." Begin P1 cluster (Tiruppur) groundwork.</p>
+      <p><strong>Deliverables:</strong> 10 paying customers, 2 case studies, digital channels live, CA referral program active, P1 cluster planning started.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 09 BUDGET -->
+<section id="budget">
+  <h2>09 &mdash; Budget Allocation (90-Day Period)</h2>
+
+  <table>
+    <tr><th>Category</th><th>Allocation</th><th>Details</th></tr>
+    <tr><td><strong>Cluster Events &amp; Workshops</strong></td><td>₹4,00,000</td><td>2 CBAM workshops (venue, materials, travel). ₹2L per event including speaker fees, refreshments, printed materials.</td></tr>
+    <tr><td><strong>Partner Enablement</strong></td><td>₹2,00,000</td><td>Tally partner training kits, CA referral program setup, demo environment costs.</td></tr>
+    <tr><td><strong>On-Ground Sales (2 clusters)</strong></td><td>₹3,60,000</td><td>1 field sales rep per P0 cluster × 3 months. ₹60K/month salary + ₹30K expenses.</td></tr>
+    <tr><td><strong>Digital Marketing</strong></td><td>₹3,00,000</td><td>Google Ads (₹1.5L), LinkedIn Ads (₹75K), content creation (₹75K for blog, video, webinars).</td></tr>
+    <tr><td><strong>Content &amp; Collateral</strong></td><td>₹1,50,000</td><td>Case study videos (₹50K each × 2), CBAM assessment tool development, multilingual landing pages.</td></tr>
+    <tr><td><strong>Pilot Customer Costs</strong></td><td>₹2,00,000</td><td>Free tier costs for 20 pilot factories × 3 months (infrastructure, support, on-site visits).</td></tr>
+    <tr><td><strong>Association Sponsorships</strong></td><td>₹1,50,000</td><td>FIEO/EEPC event sponsorship, association newsletter placements.</td></tr>
+    <tr><td><strong>Contingency</strong></td><td>₹1,40,000</td><td>Buffer for unexpected travel, additional events, or extended pilot support.</td></tr>
+    <tr><td style="background:var(--fc-blue);color:white;font-weight:700;">TOTAL 90-DAY BUDGET</td><td style="background:var(--fc-blue);color:white;font-weight:700;">₹19,00,000</td><td style="background:var(--fc-blue);color:white;font-weight:700;">(~$22,800 USD)</td></tr>
+  </table>
+
+  <h3>Budget Allocation Visual</h3>
+  <div class="budget-bar">
+    <div style="width:21%;background:var(--fc-blue);">Events 21%</div>
+    <div style="width:19%;background:var(--fc-teal);">Sales 19%</div>
+    <div style="width:16%;background:#4a90d9;">Digital 16%</div>
+    <div style="width:11%;background:var(--fc-purple);">Partners 11%</div>
+    <div style="width:11%;background:var(--fc-orange);">Pilots 11%</div>
+    <div style="width:8%;background:var(--fc-green);">Content 8%</div>
+    <div style="width:8%;background:#718096;">Assoc. 8%</div>
+    <div style="width:6%;background:#a0aec0;">Buffer</div>
+  </div>
+</section>
+
+<!-- 10 COMPLIANCE -->
+<section id="compliance">
+  <h2>10 &mdash; Regulatory &amp; Compliance Landscape</h2>
+
+  <div class="two-col">
+    <div>
+      <h3>EU CBAM (Definitive Phase)</h3>
+      <p><strong>Status:</strong> Live since January 1, 2026. Annual declarations required. Third-party verification mandatory. CBAM certificates must be purchased by EU importers.</p>
+      <p><strong>Covered sectors:</strong> Cement, iron &amp; steel, aluminium, fertilisers, electricity, hydrogen.</p>
+      <p><strong>Cost to exporters:</strong> ~€173.8/tonne for steel. India's CBAM-exposed exports to EU valued at $8.2B.</p>
+      <p><strong>Omnibus simplification (Oct 2025):</strong> Reduced admin burden but core obligations remain. Helps FactoryConnect — standardized reporting is easier to productize than custom consulting.</p>
+      <p><strong>FC opportunity:</strong> Every Indian exporter to the EU in covered sectors now needs emissions data, third-party verification support, and annual reporting. This is FC's primary wedge.</p>
+    </div>
+    <div>
+      <h3>India DPDP Act / Rules 2025</h3>
+      <p><strong>Status:</strong> Rules notified November 13, 2025. Full compliance mandatory by May 13, 2027 (18-month window).</p>
+      <p><strong>Key requirements for FactoryConnect:</strong></p>
+      <p>Consent management: FC must collect verifiable consent for processing factory/exporter personal data (contact details, financial data).</p>
+      <p>Breach notification: 72-hour notification to Data Protection Board and affected individuals.</p>
+      <p>Data retention: Automated deletion of personal data when purpose is fulfilled.</p>
+      <p>Cross-border transfer: FC stores data in India but processes some data via EU buyer systems — need to comply with transfer provisions.</p>
+      <p>Security safeguards: Technical and organizational measures appropriate to the risk.</p>
+      <p><strong>Penalties:</strong> Up to ₹250 crore per violation.</p>
+      <p><strong>FC action:</strong> Build DPDP compliance into the platform from Day 1. This is also a competitive moat — being DPDP-compliant is a trust signal for Indian SME customers.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 11 RISKS -->
+<section id="risks">
+  <h2>11 &mdash; Risk Mitigation Matrix</h2>
+
+  <div class="risk-grid">
+    <div class="risk-card">
+      <span class="severity sev-high">High</span>
+      <h4 style="margin:8px 0 6px;">Slow SME adoption / trust deficit</h4>
+      <p style="font-size:13px;">Indian factory owners are risk-averse. New software = suspicion.</p>
+      <p style="font-size:13px;"><strong>Mitigation:</strong> Shadow mode trial (zero risk). CA endorsement. On-site first 5. Association-backed workshops. Local language. WhatsApp-first communication.</p>
+    </div>
+    <div class="risk-card">
+      <span class="severity sev-high">High</span>
+      <h4 style="margin:8px 0 6px;">High onboarding cost erodes unit economics</h4>
+      <p style="font-size:13px;">Managed SaaS = human-heavy onboarding. At ₹9,999/month, CAC could exceed LTV.</p>
+      <p style="font-size:13px;"><strong>Mitigation:</strong> Cohort-based onboarding (5 factories per batch). Tally partner co-sell reduces FC's direct sales cost. Pilot customers subsidized by case study value. Target 18-month LTV:CAC of 3:1 by Month 12.</p>
+    </div>
+    <div class="risk-card">
+      <span class="severity sev-med">Medium</span>
+      <h4 style="margin:8px 0 6px;">CBAM regulatory changes / delays</h4>
+      <p style="font-size:13px;">EU could further simplify CBAM or delay enforcement. India-EU FTA negotiations could alter CBAM treatment.</p>
+      <p style="font-size:13px;"><strong>Mitigation:</strong> CBAM is the wedge, not the entire product. EDI bridge + procurement compliance has value independent of CBAM. Diversify messaging: CBAM for urgency, EDI for ongoing value.</p>
+    </div>
+    <div class="risk-card">
+      <span class="severity sev-med">Medium</span>
+      <h4 style="margin:8px 0 6px;">Tally partnership dependency</h4>
+      <p style="font-size:13px;">If Tally builds native EDI/CBAM features, FC loses its distribution advantage.</p>
+      <p style="font-size:13px;"><strong>Mitigation:</strong> Multi-ERP strategy (Tally + Zoho + SAP B1). FC's value is the buyer-side connectivity (Ariba/Coupa/EDI), not just Tally integration. Build switching costs through buyer relationships.</p>
+    </div>
+    <div class="risk-card">
+      <span class="severity sev-med">Medium</span>
+      <h4 style="margin:8px 0 6px;">Buyer-side partnership takes too long</h4>
+      <p style="font-size:13px;">Enterprise buyers have long procurement cycles. Getting a buyer to mandate FC could take 6-12 months.</p>
+      <p style="font-size:13px;"><strong>Mitigation:</strong> Don't wait for buyer mandates. CBAM compliance + Tally integration create supplier-side demand. Buyer mandates are an accelerant, not a prerequisite. Start buyer outreach on Day 1 but don't gate revenue on it.</p>
+    </div>
+    <div class="risk-card">
+      <span class="severity sev-low">Low</span>
+      <h4 style="margin:8px 0 6px;">Competitor entry from EDI incumbents</h4>
+      <p style="font-size:13px;">SPS Commerce or TrueCommerce could build India-specific features.</p>
+      <p style="font-size:13px;"><strong>Mitigation:</strong> FC's moat is local: Tally integration, on-ground presence, regional language support, CA network, cluster-level density. US companies won't invest in this for a ₹10K/month price point. Move fast — first 100 factories in each cluster creates a network effect.</p>
+    </div>
+    <div class="risk-card">
+      <span class="severity sev-med">Medium</span>
+      <h4 style="margin:8px 0 6px;">DPDP compliance complexity</h4>
+      <p style="font-size:13px;">Handling cross-border data (India → EU buyer systems) under DPDP + GDPR simultaneously.</p>
+      <p style="font-size:13px;"><strong>Mitigation:</strong> Engage a data privacy consultant during Days 1-30. Implement privacy-by-design. Use DPDP compliance as a marketing advantage — "your data stays in India, DPDP-certified."</p>
+    </div>
+    <div class="risk-card">
+      <span class="severity sev-low">Low</span>
+      <h4 style="margin:8px 0 6px;">Price sensitivity kills expansion revenue</h4>
+      <p style="font-size:13px;">Factories stay on ₹2,999 Starter and never upgrade.</p>
+      <p style="font-size:13px;"><strong>Mitigation:</strong> Starter tier is intentionally CBAM-only. When a buyer mandate arrives (inevitable for active EU exporters), they must upgrade to Standard for EDI capabilities. The product architecture forces the upgrade.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 12 METRICS -->
+<section id="metrics">
+  <h2>12 &mdash; Success Metrics &amp; KPIs</h2>
+
+  <h3>90-Day Targets</h3>
+  <table>
+    <tr><th>Metric</th><th>Day 30</th><th>Day 60</th><th>Day 90</th></tr>
+    <tr><td>Factories in Shadow Mode</td><td>5</td><td>20</td><td>30</td></tr>
+    <tr><td>Paying Customers</td><td>0</td><td>5</td><td>10</td></tr>
+    <tr><td>MRR</td><td>₹0</td><td>₹50K</td><td>₹1L+</td></tr>
+    <tr><td>Partner MOUs Signed</td><td>2</td><td>4</td><td>6</td></tr>
+    <tr><td>Workshops Delivered</td><td>0</td><td>2</td><td>3</td></tr>
+    <tr><td>CBAM Assessments Completed</td><td>10</td><td>40</td><td>80</td></tr>
+    <tr><td>Case Studies Published</td><td>0</td><td>0</td><td>2</td></tr>
+    <tr><td>Buyer Conversations Initiated</td><td>0</td><td>2</td><td>3</td></tr>
+    <tr><td>Website Organic Traffic</td><td>500/mo</td><td>1,500/mo</td><td>3,000/mo</td></tr>
+  </table>
+
+  <h3>12-Month North Star Metrics</h3>
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="value">100</div>
+      <div class="label">Paying Factories</div>
+    </div>
+    <div class="kpi">
+      <div class="value">₹10L</div>
+      <div class="label">Monthly Recurring Revenue</div>
+    </div>
+    <div class="kpi">
+      <div class="value">3:1</div>
+      <div class="label">LTV:CAC Ratio</div>
+    </div>
+    <div class="kpi">
+      <div class="value">4</div>
+      <div class="label">Active Clusters</div>
+    </div>
+  </div>
+
+  <h3>Leading Indicators to Watch</h3>
+  <p><strong>Shadow mode → paid conversion rate:</strong> Target 50%+. Below 30% signals product-market fit issues. <strong>Channel partner referral rate:</strong> Each Tally partner should refer 2+ factories/month by Month 6. <strong>CBAM assessment → shadow mode conversion:</strong> Target 25%. Below 15% means the assessment tool isn't generating urgency. <strong>Net Revenue Retention:</strong> Target 110%+ (Starter → Standard upgrades should outpace churn). <strong>Cluster density:</strong> 10+ factories per cluster before moving to the next cluster. Density creates word-of-mouth and local support efficiency.</p>
+</section>
+
+<!-- FOOTER -->
+<div class="footer">
+  <p>FactoryConnect Unified Go-to-Market Strategy &nbsp;|&nbsp; Prepared April 2026 &nbsp;|&nbsp; Confidential</p>
+  <p style="margin-top:6px;">Synthesized from independent GTM analyses by ChatGPT and Gemini, with primary research and strategic recommendations by Claude (Anthropic).</p>
+  <p style="margin-top:6px;">Research sources: FIEO (fieo.org), EEPC India (eepcindia.org), DGFT Trade Connect (trade.gov.in), Tally Solutions (tallysolutions.com), EU CBAM (taxation-customs.ec.europa.eu), DPDP Rules 2025, Tiruppur Exporters' Association, SteelOrbis, India Briefing, Textile Insights, Tribune India.</p>
+</div>
+
+</body>
+</html>
