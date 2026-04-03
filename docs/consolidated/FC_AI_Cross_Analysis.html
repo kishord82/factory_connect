@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FactoryConnect — AI Cross-Analysis: Claude + Gemini + ChatGPT</title>
+<title>FactoryConnect — Three-Way AI Cross-Analysis: Claude + Gemini + ChatGPT</title>
 <style>
   :root {
     --primary: #1a365d;
@@ -16,6 +16,9 @@
     --border: #e2e8f0;
     --text: #2d3748;
     --text-light: #718096;
+    --chatgpt: #10a37f;
+    --gemini: #8b5cf6;
+    --claude: #2563eb;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -26,7 +29,7 @@
     padding: 0;
   }
   .header {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+    background: linear-gradient(135deg, #1a1a2e 0%, var(--primary) 50%, #16213e 100%);
     color: white;
     padding: 48px 40px;
     text-align: center;
@@ -34,6 +37,11 @@
   .header h1 { font-size: 2.2em; margin-bottom: 8px; font-weight: 700; }
   .header .subtitle { font-size: 1.1em; opacity: 0.9; }
   .header .meta { margin-top: 16px; font-size: 0.9em; opacity: 0.7; }
+  .header .ai-badges { margin-top: 20px; display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; }
+  .header .ai-badge { padding: 6px 16px; border-radius: 20px; font-size: 0.85em; font-weight: 600; }
+  .ai-badge-claude { background: rgba(37,99,235,0.3); border: 1px solid rgba(37,99,235,0.5); }
+  .ai-badge-gemini { background: rgba(139,92,246,0.3); border: 1px solid rgba(139,92,246,0.5); }
+  .ai-badge-chatgpt { background: rgba(16,163,127,0.3); border: 1px solid rgba(16,163,127,0.5); }
   .container { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
   
   .executive-summary {
@@ -44,6 +52,15 @@
     margin-bottom: 40px;
   }
   .executive-summary h2 { color: var(--primary); margin-bottom: 12px; }
+  
+  .reality-check {
+    background: #fff5f5;
+    border-left: 5px solid var(--danger);
+    padding: 28px 32px;
+    border-radius: 0 12px 12px 0;
+    margin-bottom: 40px;
+  }
+  .reality-check h2 { color: var(--danger); margin-bottom: 12px; }
   
   section { margin-bottom: 48px; }
   h2 {
@@ -73,6 +90,7 @@
     gap: 8px;
     margin-bottom: 12px;
     font-size: 1.1em;
+    flex-wrap: wrap;
   }
   .badge {
     display: inline-block;
@@ -81,11 +99,14 @@
     font-size: 0.75em;
     font-weight: 600;
     text-transform: uppercase;
+    white-space: nowrap;
   }
-  .badge-gemini { background: #fef3c7; color: #92400e; }
+  .badge-gemini { background: #ede9fe; color: #5b21b6; }
   .badge-claude { background: #dbeafe; color: #1e40af; }
+  .badge-chatgpt { background: #d1fae5; color: #065f46; }
   .badge-action { background: #d1fae5; color: #065f46; }
   .badge-risk { background: #fee2e2; color: #991b1b; }
+  .badge-consensus { background: #fef3c7; color: #92400e; }
   
   table {
     width: 100%;
@@ -107,16 +128,6 @@
   }
   tr:nth-child(even) { background: #f7fafc; }
   
-  .verdict {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    padding: 4px 0;
-  }
-  .verdict-agree { color: var(--success); }
-  .verdict-enhance { color: var(--accent); }
-  .verdict-challenge { color: var(--warning); }
-  
   .action-item {
     background: #f0fff4;
     border-left: 4px solid var(--success);
@@ -134,6 +145,31 @@
     border-radius: 0 8px 8px 0;
   }
   
+  .warning-item {
+    background: #fffbeb;
+    border-left: 4px solid var(--warning);
+    padding: 16px 20px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+  }
+  
+  .three-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin: 16px 0;
+  }
+  .col-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .col-card.claude-col { border-top: 3px solid var(--claude); }
+  .col-card.gemini-col { border-top: 3px solid var(--gemini); }
+  .col-card.chatgpt-col { border-top: 3px solid var(--chatgpt); }
+  .col-card h4 { margin-bottom: 10px; font-size: 1em; }
+  
   .comparison-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -146,7 +182,18 @@
     border-radius: 10px;
     padding: 20px;
   }
-  .comparison-col h4 { margin-bottom: 12px; }
+  
+  .traffic-light {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .green { background: #48bb78; }
+  .yellow { background: #ecc94b; }
+  .red { background: #fc8181; }
   
   .priority-matrix {
     display: grid;
@@ -159,9 +206,9 @@
     border-radius: 10px;
     border: 1px solid var(--border);
   }
-  .priority-high-impact { background: #fff5f5; border-color: #feb2b2; }
+  .priority-high { background: #fff5f5; border-color: #feb2b2; }
+  .priority-quick { background: #f0fff4; border-color: #c6f6d5; }
   .priority-medium { background: #fffff0; border-color: #fefcbf; }
-  .priority-quick-win { background: #f0fff4; border-color: #c6f6d5; }
   .priority-defer { background: #f7fafc; border-color: #e2e8f0; }
   
   ul { padding-left: 24px; margin: 8px 0; }
@@ -177,7 +224,8 @@
     margin-top: 48px;
   }
   
-  @media (max-width: 768px) {
+  @media (max-width: 900px) {
+    .three-col { grid-template-columns: 1fr; }
     .comparison-grid, .priority-matrix { grid-template-columns: 1fr; }
     .container { padding: 20px 16px; }
   }
@@ -186,314 +234,495 @@
 <body>
 
 <div class="header">
-  <h1>FactoryConnect Cross-Analysis</h1>
-  <div class="subtitle">Claude + Gemini AI Review &mdash; Architecture, Market Reality &amp; Implementation Strategy</div>
-  <div class="meta">Generated April 03, 2026 &bull; Based on FC Architecture v8.0 &bull; All 5 Consolidated Master Documents</div>
+  <h1>FactoryConnect &mdash; Three-Way AI Cross-Analysis</h1>
+  <div class="subtitle">Architecture Review &bull; Market Reality &bull; Go-to-Market Strategy</div>
+  <div class="ai-badges">
+    <span class="ai-badge ai-badge-claude">Claude (Opus 4)</span>
+    <span class="ai-badge ai-badge-gemini">Google Gemini</span>
+    <span class="ai-badge ai-badge-chatgpt">ChatGPT (GPT-4o)</span>
+  </div>
+  <div class="meta">Generated April 03, 2026 &bull; FC Architecture v8.0 &bull; 6 Consolidated Master Documents</div>
 </div>
 
 <div class="container">
 
+<!-- EXECUTIVE SUMMARY -->
 <div class="executive-summary">
   <h2>Executive Summary</h2>
-  <p><strong>Both AI reviewers independently rate FactoryConnect as "Market-Ready"</strong> with the architecture scoring exceptionally high on enterprise patterns (RLS, Transactional Outbox, Saga Coordinator, FLE). The key divergence is on <em>go-to-market execution</em>: Gemini flags Indian SME price sensitivity and support costs as the primary risks, while Claude's analysis emphasizes the CBAM regulatory wedge as the fastest path to first revenue. This document synthesizes both perspectives into a unified action plan.</p>
-  <p style="margin-top:12px"><strong>Consensus verdict:</strong> Architecture is 98% complete. The remaining 2% is in operational readiness (support playbooks, pricing packaging, buyer mock environments) not technical gaps.</p>
+  <p>Three AI systems independently reviewed the FactoryConnect architecture and market strategy. Here's the honest synthesis:</p>
+  <ul style="margin-top: 12px;">
+    <li><strong>Architecture:</strong> All three rate the technical design as enterprise-grade. No fundamental rewrites needed.</li>
+    <li><strong>Market:</strong> The problem is real, but the paying market is <em>much smaller</em> than the docs suggest. ChatGPT's estimate of "disciplined exporters with a live pain trigger" is the honest TAM.</li>
+    <li><strong>GTM:</strong> The first sellable product is <strong>not</strong> a SaaS platform. It's a managed integration service with software leverage, narrowed to one ERP path + one buyer document type + one export corridor.</li>
+  </ul>
 </div>
 
-<!-- SECTION 1: Architecture Consensus -->
-<section>
-  <h2>1. Architecture Validation &mdash; Where Both AIs Agree</h2>
-  
-  <div class="insight-card">
-    <h4><span class="badge badge-gemini">Gemini</span> <span class="badge badge-claude">Claude</span> RLS + Transactional Outbox = "Spool-Proof" Core</h4>
-    <p><strong>Gemini:</strong> "The decision to use RLS from Day 1, combined with a Transactional Outbox and Saga Coordinator, solves the most common failure point in B2B integration."</p>
-    <p style="margin-top:8px"><strong>Claude:</strong> The 4-write transaction pattern (domain + outbox + saga + audit) in a single PostgreSQL transaction eliminates the "lost message" class of bugs entirely. This is enterprise-grade from Day 1.</p>
-    <div class="action-item">
-      <strong>Action:</strong> No changes needed. This is validated by both reviewers. Proceed with the exact pattern documented in Architecture Decisions History (C1).
-    </div>
-  </div>
-  
-  <div class="insight-card">
-    <h4><span class="badge badge-gemini">Gemini</span> <span class="badge badge-claude">Claude</span> Bridge Agent Self-Healing</h4>
-    <p><strong>Gemini:</strong> "The 7-layer self-healing engine and Adaptive Polling correctly address the 'unreliable host' problem common in Indian factories."</p>
-    <p style="margin-top:8px"><strong>Claude:</strong> The adaptive polling intervals (5/10/15/30 min) combined with the local SQLite queue on the Bridge Agent means zero data loss even during extended network outages. The mTLS + OTP Bootstrap is the right security choice for factory environments.</p>
-    <div class="action-item">
-      <strong>Action:</strong> Validated. The Bridge Agent (Track D) should be built exactly as specified. Consider adding a "last sync" LED indicator in the system tray for factory operators.
-    </div>
-  </div>
-  
-  <div class="insight-card">
-    <h4><span class="badge badge-gemini">Gemini</span> <span class="badge badge-claude">Claude</span> Security Posture</h4>
-    <p><strong>Gemini:</strong> "Mandatory MFA, Vault Transit FLE for PII, and the OTP Bootstrap flow provide a security posture that will pass most US retailer security audits."</p>
-    <p style="margin-top:8px"><strong>Claude:</strong> The HMAC webhook verification with timing-safe comparison, correlation IDs on all responses, and the "Error-Code-Only LLM" pattern (C4 &mdash; never sending factory data to LLMs) is defense-in-depth done right.</p>
-    <div class="action-item">
-      <strong>Action:</strong> When approaching Walmart/Target buyers, lead with the security architecture. This is a differentiator against SPS Commerce and other legacy connectors.
-    </div>
-  </div>
-</section>
+<div class="reality-check">
+  <h2>The Hard Truth (ChatGPT's Core Insight)</h2>
+  <p><strong>"For the first 12-24 months, this is more likely to be a productized services business with SaaS software inside it than a pure self-serve SaaS."</strong></p>
+  <p style="margin-top: 12px;">This is the most important sentence in all three reviews. It doesn't invalidate the architecture &mdash; it reframes the go-to-market. The software is real. The platform vision is real. But the <em>first customers</em> won't buy a platform. They'll buy "make this buyer workflow work for me." Claude and Gemini's architecture recommendations remain valid, but they must be implemented within this reality.</p>
+</div>
 
-<!-- SECTION 2: Gemini's Unique Insights -->
+<!-- SECTION 1: Three-Way Architecture Verdict -->
 <section>
-  <h2>2. Gemini's Market Reality Insights &mdash; Claude's Assessment</h2>
+  <h2>1. Architecture Verdict &mdash; All Three Agree</h2>
   
-  <div class="insight-card">
-    <h4><span class="badge badge-gemini">Gemini Insight</span> The "Support Trap"</h4>
-    <p><strong>Gemini says:</strong> Indian SME owners will call you for basic Windows networking issues. L1 support will be your biggest operational cost initially.</p>
-    <div class="comparison-grid">
-      <div class="comparison-col">
-        <h4>Gemini's Recommendation</h4>
-        <p>Graduated Escalation (WhatsApp to Human) is essential but insufficient. Budget for heavy L1 support.</p>
-      </div>
-      <div class="comparison-col">
-        <h4>Claude's Enhancement</h4>
-        <p>Build a <strong>"Factory Health Dashboard"</strong> that proactively detects common issues (Tally not running, port blocked, disk full) and auto-sends WhatsApp fix instructions <em>before</em> the factory owner notices. This converts reactive L1 tickets into proactive automated notifications.</p>
-        <ul>
-          <li>Bridge Agent already has health probes &mdash; surface them as factory-facing alerts</li>
-          <li>Create a library of 50 common issues with WhatsApp-friendly fix guides (screenshots + regional language)</li>
-          <li>Track "auto-resolved" vs "human-escalated" ratio as a key ops metric</li>
-        </ul>
-      </div>
+  <div class="three-col">
+    <div class="col-card claude-col">
+      <h4 style="color: var(--claude);">Claude's View</h4>
+      <p>The 4-write transaction pattern (domain + outbox + saga + audit) in a single PostgreSQL transaction eliminates the "lost message" class of bugs. RLS from Day 1 is the right call. The versioned adapter architecture is the long-term moat.</p>
+      <p style="margin-top:8px"><strong>Rating: 98/100</strong></p>
     </div>
-    <div class="action-item">
-      <strong>Action &mdash; Sprint 2 addition:</strong> Add <code>HealthAlertService</code> to Bridge Agent that maps health probe failures to WhatsApp template messages. Target: 60% of issues auto-resolved without human contact.
+    <div class="col-card gemini-col">
+      <h4 style="color: var(--gemini);">Gemini's View</h4>
+      <p>"The decision to use RLS from Day 1, combined with a Transactional Outbox and Saga Coordinator, solves the most common failure point in B2B integration." Security posture will pass US retailer audits.</p>
+      <p style="margin-top:8px"><strong>Verdict: Market-Ready</strong></p>
     </div>
-  </div>
-  
-  <div class="insight-card">
-    <h4><span class="badge badge-gemini">Gemini Insight</span> Price Sensitivity &amp; Setup Fee Barrier</h4>
-    <p><strong>Gemini says:</strong> Bundle the setup fee into the first 6 months of subscription to lower the barrier to entry. Setup fees are harder to collect than subscriptions in India.</p>
-    <div class="comparison-grid">
-      <div class="comparison-col">
-        <h4>Gemini's Recommendation</h4>
-        <p>Bundle setup into 6 months of higher subscription. Avoid upfront cost friction.</p>
-      </div>
-      <div class="comparison-col">
-        <h4>Claude's Enhancement</h4>
-        <p><strong>Three-tier pricing model</strong> that addresses both Gemini's concern and maximizes revenue:</p>
-        <ul>
-          <li><strong>CBAM Compliance (Free tier):</strong> Free CBAM document generation for the first 3 months. Hooks the factory on the platform with zero risk.</li>
-          <li><strong>Standard (&#8377;4,999/mo):</strong> CBAM + single buyer EDI. Setup bundled into months 1-6 as Gemini suggests.</li>
-          <li><strong>Enterprise (&#8377;14,999/mo):</strong> Multi-buyer, AI mapping, priority support. Setup fee waived entirely.</li>
-        </ul>
-        <p style="margin-top:8px">The free CBAM tier is the wedge. Once factories are generating carbon reports, upselling to buyer EDI is a warm conversation.</p>
-      </div>
+    <div class="col-card chatgpt-col">
+      <h4 style="color: var(--chatgpt);">ChatGPT's View</h4>
+      <p>Doesn't challenge the architecture. Implicitly validates it by focusing all criticism on <em>market and GTM</em>, not technical design. The architecture is over-built for the initial market, which is fine &mdash; it's built for where the company needs to be in Year 2-3.</p>
+      <p style="margin-top:8px"><strong>Implied: Build it, but sell smaller</strong></p>
     </div>
-    <div class="action-item">
-      <strong>Action &mdash; Pre-launch:</strong> Implement the free CBAM tier in the pricing engine. Update the <code>subscription_plans</code> table to support "freemium with time-limited features." This is the #1 go-to-market change.
-    </div>
-  </div>
-  
-  <div class="insight-card">
-    <h4><span class="badge badge-gemini">Gemini Insight</span> Competitor Inertia (SPS Commerce)</h4>
-    <p><strong>Gemini says:</strong> SPS Commerce is entrenched because of pre-certified relationships with buyer IT teams, not better tech. Your wedge must be Tally/Busy/Marg native connectivity.</p>
-    <div class="comparison-grid">
-      <div class="comparison-col">
-        <h4>Gemini's Recommendation</h4>
-        <p>Lead with Tally/Busy/Marg native connectivity as the differentiator.</p>
-      </div>
-      <div class="comparison-col">
-        <h4>Claude's Enhancement</h4>
-        <p><strong>The "Compliance-First" positioning</strong> sidesteps the SPS relationship advantage entirely:</p>
-        <ul>
-          <li>SPS doesn't do CBAM. EU regulation is mandatory. Factories <em>must</em> comply.</li>
-          <li>Position FC as "CBAM compliance platform that also does EDI" rather than "EDI platform competing with SPS"</li>
-          <li>Once you're the CBAM provider, you're already in the data flow &mdash; adding EDI is incremental</li>
-          <li>Buyer IT teams care about compliance. Approaching them as "your supplier's CBAM provider wants to also send POs" is a warmer intro than "switch from SPS to us"</li>
-        </ul>
-      </div>
-    </div>
-    <div class="action-item">
-      <strong>Action &mdash; Marketing:</strong> All sales materials should lead with "EU CBAM Compliance" not "EDI Integration." The EDI capability is the upsell, not the hook.
-    </div>
-  </div>
-</section>
-
-<!-- SECTION 3: Gemini's RAID Suggestions -->
-<section>
-  <h2>3. RAID Items &mdash; Gemini Suggestions + Claude Counter-Analysis</h2>
-  
-  <table>
-    <tr>
-      <th style="width:10%">ID</th>
-      <th style="width:18%">Issue</th>
-      <th style="width:24%">Gemini Suggestion</th>
-      <th style="width:24%">Claude Assessment</th>
-      <th style="width:24%">Final Recommendation</th>
-    </tr>
-    <tr>
-      <td><strong>I-T01</strong></td>
-      <td>Busy 21 No API</td>
-      <td><strong>"SQL Reflection" Pattern:</strong> Tail the MS-SQL transaction logs for near-real-time sync without polling load on Busy DB.</td>
-      <td><span class="verdict verdict-enhance">Partially agree.</span> SQL CDC (Change Data Capture) via transaction log tailing is technically sound but adds significant complexity: requires SQL Server Agent permissions, schema change tracking, and CDC table management. For Phase 1, direct SQL polling with HWM (High-Water Mark) is simpler and proven.</td>
-      <td><strong>Phase 1:</strong> Use direct SQL read with HWM (already in design).<br><strong>Phase 2:</strong> Upgrade to SQL Server CDC for real-time. The adapter versioning architecture supports this seamlessly &mdash; ship v1 with polling, v2 with CDC.</td>
-    </tr>
-    <tr>
-      <td><strong>I-T03</strong></td>
-      <td>No Go EDI Library</td>
-      <td><strong>Polyglot Sidecar:</strong> Use OpenAS2 Java sidecar with Smooks for X12 parsing. Don't build custom Go parser.</td>
-      <td><span class="verdict verdict-agree">Strongly agree.</span> The OpenAS2 sidecar is already in the architecture (ports 4080/4081). Using Smooks or a proven Java EDI library inside that sidecar is the right call. Building a custom X12 parser would be 2-3 months of work with edge cases.</td>
-      <td><strong>Adopt as-is.</strong> The OpenAS2 sidecar handles both AS2 transport AND X12 parsing. Use <code>berryworks/edireader</code> (Java, Apache 2.0 license) inside the sidecar for X12/EDIFACT parsing. FC's Node.js core sends canonical JSON; the sidecar converts to/from EDI.</td>
-    </tr>
-    <tr>
-      <td><strong>R-T02</strong></td>
-      <td>EDI Rejection Cascade</td>
-      <td><strong>"Strict-Mode" Pre-flight:</strong> Sandbox that rejects EDI with Compliance Score &lt; 100 before it hits the outbox.</td>
-      <td><span class="verdict verdict-agree">Agree, with nuance.</span> A compliance score of exactly 100 is too strict for initial rollout &mdash; some buyer-specific fields are only discoverable through actual submissions. Implement tiered scoring: &lt;80 = reject, 80-95 = warn + send, &gt;95 = auto-send.</td>
-      <td><strong>Implement tiered compliance scoring:</strong><br>
-        &bull; <strong>&lt;80:</strong> Hard reject, factory notified with specific fix instructions<br>
-        &bull; <strong>80-95:</strong> Warning sent to factory, file submitted with "test" flag to buyer sandbox<br>
-        &bull; <strong>&gt;95:</strong> Auto-submit to production<br>
-        Thresholds are configurable per buyer connection in <code>connection_config</code>.</td>
-    </tr>
-    <tr>
-      <td><strong>A-B03</strong></td>
-      <td>Buyer Cooperation</td>
-      <td><strong>"Shadow" Onboarding:</strong> Build buyer mocks so factories can test Tally-to-Walmart flow before contacting buyer IT.</td>
-      <td><span class="verdict verdict-agree">Excellent suggestion.</span> This is the single most impactful GTM feature Gemini identified. A factory that can demo a working Tally-to-Walmart flow (against a mock) before the buyer call converts the buyer conversation from "can you do this?" to "here's proof it works."</td>
-      <td><strong>Priority: HIGH.</strong> Build mock buyer endpoints for top 5 targets (Walmart, Amazon, Target, Costco, H&M). Each mock validates the exact EDI spec the real buyer uses. Include in the free CBAM tier so factories can "try before they buy." This is Track C &mdash; Sandbox Test Harness.</td>
-    </tr>
-  </table>
-</section>
-
-<!-- SECTION 4: Implementation Strategy -->
-<section>
-  <h2>4. Implementation Strategy &mdash; Unified Agent Plan</h2>
-  
-  <div class="insight-card">
-    <h4>Gemini's "3 Agent" Breakdown vs. Claude's Assessment</h4>
-    <p>Gemini correctly identifies the 3-agent parallel build strategy. Here's the refined priority order with both perspectives merged:</p>
-  </div>
-  
-  <table>
-    <tr>
-      <th>Agent</th>
-      <th>Gemini Priority</th>
-      <th>Claude Priority</th>
-      <th>Unified Sprint Plan</th>
-    </tr>
-    <tr>
-      <td><strong>Agent 1<br>"The Brain"</strong></td>
-      <td>SQL DDL (RLS) + Transactional Outbox first</td>
-      <td>Agree. Track A (Foundation) is the critical path. All other tracks build on the DB schema.</td>
-      <td><strong>Sprint 1-2:</strong> Schema + RLS + migrations + seed data. Outbox poller. Saga table. Must be done before anything else starts.</td>
-    </tr>
-    <tr>
-      <td><strong>Agent 2<br>"The Hands"</strong></td>
-      <td>Bridge Agent mTLS + OTP Bootstrap (most complex security piece)</td>
-      <td>Partially disagree on sequencing. The API layer (Track B) should start alongside Track A, with the Bridge (Track D) starting Sprint 3. Reason: the Portal and Mapping Engine both depend on API contracts.</td>
-      <td><strong>Sprint 1-2:</strong> API scaffolding + middleware stack (auth, tenant context, correlation ID).<br><strong>Sprint 3-4:</strong> Bridge Agent core + OTP Bootstrap.<br><strong>Sprint 5:</strong> Bridge mTLS + production hardening.</td>
-    </tr>
-    <tr>
-      <td><strong>Agent 3<br>"The Face"</strong></td>
-      <td>Saga Monitor UI &mdash; factory owners need to see where their order is.</td>
-      <td>Agree on the Saga Monitor as the first Portal deliverable. Add: the <strong>Buyer Mock Sandbox UI</strong> (from Gemini's A-B03 suggestion) should be Sprint 4 &mdash; it's the GTM differentiator.</td>
-      <td><strong>Sprint 2:</strong> Portal scaffold + auth flow.<br><strong>Sprint 3:</strong> Saga Monitor dashboard (order status timeline).<br><strong>Sprint 4:</strong> Buyer Mock Sandbox UI + CBAM report viewer.</td>
-    </tr>
-  </table>
-</section>
-
-<!-- SECTION 5: Priority Matrix -->
-<section>
-  <h2>5. Priority Matrix &mdash; What to Build First</h2>
-  <p>Combining Gemini's market reality feedback with Claude's technical assessment:</p>
-  
-  <div class="priority-matrix">
-    <div class="priority-cell priority-high-impact">
-      <h4 style="color:#c53030">High Impact, Do Now (Sprint 1-3)</h4>
-      <ul>
-        <li>DB schema + RLS + migrations (Track A)</li>
-        <li>Transactional Outbox + Saga Coordinator</li>
-        <li>API middleware stack (auth, tenant, correlation)</li>
-        <li>Tally XML adapter (source connector v1)</li>
-        <li>Free CBAM tier pricing model</li>
-      </ul>
-    </div>
-    <div class="priority-cell priority-quick-win">
-      <h4 style="color:#276749">Quick Wins, High GTM Value (Sprint 3-5)</h4>
-      <ul>
-        <li>Buyer Mock Sandbox (Gemini's shadow onboarding)</li>
-        <li>Saga Monitor UI (order status visibility)</li>
-        <li>WhatsApp health alerts (auto-resolve L1 tickets)</li>
-        <li>EDI compliance scoring (tiered: 80/95/100)</li>
-        <li>CBAM report generation</li>
-      </ul>
-    </div>
-    <div class="priority-cell priority-medium">
-      <h4 style="color:#c05621">Important, Can Sequence (Sprint 5-8)</h4>
-      <ul>
-        <li>Bridge Agent mTLS + OTP Bootstrap</li>
-        <li>AI Mapping Studio (LLM-assisted field mapping)</li>
-        <li>OpenAS2 sidecar + Smooks EDI parser</li>
-        <li>Multi-buyer connection management</li>
-        <li>Zoho/SAP B1 source adapters</li>
-      </ul>
-    </div>
-    <div class="priority-cell priority-defer">
-      <h4 style="color:#718096">Defer (Post-MVP)</h4>
-      <ul>
-        <li>Busy 21 SQL CDC adapter (use polling v1 first)</li>
-        <li>Marg ERP adapter</li>
-        <li>EDIFACT support (X12 first for US buyers)</li>
-        <li>Advanced analytics dashboard</li>
-        <li>Multi-language Portal UI</li>
-      </ul>
-    </div>
-  </div>
-</section>
-
-<!-- SECTION 6: Risk Reconciliation -->
-<section>
-  <h2>6. Risk Reconciliation &mdash; Gaps Neither AI Flagged</h2>
-  
-  <div class="risk-item">
-    <strong>Risk: Tally Prime Version Fragmentation</strong><br>
-    Both reviewers validated the Tally XML adapter but neither flagged that Tally Prime 4.x changed several XML endpoint behaviors from 3.x. The versioned adapter architecture handles this, but the <em>detection</em> of which Tally version is running must happen during Bridge Agent first-connect. Add a version fingerprinting step to the OTP Bootstrap flow.
-  </div>
-  
-  <div class="risk-item">
-    <strong>Risk: GST Invoice Format Changes</strong><br>
-    India's GST e-invoicing format (IRN) is updated periodically by NIC. The canonical model must version GST fields independently. Neither reviewer flagged this because it's India-specific regulatory risk. Add a <code>gst_schema_version</code> field to the canonical invoice entity.
-  </div>
-  
-  <div class="risk-item">
-    <strong>Risk: WhatsApp Business API Rate Limits</strong><br>
-    The notification service uses WhatsApp as primary channel. Meta's Business API has per-phone-number rate limits (1,000 messages/day on standard tier). With 50+ factories, health alerts + order updates could hit this limit. Plan for multiple WhatsApp Business numbers or tiered notification routing (critical = WhatsApp, informational = email).
   </div>
   
   <div class="action-item">
-    <strong>New RAID Items to Add:</strong><br>
-    <code>R-T08: Tally version fragmentation</code> &mdash; Mitigation: Version fingerprint during OTP Bootstrap<br>
-    <code>R-T09: GST schema versioning</code> &mdash; Mitigation: Independent GST version field in canonical model<br>
-    <code>R-T10: WhatsApp rate limits</code> &mdash; Mitigation: Multi-number routing + email fallback
+    <strong>Consensus:</strong> Architecture is validated. No changes needed to the technical design. The adjustment is entirely in go-to-market positioning and first-customer approach.
   </div>
 </section>
 
-<!-- SECTION 7: Final Verdict -->
+<!-- SECTION 2: The Five Hard Truths -->
 <section>
-  <h2>7. Final Verdict &mdash; Consensus Recommendation</h2>
+  <h2>2. ChatGPT's Five Hard Truths &mdash; Claude's Response</h2>
+  
+  <div class="insight-card">
+    <h4><span class="badge badge-chatgpt">ChatGPT #1</span> "It's Not SaaS-First. It's Managed SaaS."</h4>
+    <p><strong>ChatGPT:</strong> Indian export SMEs buy through trust networks, dealers, accountants. They expect onboarding help, template setup, buyer coordination, and local support. Margins and scale will be worse early on.</p>
+    <div class="comparison-grid">
+      <div class="comparison-col">
+        <h4 style="color: var(--chatgpt);">ChatGPT's Prescription</h4>
+        <p>Downgrade "SaaS first" to <strong>managed SaaS</strong> or <strong>implementation-led SaaS</strong>. Accept that the first 12-24 months are high-touch.</p>
+      </div>
+      <div class="comparison-col">
+        <h4 style="color: var(--claude);">Claude's Assessment</h4>
+        <p><strong>Agree fully.</strong> This is not a compromise &mdash; it's the correct strategy. The architecture supports this perfectly:</p>
+        <ul>
+          <li>The <strong>Onboarding Configuration Engine</strong> (already designed) becomes the tool your implementation team uses, not a self-serve wizard</li>
+          <li>The <strong>Saga Monitor</strong> becomes an internal ops dashboard first, customer-facing later</li>
+          <li>Price the first 10 deals as <strong>"implementation + subscription"</strong> with a 6-month minimum</li>
+          <li>Track implementation hours per customer to find automation opportunities</li>
+        </ul>
+      </div>
+    </div>
+    <div class="action-item">
+      <strong>Change to Architecture:</strong> None. <strong>Change to Business Model:</strong> Add an <code>implementation_hours</code> tracking table. First 10 customers get white-glove onboarding. Use the data to build self-serve features for customers 11-50.
+    </div>
+  </div>
+  
+  <div class="insight-card">
+    <h4><span class="badge badge-chatgpt">ChatGPT #2</span> "Pain Doesn't Automatically Convert to Willingness to Pay"</h4>
+    <p><strong>ChatGPT:</strong> SMEs delay software spend unless a buyer explicitly requires it, a compliance deadline is near, or the founder sees immediate revenue protection. The paying market is much smaller than the theoretical market.</p>
+    <div class="comparison-grid">
+      <div class="comparison-col">
+        <h4 style="color: var(--chatgpt);">ChatGPT's Prescription</h4>
+        <p>Focus only on factories with a <strong>live pain trigger</strong>: active buyer requirement, imminent compliance deadline, or provable revenue at risk.</p>
+      </div>
+      <div class="comparison-col">
+        <h4 style="color: var(--claude);">Claude's Assessment</h4>
+        <p><strong>Agree. This changes the sales process fundamentally.</strong></p>
+        <ul>
+          <li>Don't sell to factories who "might need EDI someday"</li>
+          <li>Sell <em>only</em> to factories who received a buyer mandate in the last 90 days</li>
+          <li>The sales qualifier is: "Show me the email from your buyer asking for EDI/CBAM/specific document format"</li>
+          <li>If they can't show it, they're not a customer yet &mdash; put them in a nurture list</li>
+        </ul>
+        <p style="margin-top:8px"><strong>Gemini's "Shadow Onboarding"</strong> (buyer mocks) helps here: factories with a live trigger can demo the working flow to their buyer immediately.</p>
+      </div>
+    </div>
+    <div class="action-item">
+      <strong>Sales Process Change:</strong> Add "Pain Trigger Verification" as a mandatory qualification step. No implementation starts without a documented buyer requirement or compliance deadline.
+    </div>
+  </div>
+  
+  <div class="insight-card">
+    <h4><span class="badge badge-chatgpt">ChatGPT #3</span> "CBAM Is a Pain Amplifier, Not the Whole Product"</h4>
+    <p><strong>ChatGPT:</strong> CBAM is real, but many exporters will first ask their customs consultant or freight forwarder to patch it manually. CBAM is better as a pain amplifier attached to buyer-integration workflows, not the only product promise.</p>
+    <div class="three-col">
+      <div class="col-card gemini-col">
+        <h4 style="color: var(--gemini);">Gemini Said</h4>
+        <p>CBAM is the fastest path to first revenue. Lead with compliance urgency.</p>
+      </div>
+      <div class="col-card chatgpt-col">
+        <h4 style="color: var(--chatgpt);">ChatGPT Says</h4>
+        <p>CBAM is real but not standalone. Factories will try manual workarounds first. Use it as an amplifier, not the core offer.</p>
+      </div>
+      <div class="col-card claude-col">
+        <h4 style="color: var(--claude);">Claude's Synthesis</h4>
+        <p><strong>Both are partially right.</strong> The answer depends on the customer segment:</p>
+        <ul>
+          <li><strong>Steel/aluminium exporters to EU:</strong> CBAM <em>is</em> the trigger. Gemini is right for this segment.</li>
+          <li><strong>General exporters to US buyers:</strong> Buyer EDI mandate is the trigger. ChatGPT is right for this segment.</li>
+          <li><strong>Optimal positioning:</strong> "We solve your buyer's document requirements. If you also export to the EU, CBAM compliance is included."</li>
+        </ul>
+      </div>
+    </div>
+    <div class="action-item">
+      <strong>Positioning Change:</strong> Lead with <em>buyer integration</em>, not CBAM. CBAM is the differentiator when competing against manual workarounds, not the headline. Update all sales materials accordingly.
+    </div>
+  </div>
+  
+  <div class="insight-card">
+    <h4><span class="badge badge-chatgpt">ChatGPT #4</span> "Buyer-Side Friction Is the Real Bottleneck"</h4>
+    <p><strong>ChatGPT:</strong> Even if your factory-side connector works, the buyer may require testing cycles, exact implementation guide compliance, certificate exchange, approved partner setup, and buyer-specific quirks. Your early moat is "we have already made buyer X work for exporter type Y."</p>
+    <div class="comparison-grid">
+      <div class="comparison-col">
+        <h4>What This Means for Architecture</h4>
+        <p>Gemini's "Shadow Onboarding" (buyer mocks) isn't just a nice GTM feature &mdash; it's a <strong>critical necessity</strong>. Every buyer integration you complete becomes institutional knowledge that de-risks the next customer on the same buyer.</p>
+        <ul>
+          <li>Build a <code>buyer_integration_playbook</code> table that captures every quirk, testing requirement, and certificate exchange for each buyer</li>
+          <li>After completing Buyer X once, the second factory connecting to Buyer X should be 70% faster</li>
+          <li>This accumulated knowledge <em>is</em> the moat ChatGPT describes</li>
+        </ul>
+      </div>
+      <div class="comparison-col">
+        <h4>The "Corridor Strategy"</h4>
+        <p><strong>ChatGPT's strongest tactical advice:</strong> Start with 3-5 design partners in one corridor. This means:</p>
+        <ul>
+          <li><strong>One ERP:</strong> Tally Prime (not Tally + Zoho + SAP simultaneously)</li>
+          <li><strong>One buyer type:</strong> US retail (Walmart/Amazon) OR EU compliance &mdash; not both</li>
+          <li><strong>One vertical:</strong> Steel/aluminium exporters from one cluster (e.g., Jamshedpur or Coimbatore)</li>
+          <li>Get 3-5 factories through the full cycle before expanding to a second corridor</li>
+        </ul>
+      </div>
+    </div>
+    <div class="action-item">
+      <strong>Architecture Addition:</strong> Add <code>buyer_playbooks</code> table and <code>integration_learnings</code> log to capture every buyer-specific quirk. This is the compound advantage that makes customer N+1 cheaper than customer N.
+    </div>
+  </div>
+  
+  <div class="insight-card">
+    <h4><span class="badge badge-chatgpt">ChatGPT #5</span> "The Market Language Is Wrong"</h4>
+    <p><strong>ChatGPT:</strong> Buyers care less about canonical models and adapter meshes than about: "Can you make this buyer flow work? How long will it take? Will my staff need training? Will this break my Tally setup? Who will fix it at 7 PM when a shipment is stuck?"</p>
+    <div class="warning-item">
+      <strong>Claude's honest response:</strong> This is correct, and it applies to our own docs too. The consolidated architecture documents are essential for the engineering team, but none of them should be shown to a prospective factory customer. The customer-facing pitch must be entirely different:
+      <ul style="margin-top:8px">
+        <li><strong>Internal:</strong> "Multi-tenant canonical data model with versioned adapter mesh and 15-state saga coordinator"</li>
+        <li><strong>Customer-facing:</strong> "We connect your Tally to your buyer's system. Takes 2 weeks. Your team doesn't need training. We handle everything."</li>
+      </ul>
+    </div>
+    <div class="action-item">
+      <strong>New Deliverable:</strong> Create a 1-page customer-facing pitch document. Zero technical jargon. Focus on outcomes: time saved, shipments unblocked, compliance met. This is separate from all architecture docs.
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 3: Gemini's Technical Insights (Still Valid) -->
+<section>
+  <h2>3. Gemini's Technical RAID Suggestions &mdash; Revalidated with ChatGPT Context</h2>
+  
+  <p>Gemini's technical suggestions remain valid even within ChatGPT's narrower GTM framing. Here's the updated priority:</p>
+  
+  <table>
+    <tr>
+      <th>ID</th>
+      <th>Gemini Suggestion</th>
+      <th>Still Valid?</th>
+      <th>Priority Change</th>
+    </tr>
+    <tr>
+      <td><strong>I-T01</strong></td>
+      <td><strong>Busy "SQL Reflection":</strong> Tail MS-SQL transaction logs for near-real-time sync</td>
+      <td><span class="traffic-light yellow"></span> Defer</td>
+      <td>ChatGPT says start with Tally only. Busy adapter moves to Phase 2. Use HWM polling when you get there; CDC in Phase 3.</td>
+    </tr>
+    <tr>
+      <td><strong>I-T03</strong></td>
+      <td><strong>Polyglot Sidecar:</strong> Use OpenAS2 + Smooks/edireader for X12 parsing</td>
+      <td><span class="traffic-light green"></span> Yes</td>
+      <td>Unchanged. If your first corridor includes a US buyer requiring EDI, this is Sprint 5-6 work.</td>
+    </tr>
+    <tr>
+      <td><strong>R-T02</strong></td>
+      <td><strong>EDI Compliance Scoring:</strong> Pre-flight sandbox with tiered scoring</td>
+      <td><span class="traffic-light green"></span> Yes, Critical</td>
+      <td>ChatGPT's "buyer-side friction" point makes this even more important. One bad EDI submission can damage the factory's relationship. <strong>Elevated to Sprint 4.</strong></td>
+    </tr>
+    <tr>
+      <td><strong>A-B03</strong></td>
+      <td><strong>"Shadow Onboarding":</strong> Buyer mocks for testing before buyer contact</td>
+      <td><span class="traffic-light green"></span> Yes, Top Priority</td>
+      <td>ChatGPT validates this is not optional. The buyer mock for your <em>first corridor's buyer</em> must be built before the first customer onboards. <strong>Elevated to Sprint 3.</strong></td>
+    </tr>
+  </table>
+</section>
+
+<!-- SECTION 4: Green/Yellow/Red Assumptions -->
+<section>
+  <h2>4. Assumption Audit &mdash; Green / Yellow / Red</h2>
+  <p>Integrating ChatGPT's "hard truths" with Gemini and Claude's analysis:</p>
+  
+  <table>
+    <tr>
+      <th>Assumption</th>
+      <th>Status</th>
+      <th>Evidence</th>
+    </tr>
+    <tr>
+      <td>Indian factories have a real integration pain</td>
+      <td><span class="traffic-light green"></span> <strong>Green</strong></td>
+      <td>All three AIs agree. 7.94 crore MSME registrations, 1.66 crore manufacturing. DGFT Trade Connect confirms export enablement is policy priority.</td>
+    </tr>
+    <tr>
+      <td>Tally is the right first ERP connector</td>
+      <td><span class="traffic-light green"></span> <strong>Green</strong></td>
+      <td>All three agree. Tally Prime 7.0 added JSON import/export alongside XML. Dominant in Indian SME market.</td>
+    </tr>
+    <tr>
+      <td>CBAM creates urgent buying pressure</td>
+      <td><span class="traffic-light yellow"></span> <strong>Yellow</strong></td>
+      <td>Gemini: yes. Claude: yes for steel/aluminium. ChatGPT: real but many will try manual workarounds first. <strong>True for a subset, not universal.</strong></td>
+    </tr>
+    <tr>
+      <td>Factories will self-serve onboard</td>
+      <td><span class="traffic-light red"></span> <strong>Red</strong></td>
+      <td>ChatGPT is definitive: "In India, they expect onboarding help, template setup, buyer coordination, and local support." First 12-24 months are high-touch.</td>
+    </tr>
+    <tr>
+      <td>10 customers in first 6 months</td>
+      <td><span class="traffic-light yellow"></span> <strong>Yellow</strong></td>
+      <td>Achievable only if narrowed to one corridor with existing relationships. ChatGPT's "3-5 design partners" is more realistic for the first 6 months.</td>
+    </tr>
+    <tr>
+      <td>&#8377;85K to first customer</td>
+      <td><span class="traffic-light yellow"></span> <strong>Yellow</strong></td>
+      <td>Gemini flags this as aggressive. Claude: achievable if the first customer is a warm relationship, not a cold sale. Budget for 2x if selling cold.</td>
+    </tr>
+    <tr>
+      <td>SaaS margins from Day 1</td>
+      <td><span class="traffic-light red"></span> <strong>Red</strong></td>
+      <td>ChatGPT: "Margins and scale will be worse early on than a normal SaaS model suggests." Implementation-heavy motion means 40-50% margins initially, not 80%+ SaaS margins.</td>
+    </tr>
+    <tr>
+      <td>Architecture is production-ready</td>
+      <td><span class="traffic-light green"></span> <strong>Green</strong></td>
+      <td>All three validate. RLS, Outbox, Saga, FLE, Bridge Agent all correctly designed.</td>
+    </tr>
+    <tr>
+      <td>AI mapping is a differentiator</td>
+      <td><span class="traffic-light yellow"></span> <strong>Yellow</strong></td>
+      <td>ChatGPT: "Your early moat is not AI mapping. It is 'we have already made buyer X work for exporter type Y.'" AI mapping becomes valuable at scale, not at customer 1-10.</td>
+    </tr>
+    <tr>
+      <td>DPDP compliance is handled</td>
+      <td><span class="traffic-light yellow"></span> <strong>Yellow</strong></td>
+      <td>ChatGPT flags DPDP Rules 2025 (notified Nov 2025) as mandatory hygiene. FLE and RLS help, but need explicit DPDP compliance review of data flows.</td>
+    </tr>
+  </table>
+</section>
+
+<!-- SECTION 5: Revised GTM -->
+<section>
+  <h2>5. Revised Go-to-Market &mdash; Three-AI Consensus</h2>
+  
+  <div class="insight-card" style="border: 2px solid var(--primary);">
+    <h4>The Viable First Offer (All Three AIs Aligned)</h4>
+    <p style="font-size: 1.1em; font-style: italic; color: var(--primary); margin-bottom: 16px;">"FactoryConnect helps Indian exporters on Tally connect to specific buyer document and compliance workflows, with managed onboarding and operational support."</p>
+    <p><strong>Not this:</strong> <span style="color: var(--text-light); text-decoration: line-through;">"FactoryConnect is a universal ERP-to-global-procurement integration cloud."</span></p>
+    <p style="margin-top: 12px;">The first one is believable. The second one is not &mdash; yet.</p>
+  </div>
+  
+  <h3>Revised First Corridor</h3>
+  <table>
+    <tr>
+      <th>Dimension</th>
+      <th>Original Plan</th>
+      <th>Revised (Post Three-AI Review)</th>
+    </tr>
+    <tr>
+      <td>Source ERP</td>
+      <td>Tally + Zoho + SAP B1</td>
+      <td><strong>Tally Prime only</strong> (JSON + XML)</td>
+    </tr>
+    <tr>
+      <td>Target</td>
+      <td>EDI X12 + Ariba + Coupa + EDIFACT</td>
+      <td><strong>One buyer's specific format</strong> (pick based on first design partner)</td>
+    </tr>
+    <tr>
+      <td>Vertical</td>
+      <td>All Indian exporters</td>
+      <td><strong>Steel/aluminium exporters from one cluster</strong></td>
+    </tr>
+    <tr>
+      <td>Compliance</td>
+      <td>CBAM as primary wedge</td>
+      <td><strong>Buyer integration primary, CBAM as add-on</strong></td>
+    </tr>
+    <tr>
+      <td>Onboarding</td>
+      <td>Self-serve SaaS</td>
+      <td><strong>White-glove managed onboarding</strong> (first 10 customers)</td>
+    </tr>
+    <tr>
+      <td>First customers</td>
+      <td>10 in 6 months</td>
+      <td><strong>3-5 design partners in 6 months</strong></td>
+    </tr>
+    <tr>
+      <td>Pricing model</td>
+      <td>SaaS subscription</td>
+      <td><strong>Implementation fee + subscription</strong> (bundled into 6-month minimum)</td>
+    </tr>
+    <tr>
+      <td>Support model</td>
+      <td>WhatsApp + email</td>
+      <td><strong>Dedicated implementation manager</strong> for first 5, then WhatsApp graduated</td>
+    </tr>
+  </table>
+</section>
+
+<!-- SECTION 6: Revised Sprint Plan -->
+<section>
+  <h2>6. Revised Sprint Plan &mdash; Narrowed for First Corridor</h2>
+  
+  <div class="priority-matrix">
+    <div class="priority-cell priority-high">
+      <h4 style="color:#c53030">Sprint 1-2: Foundation (Must Have)</h4>
+      <ul>
+        <li>DB schema + RLS + migrations (Track A)</li>
+        <li>Transactional Outbox + Saga Coordinator</li>
+        <li>API middleware (auth, tenant, correlation)</li>
+        <li>Tally Prime XML/JSON adapter v1</li>
+        <li>DPDP compliance review of data flows</li>
+      </ul>
+    </div>
+    <div class="priority-cell priority-quick">
+      <h4 style="color:#276749">Sprint 3-4: First Buyer Path (GTM Critical)</h4>
+      <ul>
+        <li>Buyer Mock for first corridor's buyer (Gemini's shadow onboarding)</li>
+        <li>Saga Monitor dashboard (internal ops first)</li>
+        <li><code>buyer_playbooks</code> table + integration learnings log</li>
+        <li>WhatsApp health alerts for Bridge Agent</li>
+        <li>EDI compliance scoring (tiered 80/95/100)</li>
+      </ul>
+    </div>
+    <div class="priority-cell priority-medium">
+      <h4 style="color:#c05621">Sprint 5-6: Production Hardening</h4>
+      <ul>
+        <li>Bridge Agent mTLS + OTP Bootstrap</li>
+        <li>OpenAS2 sidecar + EDI parser (if first buyer needs X12)</li>
+        <li>Customer-facing Saga Monitor (from internal version)</li>
+        <li>Implementation hours tracking + analytics</li>
+        <li><code>implementation_hours</code> per-customer reporting</li>
+      </ul>
+    </div>
+    <div class="priority-cell priority-defer">
+      <h4 style="color:#718096">Deferred (Post-First-Corridor)</h4>
+      <ul>
+        <li>Zoho, SAP B1, Busy adapters</li>
+        <li>AI Mapping Studio</li>
+        <li>Self-serve onboarding wizard</li>
+        <li>EDIFACT support</li>
+        <li>Multi-language Portal</li>
+        <li>Advanced analytics</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 7: New Risks -->
+<section>
+  <h2>7. New Risks Identified Across All Three Reviews</h2>
+  
+  <table>
+    <tr>
+      <th>Risk</th>
+      <th>Source</th>
+      <th>Mitigation</th>
+    </tr>
+    <tr>
+      <td>L1 support becomes biggest cost center</td>
+      <td><span class="badge badge-gemini">Gemini</span></td>
+      <td>Bridge Agent health alerts via WhatsApp. Target 60% auto-resolution. Track cost-per-ticket.</td>
+    </tr>
+    <tr>
+      <td>Factories try manual CBAM workarounds</td>
+      <td><span class="badge badge-chatgpt">ChatGPT</span></td>
+      <td>Don't lead with CBAM alone. Attach to buyer integration where switching cost is higher.</td>
+    </tr>
+    <tr>
+      <td>Buyer IT teams block onboarding</td>
+      <td><span class="badge badge-chatgpt">ChatGPT</span></td>
+      <td>Buyer mocks (Gemini) + buyer playbooks. Approach as "your supplier's compliance provider" not "new vendor."</td>
+    </tr>
+    <tr>
+      <td>DPDP Rules 2025 compliance gap</td>
+      <td><span class="badge badge-chatgpt">ChatGPT</span></td>
+      <td>Sprint 1 deliverable: DPDP compliance audit of all data flows. FLE + RLS help but need explicit review.</td>
+    </tr>
+    <tr>
+      <td>Tally Prime version fragmentation (3.x vs 4.x)</td>
+      <td><span class="badge badge-claude">Claude</span></td>
+      <td>Version fingerprint during Bridge Agent first-connect. Versioned adapter handles differences.</td>
+    </tr>
+    <tr>
+      <td>GST e-invoice schema changes</td>
+      <td><span class="badge badge-claude">Claude</span></td>
+      <td>Independent <code>gst_schema_version</code> field in canonical invoice entity.</td>
+    </tr>
+    <tr>
+      <td>WhatsApp Business API rate limits</td>
+      <td><span class="badge badge-claude">Claude</span></td>
+      <td>Multi-number routing. Critical = WhatsApp, informational = email fallback.</td>
+    </tr>
+    <tr>
+      <td>Implementation costs erode margins for 12-24 months</td>
+      <td><span class="badge badge-chatgpt">ChatGPT</span></td>
+      <td>Accept 40-50% margins early. Track implementation hours to find automation opportunities. Self-serve features target customer 11+.</td>
+    </tr>
+  </table>
+</section>
+
+<!-- SECTION 8: Final Verdict -->
+<section>
+  <h2>8. Final Three-Way Verdict</h2>
   
   <div class="insight-card" style="border: 2px solid var(--success); background: #f0fff4;">
-    <h4 style="color: var(--success); font-size: 1.3em;">Both AIs Agree: Build It.</h4>
-    <p style="font-size: 1.05em; margin-bottom: 16px;">The FactoryConnect architecture is enterprise-grade and market-differentiated. The CBAM regulatory wedge (Claude's emphasis) combined with native Indian ERP connectivity (Gemini's emphasis) creates a positioning that no current competitor occupies.</p>
+    <h4 style="color: var(--success); font-size: 1.3em;">Verdict: Build It &mdash; But Sell It Smaller Than You Think</h4>
     
-    <h4>Key Takeaways from Cross-Analysis:</h4>
+    <div class="three-col" style="margin: 20px 0;">
+      <div class="col-card claude-col">
+        <h4 style="color: var(--claude);">Claude</h4>
+        <p>"Architecture is enterprise-grade. CBAM + native ERP connectivity is the differentiator. Ship the narrow corridor first."</p>
+      </div>
+      <div class="col-card gemini-col">
+        <h4 style="color: var(--gemini);">Gemini</h4>
+        <p>"Market-ready. Build buyer mocks, use Smooks for EDI, invest in auto-healing support. HWM reconciliation and FLE elevate this from connector to platform."</p>
+      </div>
+      <div class="col-card chatgpt-col">
+        <h4 style="color: var(--chatgpt);">ChatGPT</h4>
+        <p>"The market exists but the first viable company is not a broad SaaS platform. It's a focused B2B integration-and-compliance business serving exporters with a repeatable software core."</p>
+      </div>
+    </div>
+    
+    <h4>Six Commandments from the Three-Way Review:</h4>
     <ol style="padding-left: 24px; margin-top: 8px;">
-      <li><strong>Lead with CBAM, upsell EDI.</strong> Don't compete head-on with SPS Commerce. Enter through the compliance door.</li>
-      <li><strong>Bundle setup fees.</strong> Gemini is right &mdash; Indian SMEs resist upfront costs. The free CBAM tier eliminates this friction entirely.</li>
-      <li><strong>Build buyer mocks early.</strong> The "shadow onboarding" concept is the most impactful GTM feature identified in this review.</li>
-      <li><strong>Invest in auto-healing support.</strong> Convert L1 support costs into automated WhatsApp health alerts. Target 60% auto-resolution.</li>
-      <li><strong>Use proven EDI libraries.</strong> Don't build a custom X12 parser. Smooks/edireader inside the OpenAS2 sidecar is the right architecture.</li>
-      <li><strong>Version everything.</strong> Adapters, GST schemas, buyer specs &mdash; the versioned architecture is the long-term moat.</li>
+      <li><strong>Sell outcomes, not architecture.</strong> "We connect your Tally to your buyer" &mdash; not "multi-tenant canonical data model."</li>
+      <li><strong>Start with one corridor.</strong> One ERP (Tally), one buyer type, one export cluster. 3-5 design partners, not 10 customers.</li>
+      <li><strong>Accept high-touch for Year 1.</strong> Implementation-led SaaS. Track hours. Automate for Year 2.</li>
+      <li><strong>Lead with buyer integration, amplify with CBAM.</strong> Not the other way around.</li>
+      <li><strong>Build buyer playbooks.</strong> Every completed integration makes the next one cheaper. This is the moat.</li>
+      <li><strong>Comply with DPDP.</strong> Not optional. Audit data flows in Sprint 1.</li>
     </ol>
     
-    <p style="margin-top: 20px; font-weight: 600; color: var(--primary);">Next Step: Begin Sprint 1 with Track A (Foundation) + Track B (API scaffolding). The Zod schemas for the canonical model should be the first deliverable &mdash; everything else depends on them.</p>
+    <p style="margin-top: 20px; font-weight: 600; color: var(--primary);">The architecture is ready. The market is real but narrow. Build the foundation, narrow the focus, and earn the right to expand.</p>
   </div>
 </section>
 
 </div>
 
 <div class="footer">
-  <p>FactoryConnect AI Cross-Analysis &bull; Claude (Opus 4) + Google Gemini &bull; April 03, 2026</p>
-  <p>This document should be read alongside: FC_Master_Architecture.html, FC_Business_Case.html, FC_RAID_Complete.html</p>
+  <p>FactoryConnect Three-Way AI Cross-Analysis &bull; Claude (Opus 4) + Google Gemini + ChatGPT (GPT-4o) &bull; April 03, 2026</p>
+  <p>Companion to: FC_Master_Architecture.html, FC_Business_Case.html, FC_RAID_Complete.html, FC_Research_Reference.html, FC_Phase1_Execution_Blueprint.html</p>
 </div>
 
 </body>
