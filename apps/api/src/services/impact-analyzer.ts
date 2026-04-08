@@ -19,7 +19,7 @@ export async function analyzeOrderImpact(ctx: RequestContext, orderId: string): 
     // Check shipments linked to this order
     const shipments = await findMany<{ id: string }>(
       client,
-      'SELECT id FROM canonical_shipments WHERE order_id = $1',
+      'SELECT id FROM orders.canonical_shipments WHERE order_id = $1',
       [orderId],
     );
     for (const s of shipments) {
@@ -34,7 +34,7 @@ export async function analyzeOrderImpact(ctx: RequestContext, orderId: string): 
     // Check invoices linked to this order
     const invoices = await findMany<{ id: string }>(
       client,
-      'SELECT id FROM canonical_invoices WHERE order_id = $1',
+      'SELECT id FROM orders.canonical_invoices WHERE order_id = $1',
       [orderId],
     );
     for (const inv of invoices) {
@@ -49,7 +49,7 @@ export async function analyzeOrderImpact(ctx: RequestContext, orderId: string): 
     // Check saga state
     const sagas = await findMany<{ id: string; current_step: string }>(
       client,
-      'SELECT id, current_step FROM order_sagas WHERE order_id = $1',
+      'SELECT id, current_step FROM workflow.order_sagas WHERE order_id = $1',
       [orderId],
     );
     for (const saga of sagas) {
@@ -86,7 +86,7 @@ export async function analyzeConnectionImpact(ctx: RequestContext, connectionId:
 
     const orders = await findMany<{ id: string; status: string }>(
       client,
-      `SELECT id, status FROM canonical_orders WHERE connection_id = $1 AND status NOT IN ('COMPLETED','CANCELLED')`,
+      `SELECT id, status FROM orders.canonical_orders WHERE connection_id = $1 AND status NOT IN ('COMPLETED','CANCELLED')`,
       [connectionId],
     );
     for (const o of orders) {

@@ -32,14 +32,14 @@ export async function createShipment(
 ): Promise<ShipmentRow> {
   return withTenantTransaction(ctx, async (client: PoolClient) => {
     // Verify order exists
-    const order = await findOne(client, 'SELECT id, status FROM canonical_orders WHERE id = $1', [data.order_id]);
+    const order = await findOne(client, 'SELECT id, status FROM orders.canonical_orders WHERE id = $1', [data.order_id]);
     if (!order) {
       throw new FcError('FC_ERR_ORDER_NOT_FOUND', `Order ${data.order_id} not found`, {}, 404);
     }
 
     const shipment = await insertOne<ShipmentRow>(
       client,
-      `INSERT INTO canonical_shipments (
+      `INSERT INTO orders.canonical_shipments (
         factory_id, order_id, connection_id, shipment_date,
         carrier_name, tracking_number, ship_from, ship_to, weight, weight_uom
       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,
@@ -72,7 +72,7 @@ export async function createShipment(
 
     // Advance saga to SHIP_READY
     await client.query(
-      `UPDATE order_sagas SET current_step = 'SHIP_READY', updated_at = NOW()
+      `UPDATE workflow.order_sagas SET current_step = 'SHIP_READY', updated_at = NOW()
        WHERE order_id = $1 AND current_step IN ('PO_CONFIRMED','ACK_DELIVERED')`,
       [data.order_id],
     );
@@ -90,7 +90,7 @@ export async function createShipment(
 
 export async function getShipmentById(ctx: RequestContext, id: string): Promise<ShipmentRow | null> {
   return withTenantClient(ctx, async (client: PoolClient) => {
-    return findOne<ShipmentRow>(client, 'SELECT * FROM canonical_shipments WHERE id = $1', [id]);
+    return findOne<ShipmentRow>(client, 'SELECT * FROM orders.canonical_shipments WHERE id = $1', [id]);
   });
 }
 
@@ -102,7 +102,7 @@ export async function listShipments(
 ): Promise<PaginatedResult<ShipmentRow>> {
   return withTenantClient(ctx, async (client: PoolClient) => {
     const params: unknown[] = [];
-    let sql = 'SELECT * FROM canonical_shipments';
+    let sql = 'SELECT * FROM orders.canonical_shipments';
     if (orderId) {
       sql += ' WHERE order_id = $1';
       params.push(orderId);

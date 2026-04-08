@@ -102,7 +102,7 @@ export function validateInvoice(data: Record<string, unknown>): ValidationResult
 
 export async function validateOrderForDispatch(ctx: RequestContext, orderId: string): Promise<ValidationResult> {
   return withTenantClient(ctx, async (client: PoolClient) => {
-    const order = await findOne<Record<string, unknown>>(client, 'SELECT * FROM canonical_orders WHERE id = $1', [orderId]);
+    const order = await findOne<Record<string, unknown>>(client, 'SELECT * FROM orders.canonical_orders WHERE id = $1', [orderId]);
     if (!order) {
       return { valid: false, errors: [{ field: 'id', rule: 'EXISTS', message: 'Order not found', severity: 'error' }], warnings: [] };
     }
@@ -110,7 +110,7 @@ export async function validateOrderForDispatch(ctx: RequestContext, orderId: str
     const baseResult = validateOrder(order);
 
     // Check line items exist
-    const items = await findMany<Record<string, unknown>>(client, 'SELECT id FROM canonical_order_line_items WHERE order_id = $1', [orderId]);
+    const items = await findMany<Record<string, unknown>>(client, 'SELECT id FROM orders.canonical_order_line_items WHERE order_id = $1', [orderId]);
     if (items.length === 0) {
       baseResult.errors.push({ field: 'line_items', rule: 'HAS_LINE_ITEMS', message: 'Order must have at least one line item', severity: 'error' });
       baseResult.valid = false;
@@ -118,7 +118,7 @@ export async function validateOrderForDispatch(ctx: RequestContext, orderId: str
 
     // Check connection is active
     if (order.connection_id) {
-      const conn = await findOne<{status: string}>(client, 'SELECT status FROM connections WHERE id = $1', [order.connection_id as string]);
+      const conn = await findOne<{status: string}>(client, 'SELECT status FROM core.connections WHERE id = $1', [order.connection_id as string]);
       if (conn && conn.status !== 'active') {
         baseResult.warnings.push({ field: 'connection_id', rule: 'ACTIVE_CONNECTION', message: 'Connection is not active', severity: 'warning' });
       }

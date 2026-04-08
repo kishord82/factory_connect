@@ -86,7 +86,7 @@ async function calculateStepDeadline(
   // Query connection SLA config (assumes sla_hours column in connections table)
   const config = await findOne<{ sla_hours?: number }>(
     client,
-    `SELECT sla_hours FROM connections WHERE id = $1 AND factory_id = $2`,
+    `SELECT sla_hours FROM core.connections WHERE id = $1 AND factory_id = $2`,
     [connectionId, factoryId],
   );
 
@@ -107,7 +107,7 @@ async function acquireLock(
   durationSeconds = 300,
 ): Promise<boolean> {
   const result = await client.query(
-    `UPDATE order_sagas
+    `UPDATE workflow.order_sagas
      SET locked_by = $1, lock_expires = NOW() + INTERVAL '1 second' * $2, updated_at = NOW()
      WHERE id = $3 AND (locked_by IS NULL OR lock_expires < NOW())
      RETURNING id`,
@@ -121,7 +121,7 @@ async function acquireLock(
  */
 async function releaseLock(client: PoolClient, sagaId: string): Promise<void> {
   await client.query(
-    `UPDATE order_sagas
+    `UPDATE workflow.order_sagas
      SET locked_by = NULL, lock_expires = NULL, updated_at = NOW()
      WHERE id = $1`,
     [sagaId],
@@ -200,7 +200,7 @@ export async function advanceSaga(
       // Fetch current saga state
       const saga = await findOne<SagaRow>(
         client,
-        `SELECT * FROM order_sagas WHERE id = $1`,
+        `SELECT * FROM workflow.order_sagas WHERE id = $1`,
         [sagaId],
       );
 
@@ -239,7 +239,7 @@ export async function advanceSaga(
       // Update saga state
       const updated = await insertOne<SagaRow>(
         client,
-        `UPDATE order_sagas
+        `UPDATE workflow.order_sagas
          SET current_step = $1, step_deadline = $2, updated_at = NOW()
          WHERE id = $3
          RETURNING *`,
@@ -289,7 +289,7 @@ export async function failSaga(
     try {
       const saga = await findOne<SagaRow>(
         client,
-        `SELECT * FROM order_sagas WHERE id = $1`,
+        `SELECT * FROM workflow.order_sagas WHERE id = $1`,
         [sagaId],
       );
 
@@ -305,7 +305,7 @@ export async function failSaga(
       // Update to FAILED state
       const updated = await insertOne<SagaRow>(
         client,
-        `UPDATE order_sagas
+        `UPDATE workflow.order_sagas
          SET current_step = 'FAILED', updated_at = NOW(),
              compensation_data = compensation_data || $1::jsonb
          WHERE id = $2
@@ -322,7 +322,7 @@ export async function failSaga(
 
       // Update order status to reflect failure
       await client.query(
-        `UPDATE canonical_orders
+        `UPDATE orders.canonical_orders
          SET status = 'CANCELLED', updated_at = NOW()
          WHERE id = $1`,
         [saga.order_id],
@@ -347,7 +347,7 @@ export async function getSagaStatus(sagaId: string, ctx: RequestContext): Promis
   return withTenantClient(ctx, async (client: PoolClient) => {
     const saga = await findOne<SagaRow>(
       client,
-      `SELECT * FROM order_sagas WHERE id = $1`,
+      `SELECT * FROM workflow.order_sagas WHERE id = $1`,
       [sagaId],
     );
 
@@ -386,7 +386,7 @@ export async function listSagasByFactory(
     if (filters.order_id) filterObj.order_id = filters.order_id;
 
     const { clause, params } = buildWhereClause(filterObj);
-    const sql = `SELECT * FROM order_sagas ${clause} ORDER BY updated_at DESC`;
+    const sql = `SELECT * FROM workflow.order_sagas ${clause} ORDER BY updated_at DESC`;
 
     return paginatedQuery<SagaRow>(client, sql, params, page, pageSize);
   });
@@ -398,7 +398,7 @@ export async function listSagasByFactory(
 async function detectSlaBreaches(): Promise<number> {
   const pool = getPool();
   const result = await pool.query<SagaRow>(
-    `SELECT * FROM order_sagas
+    `SELECT * FROM workflow.order_sagas
      WHERE current_step NOT IN ('COMPLETED', 'FAILED')
        AND step_deadline < NOW()
        AND (locked_by IS NULL OR lock_expires < NOW())
@@ -450,7 +450,7 @@ async function detectSlaBreaches(): Promise<number> {
 async function recoverStaleLocks(): Promise<number> {
   const pool = getPool();
   const result = await pool.query(
-    `UPDATE order_sagas
+    `UPDATE workflow.order_sagas
      SET locked_by = NULL, lock_expires = NULL, updated_at = NOW()
      WHERE locked_by IS NOT NULL AND lock_expires < NOW()
      RETURNING id`,
@@ -483,7 +483,7 @@ export async function compensate(sagaId: string, ctx: RequestContext): Promise<S
     try {
       const saga = await findOne<SagaRow>(
         client,
-        `SELECT * FROM order_sagas WHERE id = $1`,
+        `SELECT * FROM workflow.order_sagas WHERE id = $1`,
         [sagaId],
       );
 
@@ -512,7 +512,7 @@ export async function compensate(sagaId: string, ctx: RequestContext): Promise<S
       // Simple rollback: mark as failed and let the order be retried
       const updated = await insertOne<SagaRow>(
         client,
-        `UPDATE order_sagas
+        `UPDATE workflow.order_sagas
          SET current_step = 'FAILED', updated_at = NOW(),
              compensation_data = compensation_data || $1::jsonb
          WHERE id = $2
@@ -557,7 +557,7 @@ export async function initSaga(
     // Verify order exists
     const order = await findOne<{ id: string }>(
       client,
-      `SELECT id FROM canonical_orders WHERE id = $1`,
+      `SELECT id FROM orders.canonical_orders WHERE id = $1`,
       [orderId],
     );
 
@@ -576,7 +576,7 @@ export async function initSaga(
     // Create saga
     const saga = await insertOne<SagaRow>(
       client,
-      `INSERT INTO order_sagas (
+      `INSERT INTO workflow.order_sagas (
         factory_id, order_id, connection_id, current_step,
         step_deadline, started_at, compensation_data
       ) VALUES ($1, $2, $3, $4, $5, NOW(), $6)

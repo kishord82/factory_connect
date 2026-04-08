@@ -19,6 +19,7 @@ import { notificationRouter } from './routes/notifications.js';
 import { analyticsRouter } from './routes/analytics.js';
 import { authRouter } from './routes/auth.js';
 import { caRouter } from './routes/ca/index.js';
+import { webhookRouter } from './routes/webhooks.js';
 import { rateLimiter } from './middleware/rate-limiter.js';
 
 export function createApp(): express.Express {
@@ -50,6 +51,7 @@ export function createApp(): express.Express {
   app.use('/api/v1/notifications', notificationRouter);
   app.use('/api/v1/analytics', analyticsRouter);
   app.use('/api/v1/ca', caRouter);
+  app.use('/api/v1/webhooks', webhookRouter);
 
   // Global error handler (must be last)
   app.use(errorHandler);

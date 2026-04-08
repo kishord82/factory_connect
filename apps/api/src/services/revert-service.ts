@@ -61,7 +61,7 @@ export async function revertOrder(
 
     // Restore the old record
     await client.query(
-      `UPDATE canonical_orders SET
+      `UPDATE orders.canonical_orders SET
         status = $1, factory_order_number = $2, requested_ship_date = $3,
         ship_to = $4, bill_to = $5, buyer_contact = $6, updated_at = NOW()
        WHERE id = $7`,

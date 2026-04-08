@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api.js';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { formatDate } from '../utils/date.js';
 import { useAuth, canWrite } from '../lib/auth.js';
 import { TableLoading, TableEmpty, TableError } from '../components/common/TableStates.js';
@@ -34,6 +35,7 @@ const statusColors: Record<string, string> = {
 };
 
 export function Orders() {
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const { user } = useAuth();
   const { data, isLoading, isError, error, refetch } = useQuery({
@@ -46,7 +48,10 @@ export function Orders() {
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-900">Orders</h2>
         {canWrite(user) && (
-          <button className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors" disabled>
+          <button
+            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
+            onClick={() => navigate('/orders/new')}
+          >
             + New Order
           </button>
         )}
@@ -72,7 +77,7 @@ export function Orders() {
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {data.data.map((order) => (
-                  <tr key={order.id} className="hover:bg-gray-50">
+                  <tr key={order.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => navigate(`/orders/${order.id}`)}>
                     <td className="px-6 py-4 text-sm font-medium text-gray-900">{order.buyer_po_number}</td>
                     <td className="px-6 py-4 text-sm text-gray-500">{order.factory_order_number || '—'}</td>
                     <td className="px-6 py-4">

@@ -18,6 +18,9 @@ import { OrderExplorer } from './pages/OrderExplorer.js';
 import { EdiMonitor } from './pages/EdiMonitor.js';
 import { BridgeStatus } from './pages/BridgeStatus.js';
 import { Settings } from './pages/Settings.js';
+import { OrderDetail } from './pages/OrderDetail.js';
+import { Notifications } from './pages/Notifications.js';
+import { Export } from './pages/Export.js';
 import { CaLayout } from './components/ca/CaLayout.js';
 import { CaDashboard } from './pages/ca/CaDashboard.js';
 import { CaClients } from './pages/ca/CaClients.js';
@@ -72,6 +75,8 @@ function App() {
             <Route element={user ? <Layout /> : <Navigate to="/login" />}>
               <Route index element={<Dashboard />} />
               <Route path="orders" element={<Orders />} />
+              <Route path="orders/new" element={<OrderDetail />} />
+              <Route path="orders/:id" element={<OrderDetail />} />
               <Route path="orders/explorer" element={<OrderExplorer />} />
               <Route path="shipments" element={<Shipments />} />
               <Route path="invoices" element={<Invoices />} />
@@ -83,6 +88,8 @@ function App() {
               <Route path="edi-monitor" element={<EdiMonitor />} />
               <Route path="bridge-status" element={<BridgeStatus />} />
               <Route path="settings" element={<Settings />} />
+              <Route path="notifications" element={<Notifications />} />
+              <Route path="export" element={<Export />} />
             </Route>
             <Route element={user ? <CaLayout /> : <Navigate to="/login" />}>
               <Route path="ca" element={<CaDashboard />} />

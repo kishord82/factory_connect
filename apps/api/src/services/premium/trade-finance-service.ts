@@ -83,9 +83,9 @@ export async function listEligibleInvoices(
             WHEN EXTRACT(DAY FROM NOW() - ci.invoice_date) > $4 THEN 'Invoice too old'::text
             ELSE NULL
           END as ineligibility_reason
-        FROM canonical_invoices ci
+        FROM orders.canonical_invoices ci
         JOIN canonical_buyers cb ON cb.id = (
-          SELECT buyer_id FROM canonical_orders WHERE id = ci.order_id LIMIT 1
+          SELECT buyer_id FROM orders.canonical_orders WHERE id = ci.order_id LIMIT 1
         )
         WHERE ci.factory_id = $1 AND EXTRACT(DAY FROM NOW() - ci.invoice_date) <= $4
         ORDER BY ci.invoice_date DESC`,
@@ -122,7 +122,7 @@ export async function submitToTreds(
       // Fetch invoices and calculate total + expected discount
       const invoiceResult = await client.query<{ total_amount: string; count: number }>(
         `SELECT SUM(total_amount::numeric)::text as total_amount, COUNT(*) as count
-         FROM canonical_invoices WHERE id = ANY($1)`,
+         FROM orders.canonical_invoices WHERE id = ANY($1)`,
         [invoiceIds],
       );
 

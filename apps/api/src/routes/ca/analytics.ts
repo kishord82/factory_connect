@@ -145,40 +145,37 @@ analyticsRouter.post(
   },
 );
 
-/** GET /api/v1/ca/analytics/firm — Overall firm analytics */
+/** GET /api/v1/ca/analytics/firm — Overall firm analytics (shape matches frontend Analytics interface) */
 analyticsRouter.get('/firm', async (_req, res, next) => {
   try {
-    // TODO: Implement firm analytics service
+    // TODO: Implement firm analytics service backed by real DB queries
     res.json({
       data: {
-        firm_metrics: {
-          total_clients: 23,
-          active_clients: 21,
-          client_retention_rate: 96,
-          average_client_health: 78.4,
+        overall_health_score: 78.4,
+        clients_by_health: {
+          excellent: 8,
+          good: 12,
+          fair: 3,
+          poor: 0,
         },
-        compliance_metrics: {
-          filings_completed_ytd: 156,
-          on_time_completion_rate: 95,
-          exceptions_resolved: 89,
-          average_resolution_time_days: 2.3,
+        compliance_health: {
+          gst: 89,
+          tds: 76,
+          mca: 82,
+          income_tax: 85,
         },
-        financial_metrics: {
-          total_revenue_ytd: 450000,
-          average_revenue_per_client: 19565,
-          profit_margin: 45,
-          revenue_trend: 'up',
-        },
-        team_metrics: {
-          total_staff: 5,
-          avg_utilization: 82,
-          staff_retention: 100,
-        },
-        growth_metrics: {
-          new_clients_this_quarter: 3,
-          client_growth_rate: 15,
-          revenue_growth_rate: 22,
-        },
+        team_utilization: 82,
+        most_active_staff: [
+          { name: 'Rajesh Kumar', activities: 28 },
+          { name: 'Priya Sharma', activities: 24 },
+          { name: 'Amit Patel', activities: 12 },
+        ],
+        total_revenue_ytd: 450000,
+        top_clients_by_revenue: [
+          { client_name: 'Acme Corp', revenue: 85000, margin: 45 },
+          { client_name: 'Ravi Trading', revenue: 62000, margin: 38 },
+          { client_name: 'Tech Solutions', revenue: 58000, margin: 42 },
+        ],
       },
     });
   } catch (err) {

@@ -159,7 +159,7 @@ export async function generateBoL(
     async (client: PoolClient) => {
       // Verify shipment exists and belongs to this client
       const shipmentCheck = await client.query(
-        'SELECT id FROM canonical_shipments WHERE id = $1',
+        'SELECT id FROM orders.canonical_shipments WHERE id = $1',
         [data.shipment_id],
       );
       if (shipmentCheck.rows.length === 0) {

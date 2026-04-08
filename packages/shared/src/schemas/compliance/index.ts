@@ -5,7 +5,13 @@
  */
 
 import { z } from 'zod';
-import { UuidSchema, PaginationSchema } from '../index.js';
+
+// Local UUID schema to avoid circular import with schemas/index.ts
+const UuidSchema = z.string().uuid();
+const PaginationSchema = z.object({
+  page: z.coerce.number().int().positive().optional().default(1),
+  pageSize: z.coerce.number().int().positive().max(100).optional().default(20),
+});
 
 // ═══════════════════════════════════════════════════════════════════
 // ENUM SCHEMAS (matching PostgreSQL ENUMs from 005_ca_platform.sql)

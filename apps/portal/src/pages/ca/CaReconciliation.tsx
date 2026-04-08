@@ -24,13 +24,13 @@ interface SessionsResponse {
   totalPages: number;
 }
 
-const statusColor = (status: string) => {
+const statusColor = (status: string | undefined) => {
   const colors: Record<string, string> = {
     completed: 'bg-green-100 text-green-700',
     in_progress: 'bg-blue-100 text-blue-700',
     pending: 'bg-yellow-100 text-yellow-700',
   };
-  return colors[status] || 'bg-gray-100 text-gray-700';
+  return colors[status ?? ''] || 'bg-gray-100 text-gray-700';
 };
 
 export function CaReconciliation() {
@@ -124,12 +124,12 @@ export function CaReconciliation() {
               <tbody className="divide-y divide-gray-200">
                 {data.data.map((session) => (
                   <tr key={session.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{session.client_name}</td>
-                    <td className="px-6 py-4 text-sm text-gray-500 uppercase">{session.type}</td>
-                    <td className="px-6 py-4 text-sm text-gray-500">{session.period}</td>
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{session.client_name ?? '—'}</td>
+                    <td className="px-6 py-4 text-sm text-gray-500 uppercase">{session.type ?? '—'}</td>
+                    <td className="px-6 py-4 text-sm text-gray-500">{session.period ?? '—'}</td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusColor(session.status)}`}>
-                        {session.status}
+                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusColor(session.status ?? '')}`}>
+                        {session.status ?? '—'}
                       </span>
                     </td>
                     <td className="px-6 py-4">
@@ -137,20 +137,20 @@ export function CaReconciliation() {
                         <div className="w-24 bg-gray-200 rounded-full h-2">
                           <div
                             className="bg-blue-600 h-2 rounded-full"
-                            style={{ width: `${session.match_rate}%` }}
+                            style={{ width: `${session.match_rate ?? 0}%` }}
                           ></div>
                         </div>
-                        <span className="text-sm font-medium text-gray-900">{session.match_rate.toFixed(1)}%</span>
+                        <span className="text-sm font-medium text-gray-900">{(session.match_rate ?? 0).toFixed(1)}%</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">{session.matched_items}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{session.matched_items ?? 0}</td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                        session.unmatched_items > 0
+                        (session.unmatched_items ?? 0) > 0
                           ? 'bg-yellow-100 text-yellow-700'
                           : 'bg-green-100 text-green-700'
                       }`}>
-                        {session.unmatched_items}
+                        {session.unmatched_items ?? 0}
                       </span>
                     </td>
                     <td className="relative px-6 py-4 whitespace-nowrap text-right text-sm">

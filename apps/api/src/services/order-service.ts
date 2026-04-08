@@ -69,7 +69,7 @@ export async function createOrder(
     // 1. Insert canonical order
     const order = await insertOne<OrderRow>(
       client,
-      `INSERT INTO canonical_orders (
+      `INSERT INTO orders.canonical_orders (
         factory_id, buyer_id, connection_id, buyer_po_number, factory_order_number,
         order_date, requested_ship_date, ship_to, bill_to, buyer_contact,
         currency, subtotal, tax_amount, tax_config, total_amount,
@@ -95,7 +95,7 @@ export async function createOrder(
     // 2. Insert line items
     for (const item of data.line_items) {
       await client.query(
-        `INSERT INTO canonical_order_line_items (
+        `INSERT INTO orders.canonical_order_line_items (
           order_id, factory_id, line_number, buyer_sku, factory_sku,
           description, quantity_ordered, quantity_uom, unit_price, line_total,
           upc, hsn_code
@@ -118,7 +118,7 @@ export async function createOrder(
 
     // 4. Insert saga
     await client.query(
-      `INSERT INTO order_sagas (
+      `INSERT INTO workflow.order_sagas (
         factory_id, order_id, connection_id, current_step,
         step_deadline, compensation_data
       ) VALUES ($1, $2, $3, 'PO_RECEIVED', NOW() + INTERVAL '4 hours', '{}')`,
@@ -142,7 +142,7 @@ export async function confirmOrder(
   return withTenantTransaction(ctx, async (client: PoolClient) => {
     const existing = await findOne<OrderRow>(
       client,
-      'SELECT * FROM canonical_orders WHERE id = $1',
+      'SELECT * FROM orders.canonical_orders WHERE id = $1',
       [orderId],
     );
     if (!existing) {
@@ -159,7 +159,7 @@ export async function confirmOrder(
 
     const updated = await insertOne<OrderRow>(
       client,
-      `UPDATE canonical_orders SET status = 'CONFIRMED', updated_at = NOW()
+      `UPDATE orders.canonical_orders SET status = 'CONFIRMED', updated_at = NOW()
        WHERE id = $1 RETURNING *`,
       [orderId],
     );
@@ -173,7 +173,7 @@ export async function confirmOrder(
 
     // Advance saga
     await client.query(
-      `UPDATE order_sagas SET current_step = 'PO_CONFIRMED',
+      `UPDATE workflow.order_sagas SET current_step = 'PO_CONFIRMED',
        step_deadline = NOW() + INTERVAL '4 hours', updated_at = NOW()
        WHERE order_id = $1`,
       [orderId],
@@ -193,14 +193,14 @@ export async function getOrderById(
   return withTenantClient(ctx, async (client: PoolClient) => {
     const order = await findOne<OrderRow>(
       client,
-      'SELECT * FROM canonical_orders WHERE id = $1',
+      'SELECT * FROM orders.canonical_orders WHERE id = $1',
       [orderId],
     );
     if (!order) return null;
 
     const lineItems = await findMany<LineItemRow>(
       client,
-      'SELECT * FROM canonical_order_line_items WHERE order_id = $1 ORDER BY line_number',
+      'SELECT * FROM orders.canonical_order_line_items WHERE order_id = $1 ORDER BY line_number',
       [orderId],
     );
 
@@ -220,7 +220,7 @@ export async function listOrders(
     if (query.connection_id) filters.connection_id = query.connection_id;
 
     const { clause, params, nextIndex } = buildWhereClause(filters);
-    let sql = `SELECT * FROM canonical_orders ${clause}`;
+    let sql = `SELECT * FROM orders.canonical_orders ${clause}`;
 
     if (query.search) {
       const searchClause = clause ? ' AND' : ' WHERE';
@@ -243,7 +243,7 @@ export async function updateOrder(
   return withTenantTransaction(ctx, async (client: PoolClient) => {
     const existing = await findOne<OrderRow>(
       client,
-      'SELECT * FROM canonical_orders WHERE id = $1',
+      'SELECT * FROM orders.canonical_orders WHERE id = $1',
       [orderId],
     );
     if (!existing) {
@@ -286,7 +286,7 @@ export async function updateOrder(
 
     const updated = await insertOne<OrderRow>(
       client,
-      `UPDATE canonical_orders SET ${sets.join(', ')} WHERE id = $${idx} RETURNING *`,
+      `UPDATE orders.canonical_orders SET ${sets.join(', ')} WHERE id = $${idx} RETURNING *`,
       values,
     );
 

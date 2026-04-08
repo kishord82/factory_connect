@@ -23,7 +23,7 @@ adminRouter.get('/factories', validate({ query: PaginationSchema }), async (req,
     try {
       const result = await paginatedQuery(
         client,
-        'SELECT id, name AS factory_name, slug, factory_type AS erp_type, contact_email, status, created_at, updated_at FROM factories ORDER BY created_at DESC',
+        'SELECT id, name AS factory_name, slug, factory_type AS erp_type, contact_email, status, created_at, updated_at FROM core.factories ORDER BY created_at DESC',
         [], q.page, q.pageSize,
       );
       res.json(result);
@@ -39,8 +39,8 @@ adminRouter.post('/impersonate', validate({ body: z.object({
   try {
     const session = await withTransaction(async (client: PoolClient) => {
       return insertOne(client,
-        `INSERT INTO impersonation_sessions (fc_operator_id, factory_id, reason)
-         VALUES ($1, $2, $3) RETURNING *`,
+        `INSERT INTO audit.impersonation_sessions (fc_operator_id, factory_id, reason)
+         VALUES ($1, $2, $3) RETURNING id, fc_operator_id, factory_id, reason, created_at`,
         [req.auth!.sub, req.body.factory_id, req.body.reason]);
     });
     res.status(201).json({ data: session });
@@ -51,7 +51,7 @@ adminRouter.post('/impersonate', validate({ body: z.object({
 adminRouter.get('/feature-flags', async (_req, res, next) => {
   try {
     const pool = getPool();
-    const result = await pool.query('SELECT * FROM feature_flags ORDER BY flag_name');
+    const result = await pool.query('SELECT flag_name, is_enabled, description, updated_at FROM platform.feature_flags ORDER BY flag_name');
     res.json({ data: result.rows });
   } catch (err) { next(err); }
 });
@@ -64,7 +64,7 @@ adminRouter.put('/feature-flags/:flag', validate({
   try {
     const pool = getPool();
     const result = await pool.query(
-      'UPDATE feature_flags SET is_enabled = $1, updated_at = NOW() WHERE flag_name = $2 RETURNING *',
+      'UPDATE platform.feature_flags SET is_enabled = $1, updated_at = NOW() WHERE flag_name = $2 RETURNING flag_name, is_enabled, description, updated_at',
       [req.body.is_enabled, getValidatedParams<{ flag: string }>(req).flag],
     );
     if (result.rows.length === 0) {

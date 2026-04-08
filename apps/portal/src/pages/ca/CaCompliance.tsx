@@ -45,7 +45,7 @@ interface ExceptionsResponse {
   totalPages: number;
 }
 
-const statusColor = (status: string) => {
+const statusColor = (status: string | undefined) => {
   const colors: Record<string, string> = {
     filed: 'bg-green-100 text-green-700',
     in_progress: 'bg-blue-100 text-blue-700',
@@ -53,17 +53,17 @@ const statusColor = (status: string) => {
     rejected: 'bg-red-100 text-red-700',
     overdue: 'bg-red-100 text-red-700',
   };
-  return colors[status] || 'bg-gray-100 text-gray-700';
+  return colors[status ?? ''] || 'bg-gray-100 text-gray-700';
 };
 
-const severityColor = (severity: string) => {
+const severityColor = (severity: string | undefined) => {
   const colors: Record<string, string> = {
     critical: 'text-red-600 bg-red-50 border-red-200',
     high: 'text-orange-600 bg-orange-50 border-orange-200',
     medium: 'text-yellow-600 bg-yellow-50 border-yellow-200',
     low: 'text-blue-600 bg-blue-50 border-blue-200',
   };
-  return colors[severity] || 'text-gray-600 bg-gray-50 border-gray-200';
+  return colors[severity ?? ''] || 'text-gray-600 bg-gray-50 border-gray-200';
 };
 
 export function CaCompliance() {
@@ -137,16 +137,16 @@ export function CaCompliance() {
                 <tbody className="divide-y divide-gray-200">
                   {filings.data.map((filing) => (
                     <tr key={filing.id} className="hover:bg-gray-50 cursor-pointer">
-                      <td className="px-6 py-4 text-sm font-medium text-gray-900">{filing.client_name}</td>
-                      <td className="px-6 py-4 text-sm text-gray-500 uppercase">{filing.type}</td>
-                      <td className="px-6 py-4 text-sm text-gray-500">{filing.period}</td>
+                      <td className="px-6 py-4 text-sm font-medium text-gray-900">{filing.client_name ?? '—'}</td>
+                      <td className="px-6 py-4 text-sm text-gray-500 uppercase">{filing.type ?? '—'}</td>
+                      <td className="px-6 py-4 text-sm text-gray-500">{filing.period ?? '—'}</td>
                       <td className="px-6 py-4">
                         <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusColor(filing.status)}`}>
-                          {filing.status}
+                          {filing.status ?? '—'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">{new Date(filing.due_date).toLocaleDateString()}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900">{filing.document_count}</td>
+                      <td className="px-6 py-4 text-sm text-gray-500">{filing.due_date ? new Date(filing.due_date).toLocaleDateString() : '—'}</td>
+                      <td className="px-6 py-4 text-sm text-gray-900">{filing.document_count ?? 0}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -193,14 +193,14 @@ export function CaCompliance() {
                   <div key={exc.id} className={`p-4 border-l-4 ${severityColor(exc.severity)}`}>
                     <div className="flex items-start justify-between">
                       <div>
-                        <p className="font-semibold text-gray-900">{exc.description}</p>
+                        <p className="font-semibold text-gray-900">{exc.description ?? '—'}</p>
                         <p className="text-sm text-gray-500 mt-1">
-                          {exc.client_name} • Due: {new Date(exc.due_date).toLocaleDateString()}
+                          {exc.client_name ?? '—'} • Due: {exc.due_date ? new Date(exc.due_date).toLocaleDateString() : '—'}
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className={`px-2 py-1 text-xs font-medium rounded-full capitalize`}>
-                          {exc.severity}
+                          {exc.severity ?? '—'}
                         </span>
                         <button className="text-indigo-600 hover:text-indigo-700 text-sm font-medium">
                           Assign →

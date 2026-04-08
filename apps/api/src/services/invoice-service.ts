@@ -30,12 +30,12 @@ interface InvoiceRow {
 
 export async function createInvoice(ctx: RequestContext, data: CanonicalInvoiceCreate): Promise<InvoiceRow> {
   return withTenantTransaction(ctx, async (client: PoolClient) => {
-    const order = await findOne(client, 'SELECT id FROM canonical_orders WHERE id = $1', [data.order_id]);
+    const order = await findOne(client, 'SELECT id FROM orders.canonical_orders WHERE id = $1', [data.order_id]);
     if (!order) throw new FcError('FC_ERR_ORDER_NOT_FOUND', `Order ${data.order_id} not found`, {}, 404);
 
     const invoice = await insertOne<InvoiceRow>(
       client,
-      `INSERT INTO canonical_invoices (
+      `INSERT INTO orders.canonical_invoices (
         factory_id, order_id, shipment_id, connection_id, invoice_number,
         invoice_date, due_date, subtotal, tax_amount, tax_breakdown,
         total_amount, line_items
@@ -58,7 +58,7 @@ export async function createInvoice(ctx: RequestContext, data: CanonicalInvoiceC
 
     // Advance saga
     await client.query(
-      `UPDATE order_sagas SET current_step = 'INVOICE_READY', updated_at = NOW()
+      `UPDATE workflow.order_sagas SET current_step = 'INVOICE_READY', updated_at = NOW()
        WHERE order_id = $1 AND current_step IN ('ASN_DELIVERED','SHIP_READY')`,
       [data.order_id],
     );
@@ -76,14 +76,14 @@ export async function createInvoice(ctx: RequestContext, data: CanonicalInvoiceC
 
 export async function getInvoiceById(ctx: RequestContext, id: string): Promise<InvoiceRow | null> {
   return withTenantClient(ctx, async (client: PoolClient) => {
-    return findOne<InvoiceRow>(client, 'SELECT * FROM canonical_invoices WHERE id = $1', [id]);
+    return findOne<InvoiceRow>(client, 'SELECT * FROM orders.canonical_invoices WHERE id = $1', [id]);
   });
 }
 
 export async function listInvoices(ctx: RequestContext, orderId: string | undefined, page: number, pageSize: number): Promise<PaginatedResult<InvoiceRow>> {
   return withTenantClient(ctx, async (client: PoolClient) => {
     const params: unknown[] = [];
-    let sql = 'SELECT * FROM canonical_invoices';
+    let sql = 'SELECT * FROM orders.canonical_invoices';
     if (orderId) { sql += ' WHERE order_id = $1'; params.push(orderId); }
     sql += ' ORDER BY created_at DESC';
     return paginatedQuery<InvoiceRow>(client, sql, params, page, pageSize);

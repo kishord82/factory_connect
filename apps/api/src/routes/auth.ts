@@ -121,7 +121,7 @@ authRouter.post('/login', validate({ body: LoginSchema }), async (req, res, next
       const client = await pool.connect();
       try {
         await client.query('BEGIN');
-        await client.query('SET LOCAL app.current_tenant = $1', [devUser.factory_id]);
+        await client.query('SELECT set_config($1, $2, true)', ['app.current_tenant', devUser.factory_id]);
         if (isCaUser) {
           const caResult = await client.query(
             'SELECT id, firm_name FROM compliance.ca_firms WHERE id = $1',
@@ -130,18 +130,20 @@ authRouter.post('/login', validate({ body: LoginSchema }), async (req, res, next
           displayName = caResult.rows[0]?.firm_name || 'CA Firm';
         } else {
           const factoryResult = await client.query(
-            'SELECT id, name, slug FROM factories WHERE id = $1',
+            'SELECT id, name, slug FROM core.factories WHERE id = $1',
             [devUser.factory_id],
           );
-          displayName = factoryResult.rows[0]?.name || 'Unknown';
+          displayName = factoryResult.rows[0]?.name || 'Factory';
         }
         await client.query('COMMIT');
-      } catch {
+      } catch (innerErr) {
+        console.error('[auth] DB name lookup inner error:', innerErr);
         await client.query('ROLLBACK').catch(() => {});
       } finally {
         client.release();
       }
-    } catch {
+    } catch (outerErr) {
+      console.error('[auth] DB name lookup outer error:', outerErr);
       // DB lookup is non-critical for auth; proceed with default name
     }
 

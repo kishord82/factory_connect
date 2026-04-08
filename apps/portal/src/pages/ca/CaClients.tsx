@@ -1,6 +1,7 @@
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { api } from '../../lib/api.js';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search, Plus, Wifi, WifiOff, AlertCircle } from 'lucide-react';
 
 interface Client {
@@ -36,6 +37,7 @@ const tallyStatusIcon = (status: string) => {
 };
 
 export function CaClients() {
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
@@ -169,7 +171,7 @@ export function CaClients() {
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {data.data.map((client) => (
-                  <tr key={client.id} className="hover:bg-gray-50 cursor-pointer">
+                  <tr key={client.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => navigate(`/ca/clients/${client.id}`)}>
                     <td className="px-6 py-4 text-sm font-medium text-gray-900">{client.client_name}</td>
                     <td className="px-6 py-4 text-sm text-gray-500">{client.gst_number || '—'}</td>
                     <td className="px-6 py-4 text-sm text-gray-500">{client.email}</td>
