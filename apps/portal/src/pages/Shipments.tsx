@@ -1,10 +1,8 @@
-import { useQuery } from '@tanstack/react-query';
-import { api } from '../lib/api.js';
-import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { formatDate } from '../utils/date.js';
-import { TableLoading, TableEmpty, TableError } from '../components/common/TableStates.js';
+import { DataTable, Column } from '../components/common/DataTable.js';
 
-interface Shipment {
+interface Shipment extends Record<string, unknown> {
   id: string;
   order_id: string;
   status: string;
@@ -13,15 +11,6 @@ interface Shipment {
   tracking_number: string | null;
   weight: string | null;
   weight_uom: string;
-  created_at: string;
-}
-
-interface PaginatedResponse {
-  data: Shipment[];
-  total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
 }
 
 const statusColors: Record<string, string> = {
@@ -31,65 +20,61 @@ const statusColors: Record<string, string> = {
   CANCELLED: 'bg-red-100 text-red-700',
 };
 
+const columns: Column<Shipment>[] = [
+  {
+    key: 'tracking_number',
+    label: 'Tracking #',
+    sortable: true,
+    render: (row) => String(row.tracking_number ?? '—'),
+  },
+  {
+    key: 'order_id',
+    label: 'Order',
+    sortable: true,
+    render: (row) => String(row.order_id ?? '—'),
+  },
+  {
+    key: 'carrier_name',
+    label: 'Carrier',
+    render: (row) => String(row.carrier_name ?? '—'),
+  },
+  {
+    key: 'status',
+    label: 'Status',
+    sortable: true,
+    render: (row) => {
+      const s = String(row.status ?? '');
+      return (
+        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusColors[s] ?? 'bg-gray-100 text-gray-700'}`}>
+          {s || '—'}
+        </span>
+      );
+    },
+  },
+  {
+    key: 'shipment_date',
+    label: 'Ship Date',
+    sortable: true,
+    render: (row) => formatDate(String(row.shipment_date ?? '')),
+  },
+];
+
 export function Shipments() {
-  const [page, setPage] = useState(1);
-  const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['shipments', page],
-    queryFn: () => api.get<PaginatedResponse>(`/shipments?page=${page}&pageSize=20`),
-  });
+  const navigate = useNavigate();
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-900">Shipments</h2>
       </div>
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        {isLoading ? (
-          <TableLoading message="Loading shipments..." />
-        ) : isError ? (
-          <TableError message={error instanceof Error ? error.message : 'Unknown error'} onRetry={() => refetch()} />
-        ) : !data?.data?.length ? (
-          <TableEmpty entity="shipments" />
-        ) : (
-          <>
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Shipment Date</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Weight</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Carrier</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tracking</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {data.data.map((shipment) => (
-                  <tr key={shipment.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{formatDate(shipment.shipment_date)}</td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusColors[shipment.status] || 'bg-gray-100'}`}>
-                        {shipment.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">{shipment.weight ? `${shipment.weight} ${shipment.weight_uom}` : '—'}</td>
-                    <td className="px-6 py-4 text-sm text-gray-500">{shipment.carrier_name || '—'}</td>
-                    <td className="px-6 py-4 text-sm text-gray-500">{shipment.tracking_number || '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {data.totalPages > 1 && (
-              <div className="px-6 py-3 border-t border-gray-200 flex justify-between items-center">
-                <span className="text-sm text-gray-500">Page {data.page} of {data.totalPages} ({data.total} total)</span>
-                <div className="space-x-2">
-                  <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1 text-sm border rounded disabled:opacity-50">Prev</button>
-                  <button onClick={() => setPage(p => p + 1)} disabled={page >= data.totalPages} className="px-3 py-1 text-sm border rounded disabled:opacity-50">Next</button>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-      </div>
+      <DataTable<Shipment>
+        fetchUrl="/shipments"
+        columns={columns}
+        entityLabel="shipments"
+        defaultSort="shipment_date"
+        defaultOrder="desc"
+        onRowClick={(row) => navigate(`/shipments/${row.id}`)}
+      />
     </div>
   );
 }

@@ -37,13 +37,13 @@ interface DataTableProps<T extends Record<string, unknown>> {
   /** Default sort column key */
   defaultSort?: string;
   defaultOrder?: 'asc' | 'desc';
-  /** Default items per page (10 | 25 | 50) */
-  defaultPageSize?: 10 | 25 | 50;
+  /** Default items per page (10 | 25 | 50 | 100) */
+  defaultPageSize?: 10 | 25 | 50 | 100;
   /** Additional fixed query params appended to every request */
   extraParams?: Record<string, string>;
 }
 
-const PAGE_SIZE_OPTIONS: Array<10 | 25 | 50> = [10, 25, 50];
+const PAGE_SIZE_OPTIONS: Array<10 | 25 | 50 | 100> = [10, 25, 50, 100];
 
 function SortIcon({ direction }: { direction: 'asc' | 'desc' | null }) {
   if (!direction) {
@@ -82,8 +82,8 @@ export function DataTable<T extends Record<string, unknown>>({
     (searchParams.get('order') as 'asc' | 'desc') ?? defaultOrder,
   );
   const [page, setPage] = useState(parseInt(searchParams.get('page') ?? '1') || 1);
-  const [pageSize, setPageSize] = useState<10 | 25 | 50>(
-    (parseInt(searchParams.get('limit') ?? String(defaultPageSize)) as 10 | 25 | 50) ?? defaultPageSize,
+  const [pageSize, setPageSize] = useState<10 | 25 | 50 | 100>(
+    (parseInt(searchParams.get('limit') ?? String(defaultPageSize)) as 10 | 25 | 50 | 100) ?? defaultPageSize,
   );
 
   // Debounce search input 300ms
@@ -136,7 +136,7 @@ export function DataTable<T extends Record<string, unknown>>({
     setPage(1);
   }
 
-  function handlePageSizeChange(next: 10 | 25 | 50) {
+  function handlePageSizeChange(next: 10 | 25 | 50 | 100) {
     setPageSize(next);
     setPage(1);
   }
@@ -220,7 +220,9 @@ export function DataTable<T extends Record<string, unknown>>({
             <div className="px-6 py-3 border-t border-gray-200 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
                 <span className="text-sm text-gray-500">
-                  Page {data.page} of {totalPages} ({data.total} total)
+                  {data.total === 0
+                    ? `No ${entityLabel}`
+                    : `Showing ${(data.page - 1) * data.pageSize + 1}–${Math.min(data.page * data.pageSize, data.total)} of ${data.total} ${entityLabel}`}
                 </span>
                 <div className="flex items-center gap-1">
                   <span className="text-xs text-gray-400">Rows:</span>
