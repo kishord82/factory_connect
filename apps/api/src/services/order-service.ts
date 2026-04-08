@@ -208,27 +208,37 @@ export async function getOrderById(
   });
 }
 
-/** List orders with pagination and filters */
+const ORDER_SORT_COLUMNS = ['created_at', 'order_date', 'status', 'buyer_po_number', 'total_amount'];
+
+/** List orders with pagination, search, and sort */
 export async function listOrders(
   ctx: RequestContext,
   query: OrderListQuery,
 ): Promise<PaginatedResult<OrderRow>> {
   return withTenantClient(ctx, async (client: PoolClient) => {
     const filters: Record<string, unknown> = {};
-    if (query.status) filters.status = query.status;
-    if (query.buyer_id) filters.buyer_id = query.buyer_id;
-    if (query.connection_id) filters.connection_id = query.connection_id;
+    if (query.status) filters['o.status'] = query.status;
+    if (query.buyer_id) filters['o.buyer_id'] = query.buyer_id;
+    if (query.connection_id) filters['o.connection_id'] = query.connection_id;
 
     const { clause, params, nextIndex } = buildWhereClause(filters);
-    let sql = `SELECT * FROM orders.canonical_orders ${clause}`;
+    let sql = `SELECT o.id, o.factory_id, o.buyer_id, o.connection_id, o.buyer_po_number,
+                      o.factory_order_number, o.order_date, o.requested_ship_date,
+                      o.currency, o.subtotal, o.tax_amount, o.total_amount,
+                      o.source_type, o.status, o.created_at, o.updated_at
+               FROM orders.canonical_orders o ${clause}`;
 
+    let currentIndex = nextIndex;
     if (query.search) {
       const searchClause = clause ? ' AND' : ' WHERE';
-      sql += `${searchClause} (buyer_po_number ILIKE $${nextIndex} OR factory_order_number ILIKE $${nextIndex})`;
+      sql += `${searchClause} (o.buyer_po_number ILIKE $${currentIndex} OR o.factory_order_number ILIKE $${currentIndex})`;
       params.push(`%${query.search}%`);
+      currentIndex++;
     }
 
-    sql += ' ORDER BY created_at DESC';
+    const safeSort = ORDER_SORT_COLUMNS.includes(query.sort ?? '') ? query.sort! : 'created_at';
+    const safeOrder = query.order === 'asc' ? 'ASC' : 'DESC';
+    sql += ` ORDER BY o.${safeSort} ${safeOrder}`;
 
     return paginatedQuery<OrderRow>(client, sql, params, query.page, query.pageSize);
   });

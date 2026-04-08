@@ -29,6 +29,9 @@ const ReconSessionListQuerySchema = z.object({
   pageSize: z.coerce.number().int().positive().max(100).optional().default(20),
   client_id: z.string().uuid().optional(),
   type: z.enum(['bank', 'gstr2b']).optional(),
+  search: z.string().max(200).optional(),
+  sort: z.string().max(50).optional(),
+  order: z.enum(['asc', 'desc']).optional(),
 });
 
 const IdParamsSchema = z.object({ id: z.string().uuid() });

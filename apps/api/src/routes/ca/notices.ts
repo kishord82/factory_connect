@@ -34,6 +34,9 @@ const NoticeListQuerySchema = z.object({
   client_id: z.string().uuid().optional(),
   type: z.enum(['income_tax', 'gst', 'tds', 'professional_tax', 'audit', 'inspection', 'other']).optional(),
   priority: z.enum(['low', 'medium', 'high', 'critical']).optional(),
+  search: z.string().max(200).optional(),
+  sort: z.string().max(50).optional(),
+  order: z.enum(['asc', 'desc']).optional(),
 });
 
 const IdParamsSchema = z.object({ id: z.string().uuid() });

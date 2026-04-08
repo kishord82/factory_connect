@@ -5,6 +5,10 @@ import type { RequestContext } from '@fc/shared';
 import type { PoolClient } from '@fc/database';
 import { withTenantTransaction, withTenantClient, insertOne, paginatedQuery } from '@fc/database';
 import type { PaginatedResult } from '@fc/database';
+import { buildSearchWhere, buildOrderBy } from '../utils/pagination.js';
+
+const NOTIFICATION_SORT_COLUMNS = ['created_at', 'severity', 'channel'];
+const NOTIFICATION_SEARCH_COLUMNS = ['n.title', 'n.body', 'n.channel'];
 import { createLogger } from '@fc/observability';
 
 const logger = createLogger('notifications');
@@ -88,15 +92,32 @@ export async function listNotifications(
   page: number,
   pageSize: number,
   unreadOnly: boolean = false,
+  search: string = '',
+  sort: string = 'created_at',
+  order: 'asc' | 'desc' = 'desc',
 ): Promise<PaginatedResult<NotificationRow>> {
   return withTenantClient(ctx, async (client: PoolClient) => {
-    let sql = 'SELECT * FROM notifications WHERE user_id = $1';
     const params: unknown[] = [ctx.userId];
-    if (unreadOnly) {
-      sql += ' AND is_read = false';
-    }
-    sql += ' ORDER BY created_at DESC';
-    return paginatedQuery<NotificationRow>(client, sql, params, page, pageSize);
+    const conditions = ['n.user_id = $1'];
+    let idx = 2;
+
+    if (unreadOnly) { conditions.push('n.is_read = false'); }
+
+    const { clause: searchClause, values: searchValues, nextIndex } = buildSearchWhere(
+      search, NOTIFICATION_SEARCH_COLUMNS, idx,
+    );
+    if (searchClause) { conditions.push(searchClause); params.push(...searchValues); idx = nextIndex; }
+
+    const orderBy = buildOrderBy(sort, order, NOTIFICATION_SORT_COLUMNS);
+
+    return paginatedQuery<NotificationRow>(
+      client,
+      `SELECT n.id, n.factory_id, n.user_id, n.channel, n.severity,
+              n.title, n.body, n.entity_type, n.entity_id, n.is_read, n.created_at
+       FROM platform.notifications n
+       WHERE ${conditions.join(' AND ')} ${orderBy}`,
+      params, page, pageSize,
+    );
   });
 }
 

@@ -8,6 +8,10 @@ import { FcError } from '@fc/shared';
 import type { CanonicalInvoiceCreate } from '@fc/shared';
 import { withTenantTransaction, withTenantClient, insertOne, findOne, paginatedQuery } from '@fc/database';
 import type { PaginatedResult } from '@fc/database';
+import { buildSearchWhere, buildOrderBy } from '../utils/pagination.js';
+
+const INVOICE_SORT_COLUMNS = ['created_at', 'invoice_date', 'due_date', 'total_amount', 'status'];
+const INVOICE_SEARCH_COLUMNS = ['i.invoice_number', 'i.status'];
 
 interface InvoiceRow {
   id: string;
@@ -80,12 +84,37 @@ export async function getInvoiceById(ctx: RequestContext, id: string): Promise<I
   });
 }
 
-export async function listInvoices(ctx: RequestContext, orderId: string | undefined, page: number, pageSize: number): Promise<PaginatedResult<InvoiceRow>> {
+export async function listInvoices(
+  ctx: RequestContext,
+  orderId: string | undefined,
+  page: number,
+  pageSize: number,
+  search: string = '',
+  sort: string = 'created_at',
+  order: 'asc' | 'desc' = 'desc',
+): Promise<PaginatedResult<InvoiceRow>> {
   return withTenantClient(ctx, async (client: PoolClient) => {
     const params: unknown[] = [];
-    let sql = 'SELECT * FROM orders.canonical_invoices';
-    if (orderId) { sql += ' WHERE order_id = $1'; params.push(orderId); }
-    sql += ' ORDER BY created_at DESC';
-    return paginatedQuery<InvoiceRow>(client, sql, params, page, pageSize);
+    let idx = 1;
+    const conditions: string[] = [];
+
+    if (orderId) { conditions.push(`i.order_id = $${idx++}`); params.push(orderId); }
+
+    const { clause: searchClause, values: searchValues, nextIndex } = buildSearchWhere(
+      search, INVOICE_SEARCH_COLUMNS, idx,
+    );
+    if (searchClause) { conditions.push(searchClause); params.push(...searchValues); idx = nextIndex; }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    const orderBy = buildOrderBy(sort, order, INVOICE_SORT_COLUMNS);
+
+    return paginatedQuery<InvoiceRow>(
+      client,
+      `SELECT i.id, i.factory_id, i.order_id, i.shipment_id, i.connection_id,
+              i.invoice_number, i.invoice_date, i.due_date, i.subtotal,
+              i.tax_amount, i.total_amount, i.status, i.created_at, i.updated_at
+       FROM orders.canonical_invoices i ${whereClause} ${orderBy}`,
+      params, page, pageSize,
+    );
   });
 }

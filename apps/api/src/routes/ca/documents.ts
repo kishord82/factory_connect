@@ -35,6 +35,9 @@ const DocumentRequestListQuerySchema = z.object({
   status: z.enum(['pending', 'submitted', 'verified', 'rejected', 'overdue']).optional(),
   client_id: z.string().uuid().optional(),
   type: z.enum(['invoice', 'receipt', 'statement', 'bank_passbook', 'expense_bill', 'debit_note', 'credit_note', 'other']).optional(),
+  search: z.string().max(200).optional(),
+  sort: z.string().max(50).optional(),
+  order: z.enum(['asc', 'desc']).optional(),
 });
 
 const IdParamsSchema = z.object({ id: z.string().uuid() });

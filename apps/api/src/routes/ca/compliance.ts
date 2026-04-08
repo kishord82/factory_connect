@@ -30,6 +30,9 @@ const FilingListQuerySchema = z.object({
   type: z.enum(['gst', 'tds', 'mca', 'income_tax']).optional(),
   status: z.enum(['pending', 'in_progress', 'filed', 'rejected', 'overdue']).optional(),
   client_id: z.string().uuid().optional(),
+  search: z.string().max(200).optional(),
+  sort: z.string().max(50).optional(),
+  order: z.enum(['asc', 'desc']).optional(),
 });
 
 const IdParamsSchema = z.object({ id: z.string().uuid() });

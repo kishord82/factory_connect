@@ -32,9 +32,11 @@ const ClientUpdateSchema = ClientCreateSchema.partial();
 const ClientListQuerySchema = z.object({
   page: z.coerce.number().int().positive().optional().default(1),
   pageSize: z.coerce.number().int().positive().max(100).optional().default(20),
-  search: z.string().optional(),
+  search: z.string().max(200).optional(),
   status: z.enum(['connected', 'pending', 'error']).optional(),
   health_min: z.coerce.number().min(0).max(100).optional(),
+  sort: z.string().max(50).optional(),
+  order: z.enum(['asc', 'desc']).optional(),
 });
 
 const IdParamsSchema = z.object({ id: z.string().uuid() });

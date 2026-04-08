@@ -191,6 +191,8 @@ export const OrderListQuerySchema = PaginationSchema.extend({
   from_date: z.coerce.date().optional(),
   to_date: z.coerce.date().optional(),
   search: z.string().max(200).optional(),
+  sort: z.string().max(50).optional(),
+  order: z.enum(['asc', 'desc']).optional(),
 });
 
 // ═══════════════════════════════════════════════════════════════════

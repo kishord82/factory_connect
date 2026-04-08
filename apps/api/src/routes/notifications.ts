@@ -14,13 +14,18 @@ notificationRouter.use(authenticate, tenantContext);
 
 const ListQuery = PaginationSchema.extend({
   unread_only: z.coerce.boolean().default(false),
+  search: z.string().max(200).optional(),
+  sort: z.string().max(50).optional(),
+  order: z.enum(['asc', 'desc']).optional(),
 });
 
 notificationRouter.get('/', validate({ query: ListQuery }), async (req, res, next) => {
   try {
     const ctx = getRequestContext(req);
     const q = getValidatedQuery<z.infer<typeof ListQuery>>(req);
-    const result = await notificationService.listNotifications(ctx, q.page, q.pageSize, q.unread_only);
+    const result = await notificationService.listNotifications(
+      ctx, q.page, q.pageSize, q.unread_only, q.search, q.sort, q.order,
+    );
     res.json(result);
   } catch (err) { next(err); }
 });

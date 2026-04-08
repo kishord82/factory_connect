@@ -8,6 +8,7 @@ import { FcError } from '@fc/shared';
 import type { CanonicalShipmentCreate } from '@fc/shared';
 import { withTenantTransaction, withTenantClient, insertOne, findOne, paginatedQuery } from '@fc/database';
 import type { PaginatedResult } from '@fc/database';
+import { buildSearchWhere, buildOrderBy } from '../utils/pagination.js';
 
 interface ShipmentRow {
   id: string;
@@ -25,6 +26,9 @@ interface ShipmentRow {
   created_at: Date;
   updated_at: Date;
 }
+
+const SHIPMENT_SORT_COLUMNS = ['created_at', 'shipment_date', 'status', 'carrier_name'];
+const SHIPMENT_SEARCH_COLUMNS = ['s.tracking_number', 's.carrier_name', 's.status'];
 
 export async function createShipment(
   ctx: RequestContext,
@@ -56,7 +60,7 @@ export async function createShipment(
     if (data.packs) {
       for (const pack of data.packs) {
         await client.query(
-          `INSERT INTO shipment_packs (shipment_id, factory_id, sscc, pack_type, weight, items)
+          `INSERT INTO orders.shipment_packs (shipment_id, factory_id, sscc, pack_type, weight, items)
            VALUES ($1,$2,$3,$4,$5,$6)`,
           [shipment.id, ctx.tenantId, pack.sscc ?? null, pack.pack_type, pack.weight ?? null, JSON.stringify(pack.items)],
         );
@@ -65,7 +69,7 @@ export async function createShipment(
 
     // Outbox: SHIPMENT_CREATED triggers ASN 856
     await client.query(
-      `INSERT INTO outbox (aggregate_type, aggregate_id, event_type, payload)
+      `INSERT INTO workflow.outbox (aggregate_type, aggregate_id, event_type, payload)
        VALUES ('canonical_shipment', $1, 'SHIPMENT_CREATED', $2)`,
       [shipment.id, JSON.stringify({ shipment_id: shipment.id, order_id: data.order_id })],
     );
@@ -79,7 +83,7 @@ export async function createShipment(
 
     // Audit
     await client.query(
-      `INSERT INTO audit_log (tenant_id, action, entity_type, entity_id, actor_id, new_record, metadata)
+      `INSERT INTO audit.audit_log (tenant_id, action, entity_type, entity_id, actor_id, new_record, metadata)
        VALUES ($1, 'SHIP', 'canonical_shipment', $2, $3, $4, $5)`,
       [ctx.tenantId, shipment.id, ctx.userId, JSON.stringify(shipment), JSON.stringify({ correlationId: ctx.correlationId })],
     );
@@ -90,7 +94,13 @@ export async function createShipment(
 
 export async function getShipmentById(ctx: RequestContext, id: string): Promise<ShipmentRow | null> {
   return withTenantClient(ctx, async (client: PoolClient) => {
-    return findOne<ShipmentRow>(client, 'SELECT * FROM orders.canonical_shipments WHERE id = $1', [id]);
+    return findOne<ShipmentRow>(
+      client,
+      `SELECT id, factory_id, order_id, connection_id, shipment_date, carrier_name,
+              tracking_number, ship_from, ship_to, weight, weight_uom, status, created_at, updated_at
+       FROM orders.canonical_shipments WHERE id = $1`,
+      [id],
+    );
   });
 }
 
@@ -99,15 +109,41 @@ export async function listShipments(
   orderId: string | undefined,
   page: number,
   pageSize: number,
+  search: string = '',
+  sort: string = 'created_at',
+  order: 'asc' | 'desc' = 'desc',
 ): Promise<PaginatedResult<ShipmentRow>> {
   return withTenantClient(ctx, async (client: PoolClient) => {
     const params: unknown[] = [];
-    let sql = 'SELECT * FROM orders.canonical_shipments';
+    let idx = 1;
+    const conditions: string[] = [];
+
     if (orderId) {
-      sql += ' WHERE order_id = $1';
+      conditions.push(`s.order_id = $${idx++}`);
       params.push(orderId);
     }
-    sql += ' ORDER BY created_at DESC';
-    return paginatedQuery<ShipmentRow>(client, sql, params, page, pageSize);
+
+    const { clause: searchClause, values: searchValues, nextIndex } = buildSearchWhere(
+      search, SHIPMENT_SEARCH_COLUMNS, idx,
+    );
+    if (searchClause) {
+      conditions.push(searchClause);
+      params.push(...searchValues);
+      idx = nextIndex;
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    const orderBy = buildOrderBy(sort, order, SHIPMENT_SORT_COLUMNS);
+
+    return paginatedQuery<ShipmentRow>(
+      client,
+      `SELECT s.id, s.factory_id, s.order_id, s.connection_id, s.shipment_date,
+              s.carrier_name, s.tracking_number, s.ship_from, s.ship_to,
+              s.weight, s.weight_uom, s.status, s.created_at, s.updated_at
+       FROM orders.canonical_shipments s ${whereClause} ${orderBy}`,
+      params,
+      page,
+      pageSize,
+    );
   });
 }

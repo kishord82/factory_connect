@@ -5,26 +5,39 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { authenticate, authorize } from '../../middleware/auth.js';
-import { validate, getValidatedQuery, getValidatedParams } from '../../middleware/validate.js';
+import { validate, getValidatedParams } from '../../middleware/validate.js';
 import type { PoolClient } from '@fc/database';
 import { getPool } from '@fc/database';
 import { withTransaction, insertOne, paginatedQuery } from '@fc/database';
-import { PaginationSchema } from '@fc/shared';
+import { parsePagination, buildSearchWhere, buildOrderBy } from '../../utils/pagination.js';
 
 export const adminRouter = Router();
 adminRouter.use(authenticate, authorize('fc_admin'));
 
+const FACTORY_SORT_COLUMNS = ['created_at', 'factory_name', 'status', 'erp_type'];
+const FACTORY_SEARCH_COLUMNS = ['f.name', 'f.status', 'f.factory_type'];
+
 /** GET /admin/factories — list all factories */
-adminRouter.get('/factories', validate({ query: PaginationSchema }), async (req, res, next) => {
+adminRouter.get('/factories', async (req, res, next) => {
   try {
-    const q = getValidatedQuery<z.infer<typeof PaginationSchema>>(req);
+    const params = parsePagination(req, 'created_at');
+    const { clause: searchClause, values: searchValues } = buildSearchWhere(
+      params.search, FACTORY_SEARCH_COLUMNS, 1,
+    );
+    const whereClause = searchClause ? `WHERE ${searchClause}` : '';
+    const orderBy = buildOrderBy(params.sort, params.order, FACTORY_SORT_COLUMNS);
+
     const pool = getPool();
     const client = await pool.connect();
     try {
       const result = await paginatedQuery(
         client,
-        'SELECT id, name AS factory_name, slug, factory_type AS erp_type, contact_email, status, created_at, updated_at FROM core.factories ORDER BY created_at DESC',
-        [], q.page, q.pageSize,
+        `SELECT id, name AS factory_name, slug, factory_type AS erp_type,
+                contact_email, status, created_at, updated_at
+         FROM core.factories f ${whereClause} ${orderBy}`,
+        [...searchValues],
+        params.page,
+        params.limit,
       );
       res.json(result);
     } finally { client.release(); }
@@ -51,7 +64,9 @@ adminRouter.post('/impersonate', validate({ body: z.object({
 adminRouter.get('/feature-flags', async (_req, res, next) => {
   try {
     const pool = getPool();
-    const result = await pool.query('SELECT flag_name, is_enabled, description, updated_at FROM platform.feature_flags ORDER BY flag_name');
+    const result = await pool.query(
+      'SELECT flag_name, is_enabled, description, updated_at FROM platform.feature_flags ORDER BY flag_name',
+    );
     res.json({ data: result.rows });
   } catch (err) { next(err); }
 });

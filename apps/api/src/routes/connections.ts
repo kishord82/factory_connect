@@ -7,13 +7,18 @@ import { z } from 'zod';
 import { ConnectionCreateSchema, PaginationSchema } from '@fc/shared';
 import { authenticate } from '../middleware/auth.js';
 import { tenantContext, getRequestContext } from '../middleware/tenant-context.js';
-import { validate, getValidatedQuery, getValidatedParams } from '../middleware/validate.js';
+import { validate, getValidatedParams } from '../middleware/validate.js';
 import type { PoolClient } from '@fc/database';
 import { withTenantTransaction, withTenantClient, insertOne, findOne, paginatedQuery } from '@fc/database';
+import { parsePagination, buildSearchWhere, buildOrderBy } from '../utils/pagination.js';
+
 export const connectionRouter = Router();
 connectionRouter.use(authenticate, tenantContext);
 
 const IdParams = z.object({ id: z.string().uuid() });
+
+const CONNECTION_SORT_COLUMNS = ['created_at', 'status', 'mode', 'source_type'];
+const CONNECTION_SEARCH_COLUMNS = ['c.buyer_endpoint', 'c.mode', 'c.status'];
 
 interface ConnectionRow {
   id: string;
@@ -59,10 +64,22 @@ connectionRouter.post('/', validate({ body: ConnectionCreateSchema }), async (re
 connectionRouter.get('/', validate({ query: PaginationSchema }), async (req, res, next) => {
   try {
     const ctx = getRequestContext(req);
-    const q = getValidatedQuery<z.infer<typeof PaginationSchema>>(req);
+    const params = parsePagination(req, 'created_at');
+    const { clause: searchClause, values: searchValues } = buildSearchWhere(
+      params.search, CONNECTION_SEARCH_COLUMNS, 2,
+    );
+    const whereSearch = searchClause ? `AND ${searchClause}` : '';
+    const orderBy = buildOrderBy(params.sort, params.order, CONNECTION_SORT_COLUMNS);
     const result = await withTenantClient(ctx, async (client: PoolClient) => {
       return paginatedQuery<ConnectionRow>(
-        client, 'SELECT * FROM core.connections ORDER BY created_at DESC', [], q.page, q.pageSize,
+        client,
+        `SELECT id, factory_id, buyer_id, source_type, mode, protocol,
+                buyer_endpoint, status, created_at, updated_at
+         FROM core.connections c
+         WHERE c.factory_id = $1 ${whereSearch} ${orderBy}`,
+        [ctx.tenantId, ...searchValues],
+        params.page,
+        params.limit,
       );
     });
     res.json(result);
@@ -74,7 +91,13 @@ connectionRouter.get('/:id', validate({ params: IdParams }), async (req, res, ne
     const ctx = getRequestContext(req);
     const conn = await withTenantClient(ctx, async (client: PoolClient) => {
       const { id } = getValidatedParams<z.infer<typeof IdParams>>(req);
-      return findOne<ConnectionRow>(client, 'SELECT * FROM core.connections WHERE id = $1', [id]);
+      return findOne<ConnectionRow>(
+        client,
+        `SELECT id, factory_id, buyer_id, source_type, mode, protocol,
+                buyer_endpoint, status, created_at, updated_at
+         FROM core.connections WHERE id = $1`,
+        [id],
+      );
     });
     if (!conn) { res.status(404).json({ error: { code: 'FC_ERR_CONNECTION_NOT_FOUND' } }); return; }
     res.json({ data: conn });

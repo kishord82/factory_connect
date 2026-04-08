@@ -14,7 +14,12 @@ export const invoiceRouter = Router();
 invoiceRouter.use(authenticate, tenantContext);
 
 const IdParams = z.object({ id: z.string().uuid() });
-const ListQuery = PaginationSchema.extend({ order_id: z.string().uuid().optional() });
+const ListQuery = PaginationSchema.extend({
+  order_id: z.string().uuid().optional(),
+  search: z.string().max(200).optional(),
+  sort: z.string().max(50).optional(),
+  order: z.enum(['asc', 'desc']).optional(),
+});
 
 invoiceRouter.post('/', validate({ body: CanonicalInvoiceCreateSchema }), async (req, res, next) => {
   try {
@@ -28,7 +33,9 @@ invoiceRouter.get('/', validate({ query: ListQuery }), async (req, res, next) =>
   try {
     const ctx = getRequestContext(req);
     const q = getValidatedQuery<z.infer<typeof ListQuery>>(req);
-    const result = await invoiceService.listInvoices(ctx, q.order_id, q.page, q.pageSize);
+    const result = await invoiceService.listInvoices(
+      ctx, q.order_id, q.page, q.pageSize, q.search, q.sort, q.order,
+    );
     res.json(result);
   } catch (err) { next(err); }
 });
