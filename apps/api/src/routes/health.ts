@@ -9,7 +9,7 @@ import { healthCheck } from '@fc/database';
 
 export const healthRouter = Router();
 
-healthRouter.get('/health', (_req, res) => {
+healthRouter.get(['/health', '/healthz'], (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
