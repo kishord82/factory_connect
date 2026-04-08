@@ -1,0 +1,47 @@
+# FactoryConnect — Production Caddy Configuration
+# Supports both domain (auto-SSL) and IP-only (HTTP) access
+
+# Auto-detect: if DOMAIN is an IP, serve HTTP only; if domain, get SSL cert
+{$DOMAIN:localhost} {
+	# API routes
+	handle /api/* {
+		reverse_proxy api:3000
+	}
+
+	# Keycloak (auth admin)
+	handle /auth/* {
+		reverse_proxy keycloak:8080
+	}
+
+	# MinIO console (optional, remove in hardened production)
+	handle /minio/* {
+		reverse_proxy minio:9001
+	}
+
+	# Health check endpoint
+	handle /healthz {
+		respond "ok" 200
+	}
+
+	# Everything else → Portal (SPA)
+	handle {
+		reverse_proxy portal:3001
+	}
+
+	# Logging
+	log {
+		output file /var/log/caddy/access.log {
+			roll_size 10mb
+			roll_keep 5
+		}
+	}
+
+	# Security headers
+	header {
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		X-XSS-Protection "1; mode=block"
+		-Server
+	}
+}

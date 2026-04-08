@@ -8,6 +8,7 @@ import { ConnectionCreateSchema, PaginationSchema } from '@fc/shared';
 import { authenticate } from '../middleware/auth.js';
 import { tenantContext, getRequestContext } from '../middleware/tenant-context.js';
 import { validate, getValidatedQuery, getValidatedParams } from '../middleware/validate.js';
+import type { PoolClient } from '@fc/database';
 import { withTenantTransaction, withTenantClient, insertOne, findOne, paginatedQuery } from '@fc/database';
 export const connectionRouter = Router();
 connectionRouter.use(authenticate, tenantContext);
@@ -19,7 +20,7 @@ interface ConnectionRow {
   factory_id: string;
   buyer_id: string;
   source_type: string;
-  connection_mode: string;
+  mode: string;
   protocol: string;
   buyer_endpoint: string | null;
   status: string;
@@ -30,17 +31,17 @@ interface ConnectionRow {
 connectionRouter.post('/', validate({ body: ConnectionCreateSchema }), async (req, res, next) => {
   try {
     const ctx = getRequestContext(req);
-    const conn = await withTenantTransaction(ctx, async (client) => {
+    const conn = await withTenantTransaction(ctx, async (client: PoolClient) => {
       return insertOne<ConnectionRow>(
         client,
         `INSERT INTO connections (
-          factory_id, buyer_id, source_type, connection_mode, protocol,
+          factory_id, buyer_id, source_type, mode, protocol,
           buyer_endpoint, credentials, tax_config, currency_config,
           barcode_config, partial_shipment_allowed,
           sla_ack_hours, sla_ship_hours, sla_invoice_hours, status
         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,'active') RETURNING *`,
         [
-          ctx.tenantId, req.body.buyer_id, req.body.source_type, req.body.connection_mode,
+          ctx.tenantId, req.body.buyer_id, req.body.source_type, req.body.mode,
           req.body.protocol, req.body.buyer_endpoint ?? null,
           req.body.credentials ? JSON.stringify(req.body.credentials) : null,
           req.body.tax_config ? JSON.stringify(req.body.tax_config) : null,
@@ -59,7 +60,7 @@ connectionRouter.get('/', validate({ query: PaginationSchema }), async (req, res
   try {
     const ctx = getRequestContext(req);
     const q = getValidatedQuery<z.infer<typeof PaginationSchema>>(req);
-    const result = await withTenantClient(ctx, async (client) => {
+    const result = await withTenantClient(ctx, async (client: PoolClient) => {
       return paginatedQuery<ConnectionRow>(
         client, 'SELECT * FROM connections ORDER BY created_at DESC', [], q.page, q.pageSize,
       );
@@ -71,7 +72,7 @@ connectionRouter.get('/', validate({ query: PaginationSchema }), async (req, res
 connectionRouter.get('/:id', validate({ params: IdParams }), async (req, res, next) => {
   try {
     const ctx = getRequestContext(req);
-    const conn = await withTenantClient(ctx, async (client) => {
+    const conn = await withTenantClient(ctx, async (client: PoolClient) => {
       const { id } = getValidatedParams<z.infer<typeof IdParams>>(req);
       return findOne<ConnectionRow>(client, 'SELECT * FROM connections WHERE id = $1', [id]);
     });

@@ -3,6 +3,7 @@
  */
 
 import type { RequestContext } from '@fc/shared';
+import type { PoolClient } from '@fc/database';
 import { FcError } from '@fc/shared';
 import type { CanonicalShipmentCreate } from '@fc/shared';
 import { withTenantTransaction, withTenantClient, insertOne, findOne, paginatedQuery } from '@fc/database';
@@ -29,7 +30,7 @@ export async function createShipment(
   ctx: RequestContext,
   data: CanonicalShipmentCreate,
 ): Promise<ShipmentRow> {
-  return withTenantTransaction(ctx, async (client) => {
+  return withTenantTransaction(ctx, async (client: PoolClient) => {
     // Verify order exists
     const order = await findOne(client, 'SELECT id, status FROM canonical_orders WHERE id = $1', [data.order_id]);
     if (!order) {
@@ -88,7 +89,7 @@ export async function createShipment(
 }
 
 export async function getShipmentById(ctx: RequestContext, id: string): Promise<ShipmentRow | null> {
-  return withTenantClient(ctx, async (client) => {
+  return withTenantClient(ctx, async (client: PoolClient) => {
     return findOne<ShipmentRow>(client, 'SELECT * FROM canonical_shipments WHERE id = $1', [id]);
   });
 }
@@ -99,7 +100,7 @@ export async function listShipments(
   page: number,
   pageSize: number,
 ): Promise<PaginatedResult<ShipmentRow>> {
-  return withTenantClient(ctx, async (client) => {
+  return withTenantClient(ctx, async (client: PoolClient) => {
     const params: unknown[] = [];
     let sql = 'SELECT * FROM canonical_shipments';
     if (orderId) {

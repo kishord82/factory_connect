@@ -2,6 +2,7 @@
  * B19-B20: Notification service — in-memory event bus + notification creation.
  */
 import type { RequestContext } from '@fc/shared';
+import type { PoolClient } from '@fc/database';
 import { withTenantTransaction, withTenantClient, insertOne, paginatedQuery } from '@fc/database';
 import type { PaginatedResult } from '@fc/database';
 import { createLogger } from '@fc/observability';
@@ -61,7 +62,7 @@ export async function createNotification(
     user_id?: string;
   },
 ): Promise<NotificationRow> {
-  const notification = await withTenantTransaction(ctx, async (client) => {
+  const notification = await withTenantTransaction(ctx, async (client: PoolClient) => {
     return insertOne<NotificationRow>(
       client,
       `INSERT INTO notifications (factory_id, user_id, channel, severity, title, body, entity_type, entity_id)
@@ -88,7 +89,7 @@ export async function listNotifications(
   pageSize: number,
   unreadOnly: boolean = false,
 ): Promise<PaginatedResult<NotificationRow>> {
-  return withTenantClient(ctx, async (client) => {
+  return withTenantClient(ctx, async (client: PoolClient) => {
     let sql = 'SELECT * FROM notifications WHERE user_id = $1';
     const params: unknown[] = [ctx.userId];
     if (unreadOnly) {
@@ -100,7 +101,7 @@ export async function listNotifications(
 }
 
 export async function markAsRead(ctx: RequestContext, notificationIds: string[]): Promise<number> {
-  return withTenantTransaction(ctx, async (client) => {
+  return withTenantTransaction(ctx, async (client: PoolClient) => {
     const result = await client.query(
       'UPDATE notifications SET is_read = true, updated_at = NOW() WHERE id = ANY($1) AND user_id = $2',
       [notificationIds, ctx.userId],

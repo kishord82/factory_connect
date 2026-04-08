@@ -1,13 +1,23 @@
 /**
  * C9: X12 EDI parser — parses X12 documents into structured data.
+ * Supports parsing raw X12 strings, segment extraction, envelope validation.
  */
-import type { EdiDocument, EdiSegment, EdiParseResult } from './types.js';
+import type {
+  EdiDocument,
+  EdiSegment,
+  EdiParseResult,
+  EdiValidationResult,
+  IsaSegment,
+  GsSegment,
+} from './types.js';
 
 const DEFAULT_SEGMENT_TERMINATOR = '~';
 const DEFAULT_ELEMENT_SEPARATOR = '*';
-// Sub-element separator used in ISA16 — reserved for future use
-// const SUB_ELEMENT_SEPARATOR = ':';
 
+/**
+ * Parse raw X12 string into structured document.
+ * Splits by segment terminator (~) and element separator (*).
+ */
 export function parseX12(raw: string): EdiParseResult {
   try {
     const lines = raw
@@ -66,6 +76,184 @@ export function parseX12(raw: string): EdiParseResult {
   }
 }
 
+/**
+ * Parse a single X12 segment line.
+ * Handles element and sub-element separation.
+ */
+export function parseSegment(line: string, delimiter: string = DEFAULT_ELEMENT_SEPARATOR): EdiSegment {
+  const elements = line.split(delimiter);
+  const id = elements[0] ?? '';
+  return {
+    id,
+    elements: elements.slice(1),
+  };
+}
+
+/**
+ * Extract ISA segment details from parsed segments.
+ */
+export function parseIsaSegment(segment: EdiSegment): IsaSegment {
+  return {
+    authorization: segment.elements[0] ?? '',
+    security: segment.elements[1] ?? '',
+    senderQualifier: segment.elements[4] ?? 'ZZ',
+    senderId: segment.elements[5] ?? '',
+    receiverQualifier: segment.elements[6] ?? 'ZZ',
+    receiverId: segment.elements[7] ?? '',
+    date: segment.elements[8] ?? '',
+    time: segment.elements[9] ?? '',
+    controlStandard: segment.elements[10] ?? 'U',
+    version: segment.elements[11] ?? '00401',
+    controlNumber: segment.elements[12] ?? '',
+    ackRequested: segment.elements[13] ?? '0',
+    usageIndicator: segment.elements[14] ?? 'P',
+    subElementSeparator: segment.elements[15] ?? ':',
+  };
+}
+
+/**
+ * Extract GS segment details from parsed segments.
+ */
+export function parseGsSegment(segment: EdiSegment): GsSegment {
+  return {
+    functionalId: segment.elements[0] ?? '',
+    senderCode: segment.elements[1] ?? '',
+    receiverCode: segment.elements[2] ?? '',
+    date: segment.elements[3] ?? '',
+    time: segment.elements[4] ?? '',
+    controlNumber: segment.elements[5] ?? '',
+    agency: segment.elements[6] ?? 'X',
+    version: segment.elements[7] ?? '004010',
+  };
+}
+
+/**
+ * Validate X12 envelope structure.
+ * Checks ISA/GS/ST/SE/GE/IEA counts and control numbers.
+ */
+export function validateEnvelope(document: EdiDocument): EdiValidationResult {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+  let isaCount = 0;
+  let iaaCount = 0;
+  let gsCount = 0;
+  let geCount = 0;
+  let stCount = 0;
+  let seCount = 0;
+  let segmentCount = 0;
+
+  const segmentMap: Record<string, number> = {};
+
+  for (const seg of document.segments) {
+    segmentCount++;
+    segmentMap[seg.id] = (segmentMap[seg.id] ?? 0) + 1;
+
+    switch (seg.id) {
+      case 'ISA':
+        isaCount++;
+        break;
+      case 'IEA':
+        iaaCount++;
+        break;
+      case 'GS':
+        gsCount++;
+        break;
+      case 'GE':
+        geCount++;
+        break;
+      case 'ST':
+        stCount++;
+        break;
+      case 'SE':
+        seCount++;
+        break;
+    }
+  }
+
+  // Validate counts
+  if (isaCount !== 1) errors.push(`Expected 1 ISA, found ${isaCount}`);
+  if (iaaCount !== 1) errors.push(`Expected 1 IEA, found ${iaaCount}`);
+  if (gsCount !== geCount) errors.push(`GS count (${gsCount}) != GE count (${geCount})`);
+  if (stCount !== seCount) errors.push(`ST count (${stCount}) != SE count (${seCount})`);
+
+  // Verify ISA is first, IEA is last
+  if (document.segments[0]?.id !== 'ISA') {
+    errors.push('First segment must be ISA');
+  }
+  if (document.segments[document.segments.length - 1]?.id !== 'IEA') {
+    errors.push('Last segment must be IEA');
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+    warnings,
+    details: {
+      isa_count: isaCount,
+      segment_count: segmentCount,
+      transaction_sets: stCount,
+      control_numbers: {
+        isa: document.control_number,
+      },
+    },
+  };
+}
+
+/**
+ * Extract transaction sets from a multi-transaction document.
+ * Returns array of EdiDocument, one per ST/SE block.
+ */
+export function extractTransactionSets(document: EdiDocument): EdiDocument[] {
+  const results: EdiDocument[] = [];
+  let currentTxn: EdiSegment[] = [];
+  let isaSegment: EdiSegment | undefined;
+  let gsSegment: EdiSegment | undefined;
+  let stSegment: EdiSegment | undefined;
+
+  for (const seg of document.segments) {
+    if (seg.id === 'ISA') {
+      isaSegment = seg;
+      currentTxn = [seg];
+    } else if (seg.id === 'GS') {
+      gsSegment = seg;
+      if (currentTxn.length > 0) {
+        currentTxn.push(seg);
+      }
+    } else if (seg.id === 'ST') {
+      stSegment = seg;
+      currentTxn.push(seg);
+    } else if (seg.id === 'SE') {
+      currentTxn.push(seg);
+      // End of transaction set
+      if (isaSegment && gsSegment && stSegment) {
+        const txnDoc: EdiDocument = {
+          standard: document.standard,
+          document_type: document.document_type,
+          control_number: stSegment.elements[1] ?? '',
+          sender_id: document.sender_id,
+          receiver_id: document.receiver_id,
+          segments: currentTxn,
+          timestamp: new Date(),
+        };
+        results.push(txnDoc);
+        currentTxn = [isaSegment, gsSegment];
+      }
+    } else {
+      currentTxn.push(seg);
+    }
+  }
+
+  // If no SE found, return original document
+  if (results.length === 0) {
+    results.push(document);
+  }
+
+  return results;
+}
+
+/**
+ * Extract PO data from parsed X12 850 document.
+ */
 export function extractPOData(document: EdiDocument): Record<string, unknown> {
   const data: Record<string, unknown> = {
     sender_id: document.sender_id,

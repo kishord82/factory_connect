@@ -12,12 +12,17 @@ interface NavItem {
 const navItems: NavItem[] = [
   { to: '/', label: 'Dashboard', icon: '📊', roles: ['fc_admin', 'factory_admin', 'factory_operator', 'factory_viewer'] },
   { to: '/orders', label: 'Orders', icon: '📦', roles: ['fc_admin', 'factory_admin', 'factory_operator', 'factory_viewer'] },
+  { to: '/orders/explorer', label: 'Order Explorer', icon: '🔍', roles: ['fc_admin', 'factory_admin', 'factory_operator', 'factory_viewer'] },
+  { to: '/mapping-studio', label: 'Mapping Studio', icon: '🗺️', roles: ['fc_admin', 'factory_admin', 'factory_operator'] },
+  { to: '/edi-monitor', label: 'EDI Monitor', icon: '📨', roles: ['fc_admin', 'factory_admin', 'factory_operator'] },
+  { to: '/bridge-status', label: 'Bridge Status', icon: '🌉', roles: ['fc_admin', 'factory_admin', 'factory_operator'] },
   { to: '/shipments', label: 'Shipments', icon: '🚚', roles: ['fc_admin', 'factory_admin', 'factory_operator', 'factory_viewer'] },
   { to: '/invoices', label: 'Invoices', icon: '🧾', roles: ['fc_admin', 'factory_admin', 'factory_operator', 'factory_viewer'] },
   { to: '/connections', label: 'Connections', icon: '🔗', roles: ['fc_admin', 'factory_admin', 'factory_operator'] },
   { to: '/calendar', label: 'Calendar', icon: '📅', roles: ['fc_admin', 'factory_admin', 'factory_operator', 'factory_viewer'] },
   { to: '/analytics', label: 'Analytics', icon: '📈', roles: ['fc_admin', 'factory_admin'] },
-  { to: '/admin', label: 'Admin', icon: '⚙️', roles: ['fc_admin'] },
+  { to: '/settings', label: 'Settings', icon: '⚙️', roles: ['fc_admin', 'factory_admin', 'factory_viewer'] },
+  { to: '/admin', label: 'Admin', icon: '🛡️', roles: ['fc_admin'] },
 ];
 
 const roleBadgeColors: Record<string, string> = {

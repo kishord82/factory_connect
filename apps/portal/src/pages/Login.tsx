@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../lib/auth.js';
+import { useAuth, parseJwt, isCaUser } from '../lib/auth.js';
 import { api } from '../lib/api.js';
 
 export function Login() {
@@ -23,7 +23,8 @@ export function Login() {
       });
 
       login(response.access_token);
-      navigate('/');
+      const parsed = parseJwt(response.access_token);
+      navigate(isCaUser(parsed) ? '/ca' : '/');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {

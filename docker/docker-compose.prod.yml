@@ -1,0 +1,465 @@
+###############################################################################
+# FactoryConnect — Production Docker Compose
+# Deployment: OCI Ampere A1 ARM64 + PostgreSQL + Redis + Vault + MinIO
+# Usage: docker compose -f docker/docker-compose.prod.yml up -d
+###############################################################################
+
+version: '3.9'
+
+services:
+  # ─── PostgreSQL 16 ───────────────────────────────────────────────
+  # Primary database for all tenant data, RLS enforced
+  postgres:
+    image: postgres:16-alpine
+    container_name: fc-postgres-prod
+    restart: always
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME:-factoryconnect}
+      POSTGRES_USER: ${DATABASE_USER:-fc_app}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:?error}
+    ports:
+      - "${DATABASE_PORT:-5432}:5432"
+    volumes:
+      - fc_pgdata_prod:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    networks:
+      - fc-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-fc_app} -d ${DATABASE_NAME:-factoryconnect}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+
+  # ─── Redis 7 ─────────────────────────────────────────────────────
+  # Cache + BullMQ queue backend
+  redis:
+    image: redis:7-alpine
+    container_name: fc-redis-prod
+    restart: always
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - fc_redisdata_prod:/data
+    networks:
+      - fc-network
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory ${REDIS_MAX_MEMORY:-512mb}
+      --maxmemory-policy allkeys-lru
+      --requirepass ${REDIS_PASSWORD:?error}
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # ─── Keycloak 24 (Auth + MFA) ───────────────────────────────────
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0
+    container_name: fc-keycloak-prod
+    restart: always
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: "jdbc:postgresql://postgres:5432/${DATABASE_NAME:-factoryconnect}"
+      KC_DB_USERNAME: ${DATABASE_USER:-fc_app}
+      KC_DB_PASSWORD: ${DATABASE_PASSWORD:?error}
+      KC_DB_SCHEMA: keycloak
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?error}
+      KC_PROXY: edge
+      KC_HOSTNAME_PROVIDER: request
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+    ports:
+      - "8080:8080"
+    networks:
+      - fc-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1.5G
+
+  # ─── HashiCorp Vault (Secrets + FLE Transit) ────────────────────
+  # Server mode: uses file backend with TLS
+  vault:
+    image: hashicorp/vault:1.17
+    container_name: fc-vault-prod
+    restart: always
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: ${VAULT_DEV_ROOT_TOKEN_ID:?error}
+      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+    ports:
+      - "8200:8200"
+    volumes:
+      - fc_vaultdata_prod:/vault/data
+      - ./vault-config.hcl:/vault/config/vault-config.hcl:ro
+    networks:
+      - fc-network
+    cap_add:
+      - IPC_LOCK
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8200/v1/sys/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+  # ─── MinIO (S3-compatible Object Storage) ───────────────────────
+  # For claim check payloads and file uploads
+  minio:
+    image: minio/minio:latest
+    container_name: fc-minio-prod
+    restart: always
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?error}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?error}
+    ports:
+      - "9000:9000"   # API
+      - "9001:9001"   # Console
+    volumes:
+      - fc_miniodata_prod:/data
+    networks:
+      - fc-network
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+
+  # ─── OpenAS2 (EDI AS2 Transport Sidecar) ────────────────────────
+  openas2:
+    image: openas2/openas2:latest
+    container_name: fc-openas2-prod
+    restart: always
+    ports:
+      - "4080:4080"   # HTTP
+      - "4081:4081"   # HTTPS
+    volumes:
+      - fc_as2data_prod:/opt/openas2/data
+      - ./openas2/config:/opt/openas2/config:ro
+    networks:
+      - fc-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+  # ─── API Gateway Service (Express.js) ────────────────────────────
+  # 2 replicas for high availability
+  api-1:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.api
+      platforms:
+        - linux/arm64
+    image: factoryconnect/api:latest
+    container_name: fc-api-1
+    restart: always
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: "postgresql://${DATABASE_USER:-fc_app}:${DATABASE_PASSWORD:?error}@postgres:5432/${DATABASE_NAME:-factoryconnect}"
+      REDIS_URL: "redis://:${REDIS_PASSWORD:?error}@redis:6379"
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-master}
+      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:?error}
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:?error}
+      VAULT_ADDR: http://vault:8200
+      VAULT_TOKEN: ${VAULT_DEV_ROOT_TOKEN_ID:?error}
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:?error}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:?error}
+      MINIO_USE_SSL: "false"
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      CORRELATION_ID_HEADER: X-Correlation-ID
+    ports:
+      - "3000:3000"
+    networks:
+      - fc-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      vault:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+        reservations:
+          cpus: '1'
+          memory: 512M
+
+  api-2:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.api
+      platforms:
+        - linux/arm64
+    image: factoryconnect/api:latest
+    container_name: fc-api-2
+    restart: always
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: "postgresql://${DATABASE_USER:-fc_app}:${DATABASE_PASSWORD:?error}@postgres:5432/${DATABASE_NAME:-factoryconnect}"
+      REDIS_URL: "redis://:${REDIS_PASSWORD:?error}@redis:6379"
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM:-master}
+      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:?error}
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:?error}
+      VAULT_ADDR: http://vault:8200
+      VAULT_TOKEN: ${VAULT_DEV_ROOT_TOKEN_ID:?error}
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:?error}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:?error}
+      MINIO_USE_SSL: "false"
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      CORRELATION_ID_HEADER: X-Correlation-ID
+    ports:
+      - "3001:3000"
+    networks:
+      - fc-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      vault:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+        reservations:
+          cpus: '1'
+          memory: 512M
+
+  # ─── Portal UI (React + Vite) ────────────────────────────────────
+  portal:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.portal
+      platforms:
+        - linux/arm64
+    image: factoryconnect/portal:latest
+    container_name: fc-portal
+    restart: always
+    ports:
+      - "3001:3001"
+    networks:
+      - fc-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+  # ─── Prometheus (Metrics Collection) ─────────────────────────────
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: fc-prometheus-prod
+    restart: always
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - fc_prometheusdata_prod:/prometheus
+    networks:
+      - fc-network
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=30d"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+  # ─── Grafana (Metrics Visualization) ──────────────────────────────
+  grafana:
+    image: grafana/grafana:latest
+    container_name: fc-grafana-prod
+    restart: always
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?error}
+      GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:-http://localhost:3000}
+      GF_INSTALL_PLUGINS: grafana-piechart-panel
+    ports:
+      - "3002:3000"
+    volumes:
+      - fc_grafanadata_prod:/var/lib/grafana
+    networks:
+      - fc-network
+    depends_on:
+      - prometheus
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+  # ─── Caddy 2 (Reverse Proxy + Auto-SSL) ─────────────────────────
+  caddy:
+    image: caddy:2-alpine
+    container_name: fc-caddy-prod
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - fc_caddydata_prod:/data
+      - fc_caddyconfig_prod:/config
+    networks:
+      - fc-network
+    environment:
+      ACME_CA: ${ACME_CA:-https://acme-v02.api.letsencrypt.org/directory}
+    depends_on:
+      - api-1
+      - api-2
+      - portal
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 256M
+        reservations:
+          cpus: '0.5'
+          memory: 128M
+
+volumes:
+  fc_pgdata_prod:
+    driver: local
+  fc_redisdata_prod:
+    driver: local
+  fc_vaultdata_prod:
+    driver: local
+  fc_miniodata_prod:
+    driver: local
+  fc_as2data_prod:
+    driver: local
+  fc_prometheusdata_prod:
+    driver: local
+  fc_grafanadata_prod:
+    driver: local
+  fc_caddydata_prod:
+    driver: local
+  fc_caddyconfig_prod:
+    driver: local
+
+networks:
+  fc-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16

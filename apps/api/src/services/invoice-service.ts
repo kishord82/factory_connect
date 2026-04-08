@@ -3,6 +3,7 @@
  */
 
 import type { RequestContext } from '@fc/shared';
+import type { PoolClient } from '@fc/database';
 import { FcError } from '@fc/shared';
 import type { CanonicalInvoiceCreate } from '@fc/shared';
 import { withTenantTransaction, withTenantClient, insertOne, findOne, paginatedQuery } from '@fc/database';
@@ -28,7 +29,7 @@ interface InvoiceRow {
 }
 
 export async function createInvoice(ctx: RequestContext, data: CanonicalInvoiceCreate): Promise<InvoiceRow> {
-  return withTenantTransaction(ctx, async (client) => {
+  return withTenantTransaction(ctx, async (client: PoolClient) => {
     const order = await findOne(client, 'SELECT id FROM canonical_orders WHERE id = $1', [data.order_id]);
     if (!order) throw new FcError('FC_ERR_ORDER_NOT_FOUND', `Order ${data.order_id} not found`, {}, 404);
 
@@ -74,13 +75,13 @@ export async function createInvoice(ctx: RequestContext, data: CanonicalInvoiceC
 }
 
 export async function getInvoiceById(ctx: RequestContext, id: string): Promise<InvoiceRow | null> {
-  return withTenantClient(ctx, async (client) => {
+  return withTenantClient(ctx, async (client: PoolClient) => {
     return findOne<InvoiceRow>(client, 'SELECT * FROM canonical_invoices WHERE id = $1', [id]);
   });
 }
 
 export async function listInvoices(ctx: RequestContext, orderId: string | undefined, page: number, pageSize: number): Promise<PaginatedResult<InvoiceRow>> {
-  return withTenantClient(ctx, async (client) => {
+  return withTenantClient(ctx, async (client: PoolClient) => {
     const params: unknown[] = [];
     let sql = 'SELECT * FROM canonical_invoices';
     if (orderId) { sql += ' WHERE order_id = $1'; params.push(orderId); }

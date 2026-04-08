@@ -1,27 +1,45 @@
 /**
  * C9: X12 EDI generator — generates X12 documents from canonical data.
+ * Supports PO Acknowledgment (855), ASN (856), Invoice (810).
  */
-import type { EdiGenerationResult } from './types.js';
+import type { EdiGenerationResult, EdiConfig } from './types.js';
 
 const SEP = '*';
 const TERM = '~';
 
-function pad(val: string, len: number, char: string = ' '): string {
-  return val.padEnd(len, char).substring(0, len);
+/**
+ * Pad string to length, with optional character fill.
+ * Default pads right with spaces.
+ */
+export function padField(val: string, len: number, char: string = ' ', direction: 'left' | 'right' = 'right'): string {
+  const padded = direction === 'right' ? val.padEnd(len, char) : val.padStart(len, char);
+  return padded.substring(0, len);
 }
 
-function padNum(val: string, len: number): string {
-  return val.padStart(len, '0').substring(0, len);
+/**
+ * Pad numeric value with leading zeros to length.
+ */
+export function padFieldNum(val: string | number, len: number): string {
+  const str = typeof val === 'number' ? val.toString() : val;
+  return str.padStart(len, '0').substring(0, len);
 }
 
-function formatDate(date: Date | string): string {
+/**
+ * Format date as YYMMDD or CCYYMMDD.
+ */
+export function formatEdiDate(date: Date | string, includeYear: boolean = false): string {
   const d = date instanceof Date ? date : new Date(date);
-  return d.toISOString().slice(0, 10).replace(/-/g, '');
+  const iso = d.toISOString().slice(0, 10).replace(/-/g, '');
+  return includeYear ? iso : iso.slice(2); // YYMMDD
 }
 
-function formatTime(date: Date | string): string {
+/**
+ * Format time as HHMM or HHMMSS.
+ */
+export function formatEdiTime(date: Date | string, includeSeconds: boolean = false): string {
   const d = date instanceof Date ? date : new Date(date);
-  return d.toISOString().slice(11, 16).replace(':', '');
+  const iso = d.toISOString().slice(11, 19).replace(/:/g, '');
+  return includeSeconds ? iso : iso.slice(0, 4); // HHMM
 }
 
 interface IsaParams {
@@ -31,34 +49,90 @@ interface IsaParams {
   test_mode?: boolean;
 }
 
+/**
+ * Generate ISA segment (Interchange Control Header).
+ * Fixed 106 character record with 16 elements.
+ */
 function generateISA(p: IsaParams): string {
   const now = new Date();
   return [
-    'ISA', '00', pad('', 10), '00', pad('', 10),
-    'ZZ', pad(p.sender_id, 15), 'ZZ', pad(p.receiver_id, 15),
-    formatDate(now).slice(2), formatTime(now),
-    'U', '00401', padNum(p.control_number, 9),
+    'ISA', '00', padField('', 10), '00', padField('', 10),
+    'ZZ', padField(p.sender_id, 15), 'ZZ', padField(p.receiver_id, 15),
+    formatEdiDate(now), formatEdiTime(now),
+    'U', '00401', padFieldNum(p.control_number, 9),
     '0', p.test_mode ? 'T' : 'P', ':',
   ].join(SEP) + TERM;
 }
 
+/**
+ * Generate IEA segment (Interchange Control Trailer).
+ */
 function generateIEA(controlNumber: string): string {
-  return `IEA${SEP}1${SEP}${padNum(controlNumber, 9)}${TERM}`;
+  return `IEA${SEP}1${SEP}${padFieldNum(controlNumber, 9)}${TERM}`;
 }
 
+/**
+ * Generate GS segment (Functional Group Header).
+ */
 function generateGS(docType: string, senderId: string, receiverId: string, controlNumber: string): string {
   const now = new Date();
   const codeMap: Record<string, string> = { '855': 'PR', '856': 'SH', '810': 'IN', '997': 'FA' };
   return [
     'GS', codeMap[docType] ?? 'PO', senderId, receiverId,
-    formatDate(now), formatTime(now), controlNumber, 'X', '004010',
+    formatEdiDate(now, true), formatEdiTime(now), controlNumber, 'X', '004010',
   ].join(SEP) + TERM;
 }
 
+/**
+ * Generate GE segment (Functional Group Trailer).
+ */
 function generateGE(controlNumber: string): string {
   return `GE${SEP}1${SEP}${controlNumber}${TERM}`;
 }
 
+/**
+ * Generate next sequential control number for a given type.
+ * In production, read from database sequence table.
+ */
+export function nextControlNumber(_type: string, _config: EdiConfig): string {
+  // Stub: In production, query database for next sequence
+  // For now, use timestamp-based hash
+  const ts = Date.now().toString();
+  return ts.slice(-9).padStart(9, '0');
+}
+
+/**
+ * Generate EDI envelope wrapper (ISA/GS/ST/SE/GE/IEA).
+ */
+export function generateEnvelope(
+  docType: string,
+  config: EdiConfig,
+  content: string,
+  segmentCount: number,
+): string {
+  const controlNum = nextControlNumber(docType, config);
+  const lines: string[] = [];
+
+  lines.push(generateISA({
+    sender_id: config.seller_id,
+    receiver_id: config.buyer_id,
+    control_number: controlNum,
+    test_mode: config.test_mode,
+  }));
+
+  lines.push(generateGS(docType, config.seller_id, config.buyer_id, controlNum));
+  lines.push(`ST${SEP}${docType}${SEP}${padFieldNum(controlNum, 4)}${TERM}`);
+  lines.push(content);
+  lines.push(`SE${SEP}${segmentCount + 2}${SEP}${padFieldNum(controlNum, 4)}${TERM}`);
+  lines.push(generateGE(controlNum));
+  lines.push(generateIEA(controlNum));
+
+  return lines.join('');
+}
+
+/**
+ * Generate X12 855 (PO Acknowledgment) from order data.
+ */
 export function generate855(data: {
   sender_id: string;
   receiver_id: string;
@@ -71,9 +145,14 @@ export function generate855(data: {
 }): EdiGenerationResult {
   try {
     const lines: string[] = [];
-    lines.push(generateISA({ sender_id: data.sender_id, receiver_id: data.receiver_id, control_number: data.control_number, test_mode: data.test_mode }));
+    lines.push(generateISA({
+      sender_id: data.sender_id,
+      receiver_id: data.receiver_id,
+      control_number: data.control_number,
+      test_mode: data.test_mode,
+    }));
     lines.push(generateGS('855', data.sender_id, data.receiver_id, data.control_number));
-    lines.push(`ST${SEP}855${SEP}${padNum(data.control_number, 4)}${TERM}`);
+    lines.push(`ST${SEP}855${SEP}${padFieldNum(data.control_number, 4)}${TERM}`);
     lines.push(`BAK${SEP}00${SEP}${data.ack_status}${SEP}${data.po_number}${SEP}${data.po_date}${TERM}`);
 
     let segCount = 3; // ST + BAK + SE
@@ -85,7 +164,7 @@ export function generate855(data: {
       }
     }
 
-    lines.push(`SE${SEP}${segCount}${SEP}${padNum(data.control_number, 4)}${TERM}`);
+    lines.push(`SE${SEP}${segCount}${SEP}${padFieldNum(data.control_number, 4)}${TERM}`);
     lines.push(generateGE(data.control_number));
     lines.push(generateIEA(data.control_number));
 
@@ -95,6 +174,9 @@ export function generate855(data: {
   }
 }
 
+/**
+ * Generate X12 856 (Advance Ship Notice) from shipment data.
+ */
 export function generate856(data: {
   sender_id: string;
   receiver_id: string;
@@ -109,10 +191,15 @@ export function generate856(data: {
 }): EdiGenerationResult {
   try {
     const lines: string[] = [];
-    lines.push(generateISA({ sender_id: data.sender_id, receiver_id: data.receiver_id, control_number: data.control_number, test_mode: data.test_mode }));
+    lines.push(generateISA({
+      sender_id: data.sender_id,
+      receiver_id: data.receiver_id,
+      control_number: data.control_number,
+      test_mode: data.test_mode,
+    }));
     lines.push(generateGS('856', data.sender_id, data.receiver_id, data.control_number));
-    lines.push(`ST${SEP}856${SEP}${padNum(data.control_number, 4)}${TERM}`);
-    lines.push(`BSN${SEP}00${SEP}${data.shipment_id}${SEP}${data.ship_date}${SEP}${formatTime(new Date())}${TERM}`);
+    lines.push(`ST${SEP}856${SEP}${padFieldNum(data.control_number, 4)}${TERM}`);
+    lines.push(`BSN${SEP}00${SEP}${data.shipment_id}${SEP}${data.ship_date}${SEP}${formatEdiTime(new Date())}${TERM}`);
 
     let segCount = 3;
     // Shipment level
@@ -138,7 +225,7 @@ export function generate856(data: {
       }
     }
 
-    lines.push(`SE${SEP}${segCount}${SEP}${padNum(data.control_number, 4)}${TERM}`);
+    lines.push(`SE${SEP}${segCount}${SEP}${padFieldNum(data.control_number, 4)}${TERM}`);
     lines.push(generateGE(data.control_number));
     lines.push(generateIEA(data.control_number));
 
@@ -148,6 +235,9 @@ export function generate856(data: {
   }
 }
 
+/**
+ * Generate X12 810 (Invoice) from invoice data.
+ */
 export function generate810(data: {
   sender_id: string;
   receiver_id: string;
@@ -161,9 +251,14 @@ export function generate810(data: {
 }): EdiGenerationResult {
   try {
     const lines: string[] = [];
-    lines.push(generateISA({ sender_id: data.sender_id, receiver_id: data.receiver_id, control_number: data.control_number, test_mode: data.test_mode }));
+    lines.push(generateISA({
+      sender_id: data.sender_id,
+      receiver_id: data.receiver_id,
+      control_number: data.control_number,
+      test_mode: data.test_mode,
+    }));
     lines.push(generateGS('810', data.sender_id, data.receiver_id, data.control_number));
-    lines.push(`ST${SEP}810${SEP}${padNum(data.control_number, 4)}${TERM}`);
+    lines.push(`ST${SEP}810${SEP}${padFieldNum(data.control_number, 4)}${TERM}`);
     lines.push(`BIG${SEP}${data.invoice_date}${SEP}${data.invoice_number}${SEP}${SEP}${data.po_number}${TERM}`);
 
     let segCount = 3;
@@ -179,7 +274,7 @@ export function generate810(data: {
     lines.push(`TDS${SEP}${data.total_amount.replace('.', '')}${TERM}`);
     segCount++;
 
-    lines.push(`SE${SEP}${segCount}${SEP}${padNum(data.control_number, 4)}${TERM}`);
+    lines.push(`SE${SEP}${segCount}${SEP}${padFieldNum(data.control_number, 4)}${TERM}`);
     lines.push(generateGE(data.control_number));
     lines.push(generateIEA(data.control_number));
 

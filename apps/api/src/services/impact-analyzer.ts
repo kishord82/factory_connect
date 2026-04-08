@@ -2,6 +2,7 @@
  * B14: Impact analyzer — calculates blast radius before revert/rollback.
  */
 import type { RequestContext } from '@fc/shared';
+import type { PoolClient } from '@fc/database';
 import { withTenantClient, findMany } from '@fc/database';
 
 interface ImpactReport {
@@ -12,7 +13,7 @@ interface ImpactReport {
 }
 
 export async function analyzeOrderImpact(ctx: RequestContext, orderId: string): Promise<ImpactReport[]> {
-  return withTenantClient(ctx, async (client) => {
+  return withTenantClient(ctx, async (client: PoolClient) => {
     const impacts: ImpactReport[] = [];
 
     // Check shipments linked to this order
@@ -80,7 +81,7 @@ export async function analyzeOrderImpact(ctx: RequestContext, orderId: string): 
 }
 
 export async function analyzeConnectionImpact(ctx: RequestContext, connectionId: string): Promise<ImpactReport[]> {
-  return withTenantClient(ctx, async (client) => {
+  return withTenantClient(ctx, async (client: PoolClient) => {
     const impacts: ImpactReport[] = [];
 
     const orders = await findMany<{ id: string; status: string }>(

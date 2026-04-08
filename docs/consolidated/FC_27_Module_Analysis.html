@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FactoryConnect — 27 Module Deep Analysis vs Codebase</title>
+<style>
+:root { --bg: #0a0a0a; --surface: #141414; --border: #2a2a2a; --text: #e0e0e0; --muted: #888; --green: #22c55e; --yellow: #eab308; --orange: #f97316; --red: #ef4444; --blue: #3b82f6; --purple: #a855f7; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'SF Pro Text', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+.container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+h2 { font-size: 20px; font-weight: 600; margin: 32px 0 16px; color: #fff; }
+h3 { font-size: 16px; font-weight: 600; margin: 16px 0 8px; }
+.subtitle { color: var(--muted); margin-bottom: 32px; font-size: 14px; }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 32px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; text-align: center; }
+.stat-num { font-size: 32px; font-weight: 700; }
+.stat-label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.stat-green .stat-num { color: var(--green); }
+.stat-yellow .stat-num { color: var(--yellow); }
+.stat-orange .stat-num { color: var(--orange); }
+.stat-red .stat-num { color: var(--red); }
+.stat-blue .stat-num { color: var(--blue); }
+.stat-purple .stat-num { color: var(--purple); }
+.layer { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 16px; overflow: hidden; }
+.layer-header { padding: 16px 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; }
+.layer-header:hover { background: #1a1a1a; }
+.layer-title { font-weight: 600; font-size: 15px; }
+.layer-badge { display: flex; gap: 8px; }
+.badge { font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 500; }
+.badge-built { background: #052e16; color: var(--green); }
+.badge-partial { background: #422006; color: var(--yellow); }
+.badge-stub { background: #431407; color: var(--orange); }
+.badge-not-started { background: #1c1917; color: var(--muted); }
+.layer-body { display: none; border-top: 1px solid var(--border); }
+.layer.open .layer-body { display: block; }
+.module { padding: 16px 20px; border-bottom: 1px solid var(--border); }
+.module:last-child { border-bottom: none; }
+.module-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+.module-name { font-weight: 600; font-size: 14px; }
+.module-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.tag { font-size: 10px; padding: 1px 6px; border-radius: 3px; }
+.tag-mvp { background: #1e3a5f; color: #60a5fa; }
+.tag-moat { background: #3b1f6e; color: #c084fc; }
+.tag-phase2 { background: #1c1917; color: #a8a29e; }
+.tag-platform { background: #1a2e05; color: #86efac; }
+.tag-critical { background: #450a0a; color: #fca5a5; }
+.tag-high { background: #451a03; color: #fdba74; }
+.tag-medium { background: #422006; color: #fcd34d; }
+.status-bar { height: 4px; border-radius: 2px; margin: 8px 0; background: #222; }
+.status-fill { height: 100%; border-radius: 2px; transition: width 0.3s; }
+.fill-built { background: var(--green); }
+.fill-partial { background: var(--yellow); }
+.fill-stub { background: var(--orange); }
+.fill-not { background: var(--red); }
+.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
+@media (max-width: 768px) { .detail-grid { grid-template-columns: 1fr; } }
+.detail-box { background: #0d0d0d; border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; font-size: 13px; }
+.detail-box h4 { font-size: 11px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; letter-spacing: 0.5px; }
+.detail-box ul { list-style: none; padding: 0; }
+.detail-box ul li { padding: 2px 0; }
+.detail-box ul li::before { content: "→ "; color: var(--muted); }
+.file-ref { color: var(--blue); font-family: 'SF Mono', monospace; font-size: 12px; }
+.missing-ref { color: var(--orange); font-family: 'SF Mono', monospace; font-size: 12px; }
+.effort { display: inline-block; background: #1a1a2e; color: var(--blue); padding: 2px 8px; border-radius: 3px; font-size: 12px; font-weight: 500; }
+.readiness { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 12px; font-weight: 600; }
+.ready-demo { background: #052e16; color: var(--green); }
+.ready-2wk { background: #422006; color: var(--yellow); }
+.ready-1mo { background: #431407; color: var(--orange); }
+.ready-future { background: #1c1917; color: var(--muted); }
+.trial-section { background: var(--surface); border: 2px solid var(--blue); border-radius: 8px; padding: 24px; margin: 32px 0; }
+.trial-section h2 { margin-top: 0; color: var(--blue); }
+.trial-table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
+.trial-table th { text-align: left; padding: 8px 12px; border-bottom: 2px solid var(--border); color: var(--muted); font-size: 11px; text-transform: uppercase; }
+.trial-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+.chevron { transition: transform 0.2s; font-size: 12px; color: var(--muted); }
+.layer.open .chevron { transform: rotate(90deg); }
+.summary-box { background: linear-gradient(135deg, #0a1628, #0d0d0d); border: 1px solid #1e3a5f; border-radius: 8px; padding: 20px; margin: 24px 0; font-size: 14px; }
+.progress-overview { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; margin: 16px 0; height: 24px; border-radius: 4px; overflow: hidden; }
+.po-seg { display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: #000; }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>FactoryConnect — 27 Module Analysis</h1>
+<p class="subtitle">Blueprint vs Codebase | Deep Dive for Customer Trial Readiness | April 2026</p>
+
+<div class="stats-grid">
+<div class="stat-card stat-green"><div class="stat-num">5</div><div class="stat-label">BUILT / Near-Ready</div></div>
+<div class="stat-card stat-yellow"><div class="stat-num">10</div><div class="stat-label">PARTIAL</div></div>
+<div class="stat-card stat-orange"><div class="stat-num">3</div><div class="stat-label">STUB Only</div></div>
+<div class="stat-card stat-red"><div class="stat-num">9</div><div class="stat-label">NOT STARTED</div></div>
+<div class="stat-card stat-blue"><div class="stat-num">~320h</div><div class="stat-label">Total to Trial-Ready</div></div>
+<div class="stat-card stat-purple"><div class="stat-num">12</div><div class="stat-label">Needed for 1st Trial</div></div>
+</div>
+
+<div class="progress-overview">
+<div class="po-seg" style="background:var(--green);">5 Built</div>
+<div class="po-seg" style="background:var(--yellow);">10 Partial</div>
+<div class="po-seg" style="background:var(--orange);">3 Stub</div>
+<div class="po-seg" style="background:var(--red); color:#fff;">9 Not Started</div>
+</div>
+
+<div class="summary-box">
+<strong>Executive Summary:</strong> Your codebase has strong foundations across EDI, order management, multi-tenancy, and observability. Of 27 modules, 15 have some code. The critical gap is on the <strong>factory floor side</strong> — QC, inventory, dispatch, GST compliance, and the buyer portal are not started. For a Hyderabad factory trial, you need 12 modules working. Estimated effort to reach trial-ready: <strong>~180 hours for the 12 essential modules</strong> (not all 27). The EDI engine, ERP connectors, AI mapper, and audit trail are your strongest assets today.
+</div>
+
+<!-- LAYER 1 -->
+<div class="layer open" onclick="this.classList.toggle('open')">
+<div class="layer-header">
+<span class="layer-title">LAYER 1 — INTEGRATION & CONNECTIVITY</span>
+<span class="chevron">▶</span>
+</div>
+<div class="layer-body">
+
+<div class="module">
+<div class="module-header">
+<div><span class="module-name">01 — ERP Connector Library</span> <span class="readiness ready-2wk">1-2 WEEKS</span> <span class="effort">~20h remaining</span></div>
+<div class="module-tags"><span class="tag tag-mvp">MVP</span><span class="tag tag-critical">Critical</span><span class="badge badge-partial">PARTIAL</span></div>
+</div>
+<div class="status-bar"><div class="status-fill fill-partial" style="width:60%"></div></div>
+<div class="detail-grid">
+<div class="detail-box">
+<h4>✅ What Exists in Code</h4>
+<ul>
+<li><span class="file-ref">apps/bridge/src/erp-adapters/tally.ts</span> — Tally Prime adapter with XML parsing</li>
+<li><span class="file-ref">apps/bridge/src/erp-adapters/zoho.ts</span> — Zoho Books adapter</li>
+<li><span class="file-ref">apps/bridge/src/erp-adapters/sap-b1.ts</span> — SAP Business One adapter</li>
+<li><span class="file-ref">apps/bridge/src/adaptive-poller.ts</span> — Polling engine for all ERPs</li>
+<li><span class="file-ref">apps/bridge/src/local-queue.ts</span> — SQLite offline queue</li>
+<li><span class="file-ref">apps/api/src/routes/connections.ts</span> — Connection management API</li>
+<li><span class="file-ref">apps/portal/src/pages/Connections.tsx</span> — Connection UI</li>
+</ul>
+</div>
+<div class="detail-box">
+<h4>❌ What's Missing</h4>
+<ul>
+<li><span class="missing-ref">Busy adapter</span> — popular in smaller factories</li>
+<li><span class="missing-ref">Real Tally XML integration testing</span> — adapter is structural, not tested against real Tally exports</li>
+<li><span class="missing-ref">Connection wizard UI</span> — step-by-step ERP setup flow</li>
+<li><span class="missing-ref">Auto-detect ERP version</span> — Tally Prime vs Tally ERP 9</li>
+<li><span class="missing-ref">Data extraction for invoices, stock, dispatch</span> — only orders currently mapped</li>
+</ul>
+</div>
+</div>
+</div>
+
+<div class="module">
+<div class="module-header">
+<div><span class="module-name">02 — EDI Engine (X12 + EDIFACT)</span> <span class="readiness ready-2wk">1-2 WEEKS</span> <span class="effort">~16h remaining</span></div>
+<div class="module-tags"><span class="tag tag-moat">Moat</span><span class="tag tag-critical">Critical</span><span class="badge badge-partial">PARTIAL</span></div>
+</div>
+<div class="status-bar"><div class="status-fill fill-partial" style="width:70%"></div></div>
+<div class="detail-grid">
+<div class="detail-box">
+<h4>✅ What Exists in Code</h4>
+<ul>
+<li><span class="file-ref">packages/shared/src/edi/x12-parser.ts</span> — Full X12 parser</li>
+<li><span class="file-ref">packages/shared/src/edi/x12-generator.ts</span> — X12 document generator (850, 856, 810)</li>
+<li><span class="file-ref">packages/shared/src/edi/cxml-adapter.ts</span> — cXML for Ariba/Coupa</li>
+<li><span class="file-ref">packages/shared/src/edi/json-rest-adapter.ts</span> — REST API adapter</li>
+<li><span class="file-ref">docker/docker-compose.yml</span> — OpenAS2 sidecar for AS2 transport</li>
+<li><span class="file-ref">apps/bridge/src/shadow/comparison-engine.ts</span> — EDI document comparison</li>
+<li><span class="file-ref">apps/api/src/services/edi-summary-renderer.ts</span> — Human-readable EDI view</li>
+</ul>
+</div>
+<div class="detail-box">
+<h4>❌ What's Missing</h4>
+<ul>
+<li><span class="missing-ref">EDIFACT support</span> — X12 only today, EU buyers need EDIFACT</li>
+<li><span class="missing-ref">EDI 855 (PO Acknowledgment)</span> — critical for chargeback prevention</li>
+<li><span class="missing-ref">EDI 846 (Inventory)</span> — stock visibility for buyers</li>
+<li><span class="missing-ref">AS2 transport testing</span> — OpenAS2 configured but not wired to EDI engine</li>
+<li><span class="missing-ref">Buyer-specific envelope configs</span> — Walmart vs Samsung vs Foxconn ISA/GS headers</li>
+</ul>
+</div>
+</div>
+</div>
+
+<div class="module">
+<div class="module-header">
+<div><span class="module-name">03 — WhatsApp Order Intake</span> <span class="readiness ready-1mo">1 MONTH</span> <span class="effort">~40h</span></div>
+<div class="module-tags"><span class="tag tag-mvp">MVP</span><span class="tag tag-high">High</span><span class="badge badge-not-started">NOT STARTED</span></div>
+</div>
+<div class="status-bar"><div class="status-fill fill-not" style="width:0%"></div></div>
+<div class="detail-grid">
+<div class="detail-box">
+<h4>✅ What Exists</h4>
+<ul>
+<li>Architecture doc mentions WhatsApp Business API integration</li>
+<li>Notification service exists and can be extended</li>
+<li>Claude AI integration patterns exist in AI mapper</li>
+</ul>
+</div>
+<div class="detail-box">
+<h4>❌ What's Missing — Everything</h4>
+<ul>
+<li><span class="missing-ref">WhatsApp Business API integration</span></li>
+<li><span class="missing-ref">Message parser (text, voice note, image)</span></li>
+<li><span class="missing-ref">AI order extraction from unstructured messages</span></li>
+<li><span class="missing-ref">Order confirmation flow back via WhatsApp</span></li>
+<li><span class="missing-ref">WhatsApp webhook receiver</span></li>
+</ul>
+</div>
+</div>
+</div>
+
+<div class="module">
+<div class="module-header">
+<div><span class="module-name">04 — API Gateway & Buyer Connect</span> <span class="readiness ready-future">FUTURE</span> <span class="effort">~24h</span></div>
+<div class="module-tags"><span class="tag tag-phase2">Phase 2</span><span class="tag tag-medium">Medium</span><span class="badge badge-partial">PARTIAL</span></div>
+</div>
+<div class="status-bar"><div class="status-fill fill-partial" style="width:40%"></div></div>
+<div class="detail-grid">
+<div class="detail-box">
+<h4>✅ What Exists</h4>
+<ul>
+<li><span class="file-ref">apps/api/src/middleware/auth.ts</span> — JWT auth middleware</li>
+<li><span class="file-ref">apps/api/src/middleware/rate-limiter.ts</span> — Rate limiting</li>
+<li><span class="file-ref">apps/api/src/services/webhook-service.ts</span> — Outbound webhooks</li>
+<li>OAuth2 via Keycloak already configured</li>
+</ul>
+</div>
+<div class="detail-box">
+<h4>❌ What's Missing</h4>
+<ul>
+<li><span class="missing-ref">Buyer-facing API endpoints</span> — separate from factory APIs</li>
+<li><span class="missing-ref">API key management for buyers</span></li>
+<li><span class="missing-ref">SOAP adapter</span> — legacy buyer systems</li>
+<li><span class="missing-ref">Multi-supplier aggregation view</span></li>
+</ul>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+
+<!-- LAYER 2 -->
+<div class="layer" onclick="this.classList.toggle('open')">
+<div class="layer-header">
+<span class="layer-title">LAYER 2 — ORDER & OPERATIONS</span>
+<span class="chevron">▶</span>
+</div>
+<div class="layer-body">
+
+<div class="module">
+<div class="module-header">
+<div><span class="module-name">05 — Order-to-Cash Automation</span> <span class="readiness ready-2wk">1-2 WEEKS</span> <span class="effort">~24h remaining</span></div>
+<div class="module-tags"><span class="tag tag-mvp">MVP</span><span class="tag tag-critical">Critical</span><span class="badge badge-partial">PARTIAL</span></div>
+</div>
+<div class="status-bar"><div class="status-fill fill-partial" style="width:65%"></div></div>
+<div class="detail-grid">
+<div class="detail-box">
+<h4>✅ What Exists</h4>
+<ul>
+<li><span class="file-ref">apps/api/src/services/order-service.ts</span> — Full order CRUD</li>
+<li><span class="file-ref">apps/api/src/services/invoice-service.ts</span> — Invoice management</li>
+<li><span class="file-ref">apps/api/src/services/saga-coordinator.ts</span> — 15-state order lifecycle</li>
+<li><span class="file-ref">apps/api/src/services/outbox-poller.ts</span> — Transactional outbox</li>
+<li><span class="file-ref">apps/api/src/services/approval-service.ts</span> — Human approval gate</li>
+<li><span class="file-ref">apps/portal/src/pages/Orders.tsx</span> — Order management UI</li>
+<li><span class="file-ref">apps/portal/src/pages/Invoices.tsx</span> — Invoice UI</li>
+</ul>
+</div>
+<div class="detail-box">
+<h4>❌ What's Missing</h4>
+<ul>
+<li><span class="missing-ref">Auto-invoice generation from dispatch</span> — manual trigger today</li>
+<li><span class="missing-ref">Payment link generation (Razorpay)</span></li>
+<li><span class="missing-ref">GST invoice format</span> — Indian tax compliance fields</li>
+<li><span class="missing-ref">Cash collection tracking</span> — payment aging, reminders</li>
+<li><span class="missing-ref">PO → Tally sync back</span> — one-way only today</li>
+</ul>
+</div>
+</div>
+</div>
+
+<div class="module">
+<div class="module-header">
+<div><span class="module-name">06 — Production Scheduling</span> <span class="readiness ready-future">FUTURE</span> <span class="effort">~48h</span></div>
+<div class="module-tags"><span class="tag tag-phase2">Phase 2</span><span class="tag tag-high">High</span><span class="badge badge-not-started">NOT STARTED</span></div>
+</div>
+<div class="status-bar"><div class="status-fill fill-not" style="width:0%"></div></div>
+<div class="detail-grid">
+<div class="detail-box"><h4>✅ What Exists</h4><ul><li>Order data model with delivery dates</li><li>Calendar page exists but for scheduling view only</li></ul></div>
+<div class="detail-box"><h4>❌ What's Missing — Everything</h4><ul><li><span class="missing-ref">Machine/line capacity model</span></li><li><span class="missing-ref">Shift management</span></li><li><span class="missing-ref">Auto-scheduling algorithm</span></li><li><span class="missing-ref">Delivery risk alerts</span></li><li><span class="missing-ref">Gantt chart UI</span></li></ul></div>
+</div>
+</div>
+
+<div class="module">
+<div class="module-header">
+<div><span class="module-name">07 — Inventory Sync & Alerts</span> <span class="readiness ready-1mo">1 MONTH</span> <span class="effort">~32h</span></div>
+<div class="module-tags"><span class="tag tag-mvp">MVP</span><span class="tag tag-critical">Critical</span><span class="badge badge-stub">STUB</span></div>
+</div>
+<div class="status-bar"><div class="status-fill fill-stub" style="width:15%"></div></div>
+<div class="detail-grid">
+<div class="detail-box"><h4>✅ What Exists</h4><ul><li>Tally adapter can theoretically read stock registers</li><li>Health score module checks data quality</li><li>Notification service infrastructure exists</li></ul></div>
+<div class="detail-box"><h4>❌ What's Missing</h4><ul><li><span class="missing-ref">Inventory data model & migration</span></li><li><span class="missing-ref">Stock sync from Tally</span> — adapter exists but no inventory extraction</li><li><span class="missing-ref">Reorder level alerts</span></li><li><span class="missing-ref">Available-to-promise calculation</span></li><li><span class="missing-ref">Inventory dashboard UI</span></li></ul></div>
+</div>
+</div>
+
+<div class="module">
+<div class="module-header">
+<div><span class="module-name">08 — Dispatch & Logistics Tracking</span> <span class="readiness ready-2wk">1-2 WEEKS</span> <span class="effort">~20h remaining</span></div>
+<div class="module-tags"><span class="tag tag-mvp">MVP</span><span class="tag tag-high">High</span><span class="badge badge-partial">PARTIAL</span></div>
+</div>
+<div class="status-bar"><div class="status-fill fill-partial" style="width:50%"></div></div>
+<div class="detail-grid">
+<div class="detail-box"><h4>✅ What Exists</h4><ul>
+<li><span class="file-ref">apps/api/src/services/shipment-service.ts</span> — Shipment CRUD</li>
+<li><span class="file-ref">apps/api/src/routes/shipments.ts</span> — Shipment API</li>
+<li><span class="file-ref">apps/portal/src/pages/Shipments.tsx</span> — Shipment UI</li>
+<li>ASN generation via EDI 856 in x12-generator</li>
+</ul></div>
+<div class="detail-box"><h4>❌ What's Missing</h4><ul>
+<li><span class="missing-ref">E-way bill auto-generation</span> — GST e-way bill API</li>
+<li><span class="missing-ref">Courier API integration</span> — Delhivery, FedEx, Blue Dart</li>
+<li><span class="missing-ref">Live tracking link generation</span></li>
+<li><span class="missing-ref">Auto-push tracking to buyer</span></li>
+</ul></div>
+</div>
+</div>
+
+<div class="module">
+<div class="module-header">
+<div><span class="module-name">09 — Pricing & Quote Engine</span> <span class="readiness ready-future">FUTURE</span> <span class="effort">~24h</span></div>
+<div class="module-tags"><span class="tag tag-phase2">Phase 2</span><span class="tag tag-medium">Medium</span><span class="badge badge-not-started">NOT STARTED</span></div>
+</div>
+<div class="status-bar"><div class="status-fill fill-not" style="width:0%"></div></div>
+<div class="detail-grid">
+<div class="detail-box"><h4>✅ What Exists</h4><ul><li>Nothing specific to quoting</li></ul></div>
+<div class="detail-box"><h4>❌ What's Missing — Everything</h4><ul><li><span class="missing-ref">Quote data model</span></li><li><span class="missing-ref">PDF quote generation</span></li><li><span class="missing-ref">Version history</span></li><li><span class="missing-ref">Digital approval flow</span></li></ul></div>
+</div>
+</div>
+
+</div>
+</div>
+
+<!-- LAYER 3 -->
+<div class="layer" onclick="this.classList.toggle('open')">
+<div class="layer-header">
+<span class="layer-title">LAYER 3 — COMPLIANCE & QUALITY</span>
+<span class="chevron">▶</span>
+</div>
+<div class="layer-body">
+
+<div class="module">
+<div class="module-header">
+<div><span class="module-name">10 — Digital QC Trail</span> <span class="readiness ready-1mo">1 MONTH</span> <span class="effort">~40h</span></div>
+<div class="module-tags"><span class="tag tag-mvp">MVP</span><span class="tag tag-critical">Critical</span><span class="badge badge-not-started">NOT STARTED</span></div>
+</div>
+<div class="status-bar"><div class="status-fill fill-not" style="width:0%"></div></div>
+<div class="detail-grid">
+<div class="detail-box"><h4>✅ What Exists</h4><ul><li>MinIO configured in Docker for file storage</li><li>Audit log infrastructure exists</li></ul></div>
+<div class="detail-box"><h4>❌ What's Missing — Everything</h4><ul>
+<li><span class="missing-ref">QC checkpoint data model</span></li>
+<li><span class="missing-ref">Mobile QC capture (photo + sign-off)</span></li>
+<li><span class="missing-ref">QC status per batch/order</span></li>
+<li><span class="missing-ref">ISO/IATF audit PDF generation</span></li>
+<li><span class="missing-ref">Buyer QC visibility API</span></li>
+</ul></div>
+</div>
+</div>
+
+<div class="module">
+<div class="module-header">
+<div><span class="module-name">11 — GST & Export Compliance</span> <span class="readiness ready-1mo">1 MONTH</span> <span class="effort">~36h</span></div>
+<div class="module-tags"><span class="tag tag-mvp">MVP</span><span class="tag tag-critical">Critical</span><span class="badge badge-not-started">NOT STARTED</span></div>
+</div>
+<div class="status-bar"><div class="status-fill fill-not" style="width:0%"></div></div>
+<div class="detail-grid">
+<div class="detail-box"><h4>✅ What Exists</h4><ul><li>GSTIN field in tenant data model</li><li>Health score checks GSTIN validity</li><li>Vault FLE for GSTIN encryption</li></ul></div>
+<div class="detail-box"><h4>❌ What's Missing</h4><ul>
+<li><span class="missing-ref">E-way bill API integration (NIC)</span></li>
+<li><span class="missing-ref">E-invoice generation (IRN)</span></li>
+<li><span class="missing-ref">DGFT shipping bill reconciliation</span></li>
+<li><span class="missing-ref">LUT bond tracker</span></li>
+<li><span class="missing-ref">IGST refund monitoring</span></li>
+<li><span class="missing-ref">Compliance calendar with deadlines</span></li>
+</ul></div>
+</div>
+</div>
+
+<div class="module">
+<div class="module-header">
+<div><span class="module-name">12 — Document Management</span> <span class="readiness ready-2wk">1-2 WEEKS</span> <span class="effort">~16h</span></div>
+<div class="module-tags"><span class="tag tag-mvp">MVP</span><span class="tag tag-high">High</span><span class="badge badge-stub">STUB</span></div>
+</div>
+<div class="status-bar"><div class="status-fill fill-stub" style="width:20%"></div></div>
+<div class="detail-grid">
+<div class="detail-box"><h4>✅ What Exists</h4><ul><li>MinIO configured in Docker Compose</li><li>Report generator service creates HTML docs</li><li>Export-import routes exist</li></ul></div>
+<div class="detail-box"><h4>❌ What's Missing</h4><ul>
+<li><span class="missing-ref">Document upload/versioning API</span></li>
+<li><span class="missing-ref">Auto-link documents to orders/batches</span></li>
+<li><span class="missing-ref">Document search</span></li>
+<li><span class="missing-ref">Buyer document sharing portal</span></li>
+<li><span class="missing-ref">COA/COC template system</span></li>
+</ul></div>
+</div>
+</div>
+
+<div class="module">
+<div class="module-header">
+<div><span class="module-name">13 — ESG & Carbon Reporting</span> <span class="readiness ready-future">FUTURE</span> <span class="effort">~48h</span></div>
+<div class="module-tags"><span class="tag tag-moat">Moat</span><span class="tag tag-critical">Critical</span><span class="badge badge-not-started">NOT STARTED</span></div>
+</div>
+<div class="status-bar"><div class="status-fill fill-not" style="width:0%"></div></div>
+<div class="detail-grid">
+<div class="detail-box"><h4>✅ What Exists</h4><ul><li>CBAM research completed — textiles not in scope</li><li>EU DPP identified as real opportunity (2027-2028)</li><li>India CCTS covers textiles (Jan 2026)</li></ul></div>
+<div class="detail-box"><h4>❌ What's Missing — Everything</h4><ul>
+<li><span class="missing-ref">Energy/water/waste data capture forms</span></li>
+<li><span class="missing-ref">Carbon footprint calculator</span></li>
+<li><span class="missing-ref">DPP data model</span></li>
+<li><span class="missing-ref">ESG report generation</span></li>
+<li>Note: Defer to Phase 1.5 — DPP+CCTS, not CBAM</li>
+</ul></div>
+</div>
+</div>
+
+<div class="module">
+<div class="module-header">
+<div><span class="module-name">14 — Audit Log & Compliance Trail</span> <span class="readiness ready-demo">DEMO READY</span> <span class="effort">~4h polish</span></div>
+<div class="module-tags"><span class="tag tag-platform">Platform</span><span class="tag tag-high">High</span><span class="badge badge-built">BUILT</span></div>
+</div>
+<div class="status-bar"><div class="status-fill fill-built" style="width:90%"></div></div>
+<div class="detail-grid">
+<div class="detail-box"><h4>✅ What Exists — Nearly Complete</h4><ul>
+<li><span class="file-ref">migrations/002_history_triggers.sql</span> — Record history on all tables</li>
+<li><span class="file-ref">apps/api/src/middleware/correlation-id.ts</span> — Request tracing</li>
+<li><span class="file-ref">packages/observability/</span> — PII redactor, structured logging</li>
+<li>SHA-256 hash chain in audit entries</li>
+<li>Every DB write has user, tenant, timestamp</li>
+</ul></div>
+<div class="detail-box"><h4>❌ Minor Gaps</h4><ul>
+<li><span class="missing-ref">Audit PDF export for ISO auditors</span></li>
+<li><span class="missing-ref">Audit search/filter UI</span></li>
+</ul></div>
+</div>
+</div>
+
+</div>
+</div>
+
+<!-- LAYER 4 -->
+<div class="layer" onclick="this.classList.toggle('open')">
+<div class="layer-header">
+<span class="layer-title">LAYER 4 — INTELLIGENCE & AI</span>
+<span class="chevron">▶</span>
+</div>
+<div class="layer-body">
+
+<div class="module">
+<div class="module-header">
+<div><span class="module-name">15 — AI Field Mapper (Claude)</span> <span class="readiness ready-demo">DEMO READY</span> <span class="effort">~8h polish</span></div>
+<div class="module-tags"><span class="tag tag-moat">Moat</span><span class="tag tag-critical">Critical</span><span class="badge badge-built">BUILT</span></div>
+</div>
+<div class="status-bar"><div class="status-fill fill-built" style="width:85%"></div></div>
+<div class="detail-grid">
+<div class="detail-box"><h4>✅ What Exists — Strong</h4><ul>
+<li><span class="file-ref">packages/shared/src/mapping/ai-mapper.ts</span> — Claude-powered field mapping</li>
+<li><span class="file-ref">packages/shared/src/mapping/engine.ts</span> — Mapping execution engine</li>
+<li><span class="file-ref">packages/shared/src/mapping/transform.ts</span> — Transform rules</li>
+<li><span class="file-ref">packages/shared/src/mapping/template-manager.ts</span> — Reusable mapping templates</li>
+<li>Confidence scoring, one-click confirmation flow designed</li>
+</ul></div>
+<div class="detail-box"><h4>❌ Minor Gaps</h4><ul>
+<li><span class="missing-ref">Mapping Studio UI</span> — visual drag-drop mapper (Portal page)</li>
+<li><span class="missing-ref">Real Tally schema auto-detection</span></li>
+<li><span class="missing-ref">Mapping accuracy metrics dashboard</span></li>
+</ul></div>
+</div>
+</div>
+
+<div class="module">
+<div class="module-header">
+<div><span class="module-name">16 — Analytics & BI Dashboard</span> <span class="readiness ready-2wk">1-2 WEEKS</span> <span class="effort">~16h remaining</span></div>
+<div class="module-tags"><span class="tag tag-phase2">Phase 2</span><span class="tag tag-high">High</span><span class="badge badge-partial">PARTIAL</span></div>
+</div>
+<div class="status-bar"><div class="status-fill fill-partial" style="width:40%"></div></div>
+<div class="detail-grid">
+<div class="detail-box"><h4>✅ What Exists</h4><ul>
+<li><span class="file-ref">apps/api/src/routes/analytics.ts</span> — Analytics API</li>
+<li><span class="file-ref">apps/portal/src/pages/Analytics.tsx</span> — Analytics page</li>
+<li><span class="file-ref">apps/portal/src/pages/Dashboard.tsx</span> — Main dashboard</li>
+<li>Grafana + Prometheus configured for system metrics</li>
+</ul></div>
+<div class="detail-box"><h4>❌ What's Missing</h4><ul>
+<li><span class="missing-ref">Business KPI calculations</span> — on-time delivery %, QC pass rate</li>
+<li><span class="missing-ref">Revenue by buyer view</span></li>
+<li><span class="missing-ref">Cash collection days metric</span></li>
+<li><span class="missing-ref">Trend charts with historical data</span></li>
+</ul></div>
+</div>
+</div>
+
+<div class="module">
+<div class="module-header">
+<div><span class="module-name">17 — Demand Forecasting</span> <span class="readiness ready-future">FUTURE</span> <span class="effort">~32h</span></div>
+<div class="module-tags"><span class="tag tag-phase2">Phase 2</span><span class="tag tag-medium">Medium</span><span class="badge badge-not-started">NOT STARTED</span></div>
+</div>
+<div class="status-bar"><div class="status-fill fill-not" style="width:0%"></div></div>
+<div class="detail-grid">
+<div class="detail-box"><h4>✅ What Exists</h4><ul><li>Order history data model exists</li><li>AI gateway patterns from Claude integration</li></ul></div>
+<div class="detail-box"><h4>❌ What's Missing — Everything</h4><ul><li><span class="missing-ref">Forecasting algorithm</span></li><li><span class="missing-ref">Seasonal pattern detection</span></li><li><span class="missing-ref">Forecast visualization</span></li><li><span class="missing-ref">Plain-language forecast narration</span></li></ul></div>
+</div>
+</div>
+
+<div class="module">
+<div class="module-header">
+<div><span class="module-name">18 — AI Order Anomaly Detection</span> <span class="readiness ready-future">FUTURE</span> <span class="effort">~24h</span></div>
+<div class="module-tags"><span class="tag tag-moat">Moat</span><span class="tag tag-medium">Medium</span><span class="badge badge-not-started">NOT STARTED</span></div>
+</div>
+<div class="status-bar"><div class="status-fill fill-not" style="width:0%"></div></div>
+<div class="detail-grid">
+<div class="detail-box"><h4>✅ What Exists</h4><ul><li>Validation engine exists for basic checks</li><li>AI mapper patterns reusable</li></ul></div>
+<div class="detail-box"><h4>❌ What's Missing — Everything</h4><ul><li><span class="missing-ref">Historical pattern baseline</span></li><li><span class="missing-ref">Anomaly scoring model</span></li><li><span class="missing-ref">Alert integration</span></li><li><span class="missing-ref">Anomaly dashboard</span></li></ul></div>
+</div>
+</div>
+
+</div>
+</div>
+
+<!-- LAYER 5 -->
+<div class="layer" onclick="this.classList.toggle('open')">
+<div class="layer-header">
+<span class="layer-title">LAYER 5 — EXPERIENCE & PORTALS</span>
+<span class="chevron">▶</span>
+</div>
+<div class="layer-body">
+
+<div class="module">
+<div class="module-header">
+<div><span class="module-name">19 — Buyer Portal</span> <span class="readiness ready-1mo">1 MONTH</span> <span class="effort">~40h</span></div>
+<div class="module-tags"><span class="tag tag-mvp">MVP</span><span class="tag tag-critical">Critical</span><span class="badge badge-not-started">NOT STARTED</span></div>
+</div>
+<div class="status-bar"><div class="status-fill fill-not" style="width:0%"></div></div>
+<div class="detail-grid">
+<div class="detail-box"><h4>✅ What Exists</h4><ul><li>Multi-tenant architecture supports separate buyer access</li><li>Keycloak can create buyer roles</li><li>Webhook service can push events to buyers</li></ul></div>
+<div class="detail-box"><h4>❌ What's Missing — Everything</h4><ul>
+<li><span class="missing-ref">Buyer-specific portal pages</span></li>
+<li><span class="missing-ref">Read-only order/shipment/QC views</span></li>
+<li><span class="missing-ref">White-labeling per buyer</span></li>
+<li><span class="missing-ref">Buyer user management</span></li>
+<li><span class="missing-ref">Available inventory view for buyers</span></li>
+</ul></div>
+</div>
+</div>
+
+<div class="module">
+<div class="module-header">
+<div><span class="module-name">20 — Factory Owner Mobile App</span> <span class="readiness ready-future">FUTURE</span> <span class="effort">~60h</span></div>
+<div class="module-tags"><span class="tag tag-phase2">Phase 2</span><span class="tag tag-high">High</span><span class="badge badge-not-started">NOT STARTED</span></div>
+</div>
+<div class="status-bar"><div class="status-fill fill-not" style="width:0%"></div></div>
+<div class="detail-grid">
+<div class="detail-box"><h4>✅ What Exists</h4><ul><li>Portal is React — can be made responsive as PWA</li><li>API-first architecture supports mobile</li></ul></div>
+<div class="detail-box"><h4>❌ What's Missing — Everything</h4><ul><li><span class="missing-ref">React Native or PWA app shell</span></li><li><span class="missing-ref">Push notifications (FCM)</span></li><li><span class="missing-ref">Offline capability</span></li><li><span class="missing-ref">Quick-action approvals</span></li></ul></div>
+</div>
+</div>
+
+<div class="module">
+<div class="module-header">
+<div><span class="module-name">21 — Shop Floor Worker App</span> <span class="readiness ready-future">FUTURE</span> <span class="effort">~40h</span></div>
+<div class="module-tags"><span class="tag tag-phase2">Phase 2</span><span class="tag tag-medium">Medium</span><span class="badge badge-not-started">NOT STARTED</span></div>
+</div>
+<div class="status-bar"><div class="status-fill fill-not" style="width:0%"></div></div>
+<div class="detail-grid">
+<div class="detail-box"><h4>✅ What Exists</h4><ul><li>Nothing specific</li></ul></div>
+<div class="detail-box"><h4>❌ What's Missing — Everything</h4><ul><li><span class="missing-ref">PWA for low-end Android</span></li><li><span class="missing-ref">QR scan → stage complete flow</span></li><li><span class="missing-ref">Offline-first with sync</span></li><li><span class="missing-ref">Regional language support</span></li></ul></div>
+</div>
+</div>
+
+<div class="module">
+<div class="module-header">
+<div><span class="module-name">22 — Notification & Alert Engine</span> <span class="readiness ready-demo">DEMO READY</span> <span class="effort">~8h polish</span></div>
+<div class="module-tags"><span class="tag tag-platform">Platform</span><span class="tag tag-high">High</span><span class="badge badge-built">BUILT</span></div>
+</div>
+<div class="status-bar"><div class="status-fill fill-built" style="width:80%"></div></div>
+<div class="detail-grid">
+<div class="detail-box"><h4>✅ What Exists — Strong</h4><ul>
+<li><span class="file-ref">apps/api/src/services/notification-service.ts</span> — Multi-channel notifications</li>
+<li><span class="file-ref">apps/api/src/routes/notifications.ts</span> — Notification API</li>
+<li>BullMQ job queue for async delivery</li>
+<li>Approval notifications integrated</li>
+</ul></div>
+<div class="detail-box"><h4>❌ Minor Gaps</h4><ul>
+<li><span class="missing-ref">WhatsApp delivery channel</span> — currently email/in-app only</li>
+<li><span class="missing-ref">SMS channel</span></li>
+<li><span class="missing-ref">Per-role notification preferences UI</span></li>
+</ul></div>
+</div>
+</div>
+
+</div>
+</div>
+
+<!-- LAYER 6 -->
+<div class="layer" onclick="this.classList.toggle('open')">
+<div class="layer-header">
+<span class="layer-title">LAYER 6 — PLATFORM & MULTI-TENANCY</span>
+<span class="chevron">▶</span>
+</div>
+<div class="layer-body">
+
+<div class="module">
+<div class="module-header">
+<div><span class="module-name">23 — Multi-Factory Dashboard</span> <span class="readiness ready-future">FUTURE</span> <span class="effort">~24h</span></div>
+<div class="module-tags"><span class="tag tag-phase2">Phase 2</span><span class="tag tag-high">High</span><span class="badge badge-stub">STUB</span></div>
+</div>
+<div class="status-bar"><div class="status-fill fill-stub" style="width:15%"></div></div>
+<div class="detail-grid">
+<div class="detail-box"><h4>✅ What Exists</h4><ul><li>Multi-tenant architecture with RLS</li><li>Admin routes exist</li><li>Dashboard page exists (single factory)</li></ul></div>
+<div class="detail-box"><h4>❌ What's Missing</h4><ul><li><span class="missing-ref">Cross-factory aggregation queries</span></li><li><span class="missing-ref">Group admin role</span></li><li><span class="missing-ref">Consolidated view UI</span></li></ul></div>
+</div>
+</div>
+
+<div class="module">
+<div class="module-header">
+<div><span class="module-name">24 — User & Role Management</span> <span class="readiness ready-demo">DEMO READY</span> <span class="effort">~4h polish</span></div>
+<div class="module-tags"><span class="tag tag-platform">Platform</span><span class="tag tag-high">High</span><span class="badge badge-built">BUILT</span></div>
+</div>
+<div class="status-bar"><div class="status-fill fill-built" style="width:85%"></div></div>
+<div class="detail-grid">
+<div class="detail-box"><h4>✅ What Exists — Strong</h4><ul>
+<li><span class="file-ref">apps/api/src/middleware/auth.ts</span> — JWT verification</li>
+<li><span class="file-ref">apps/api/src/middleware/tenant-context.ts</span> — Per-request tenant isolation</li>
+<li><span class="file-ref">apps/api/src/middleware/feature-gate.ts</span> — Feature flag per role</li>
+<li>Keycloak 24 configured for SSO/OIDC</li>
+<li><span class="file-ref">apps/portal/src/pages/Admin.tsx</span> — Admin page</li>
+<li>RLS policies on every table</li>
+</ul></div>
+<div class="detail-box"><h4>❌ Minor Gaps</h4><ul>
+<li><span class="missing-ref">Role management UI</span> — Keycloak admin only today</li>
+<li><span class="missing-ref">Granular module-level permissions</span></li>
+</ul></div>
+</div>
+</div>
+
+<div class="module">
+<div class="module-header">
+<div><span class="module-name">25 — Supplier & Sub-contractor Network</span> <span class="readiness ready-future">FUTURE</span> <span class="effort">~40h</span></div>
+<div class="module-tags"><span class="tag tag-phase2">Phase 2</span><span class="tag tag-medium">Medium</span><span class="badge badge-not-started">NOT STARTED</span></div>
+</div>
+<div class="status-bar"><div class="status-fill fill-not" style="width:0%"></div></div>
+<div class="detail-grid">
+<div class="detail-box"><h4>✅ What Exists</h4><ul><li>Partner system migration (004) exists</li><li>Multi-tenant architecture supports sub-tenants</li></ul></div>
+<div class="detail-box"><h4>❌ What's Missing — Everything</h4><ul><li><span class="missing-ref">Sub-order data model</span></li><li><span class="missing-ref">Sub-contractor portal</span></li><li><span class="missing-ref">Upstream delivery tracking</span></li><li><span class="missing-ref">Viral onboarding flow</span></li></ul></div>
+</div>
+</div>
+
+<div class="module">
+<div class="module-header">
+<div><span class="module-name">26 — Subscription & Billing Engine</span> <span class="readiness ready-1mo">1 MONTH</span> <span class="effort">~24h</span></div>
+<div class="module-tags"><span class="tag tag-platform">Platform</span><span class="tag tag-critical">Critical</span><span class="badge badge-not-started">NOT STARTED</span></div>
+</div>
+<div class="status-bar"><div class="status-fill fill-not" style="width:0%"></div></div>
+<div class="detail-grid">
+<div class="detail-box"><h4>✅ What Exists</h4><ul><li>Feature flag system for tier gating</li></ul></div>
+<div class="detail-box"><h4>❌ What's Missing — Everything</h4><ul>
+<li><span class="missing-ref">Razorpay subscription integration</span></li>
+<li><span class="missing-ref">Usage metering</span></li>
+<li><span class="missing-ref">Dunning/failed payment handling</span></li>
+<li><span class="missing-ref">Monthly invoice auto-generation</span></li>
+<li>Note: Not needed for trial — bill manually first</li>
+</ul></div>
+</div>
+</div>
+
+<div class="module">
+<div class="module-header">
+<div><span class="module-name">27 — Monitoring & Observability</span> <span class="readiness ready-demo">DEMO READY</span> <span class="effort">~4h polish</span></div>
+<div class="module-tags"><span class="tag tag-platform">Platform</span><span class="tag tag-high">High</span><span class="badge badge-built">BUILT</span></div>
+</div>
+<div class="status-bar"><div class="status-fill fill-built" style="width:90%"></div></div>
+<div class="detail-grid">
+<div class="detail-box"><h4>✅ What Exists — Strong</h4><ul>
+<li><span class="file-ref">packages/observability/</span> — Pino structured logging + PII redaction</li>
+<li><span class="file-ref">docker/docker-compose.yml</span> — Prometheus, Grafana, Jaeger all configured</li>
+<li>Per-tenant health scoring via health-score service</li>
+<li>Distributed tracing via Jaeger</li>
+<li>Circuit breaker patterns (Opossum)</li>
+</ul></div>
+<div class="detail-box"><h4>❌ Minor Gaps</h4><ul>
+<li><span class="missing-ref">Per-factory health dashboard in Grafana</span></li>
+<li><span class="missing-ref">Alert rules for stuck orders</span></li>
+</ul></div>
+</div>
+</div>
+
+</div>
+</div>
+
+<!-- TRIAL READINESS -->
+<div class="trial-section">
+<h2>🎯 FIRST CUSTOMER TRIAL — What Must Work</h2>
+<p style="color:var(--muted); margin-bottom: 16px;">For a Hyderabad pharma/auto/textile factory running a 2-week trial, these 12 modules are essential. The rest can wait.</p>
+
+<table class="trial-table">
+<thead><tr><th>#</th><th>Module</th><th>Status</th><th>Effort to Trial-Ready</th><th>Why Essential</th></tr></thead>
+<tbody>
+<tr><td>01</td><td>ERP Connector Library</td><td><span class="badge badge-partial">PARTIAL</span></td><td><span class="effort">20h</span></td><td>Without Tally connection, nothing works</td></tr>
+<tr><td>02</td><td>EDI Engine</td><td><span class="badge badge-partial">PARTIAL</span></td><td><span class="effort">16h</span></td><td>Core value prop — auto EDI from Tally</td></tr>
+<tr><td>05</td><td>Order-to-Cash</td><td><span class="badge badge-partial">PARTIAL</span></td><td><span class="effort">24h</span></td><td>PO intake → invoice is the basic flow</td></tr>
+<tr><td>08</td><td>Dispatch & Logistics</td><td><span class="badge badge-partial">PARTIAL</span></td><td><span class="effort">20h</span></td><td>ASN/ship notice = highest chargeback risk</td></tr>
+<tr><td>11</td><td>GST & Export Compliance</td><td><span class="badge badge-not-started">NOT STARTED</span></td><td><span class="effort">36h</span></td><td>Every Indian exporter needs e-way bill + e-invoice</td></tr>
+<tr><td>12</td><td>Document Management</td><td><span class="badge badge-stub">STUB</span></td><td><span class="effort">16h</span></td><td>COA/COC sharing is daily factory need</td></tr>
+<tr><td>14</td><td>Audit Log</td><td><span class="badge badge-built">BUILT</span></td><td><span class="effort">4h</span></td><td>Shows compliance credibility</td></tr>
+<tr><td>15</td><td>AI Field Mapper</td><td><span class="badge badge-built">BUILT</span></td><td><span class="effort">8h</span></td><td>Wow factor — maps Tally→EDI in 3 hours</td></tr>
+<tr><td>19</td><td>Buyer Portal</td><td><span class="badge badge-not-started">NOT STARTED</span></td><td><span class="effort">40h</span></td><td>Show the buyer side — retention hook</td></tr>
+<tr><td>22</td><td>Notification Engine</td><td><span class="badge badge-built">BUILT</span></td><td><span class="effort">8h</span></td><td>WhatsApp/email alerts make it feel alive</td></tr>
+<tr><td>24</td><td>User & Role Management</td><td><span class="badge badge-built">BUILT</span></td><td><span class="effort">4h</span></td><td>Multi-user access from Day 1</td></tr>
+<tr><td>27</td><td>Monitoring</td><td><span class="badge badge-built">BUILT</span></td><td><span class="effort">4h</span></td><td>Shows professional-grade platform</td></tr>
+</tbody>
+<tfoot><tr><td colspan="3" style="font-weight:700; padding-top:12px;">TOTAL EFFORT TO TRIAL-READY</td><td colspan="2" style="font-weight:700; padding-top:12px; color:var(--blue);">~200 hours (~5 weeks focused work)</td></tr></tfoot>
+</table>
+</div>
+
+<!-- WHAT'S COVERED vs NOT -->
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:32px 0;">
+<div style="background:var(--surface); border:1px solid var(--green); border-radius:8px; padding:20px;">
+<h3 style="color:var(--green); margin-bottom:12px;">✅ STRONGEST AREAS (Demo Today)</h3>
+<p style="font-size:13px;">These can be shown to a factory owner right now:</p>
+<ul style="font-size:13px; margin-top:8px; list-style:none;">
+<li style="padding:4px 0;">→ AI Field Mapper — "Watch Claude map your Tally fields in 3 hours"</li>
+<li style="padding:4px 0;">→ EDI Engine — generate X12 850/856/810 documents</li>
+<li style="padding:4px 0;">→ Audit Trail — "Every action logged, SHA-256 hash chain"</li>
+<li style="padding:4px 0;">→ User & Role Management — Keycloak SSO, RLS isolation</li>
+<li style="padding:4px 0;">→ Monitoring — Grafana dashboards, Jaeger tracing</li>
+<li style="padding:4px 0;">→ Shadow Mode — run EDI without sending, show risk report</li>
+<li style="padding:4px 0;">→ Chargeback Tracker — "Here's ₹X we saved you"</li>
+<li style="padding:4px 0;">→ Template System — reusable Tally→Buyer mappings</li>
+<li style="padding:4px 0;">→ Onboarding Wizard — 9-step guided setup</li>
+</ul>
+</div>
+<div style="background:var(--surface); border:1px solid var(--red); border-radius:8px; padding:20px;">
+<h3 style="color:var(--red); margin-bottom:12px;">❌ BIGGEST GAPS (Must Build)</h3>
+<p style="font-size:13px;">These are missing and essential for real factory adoption:</p>
+<ul style="font-size:13px; margin-top:8px; list-style:none;">
+<li style="padding:4px 0;">→ WhatsApp Integration — #1 channel for Indian SMEs</li>
+<li style="padding:4px 0;">→ GST/E-way Bill Compliance — legal requirement</li>
+<li style="padding:4px 0;">→ Buyer Portal — the retention hook</li>
+<li style="padding:4px 0;">→ QC Trail — pharma/auto factories need this for audits</li>
+<li style="padding:4px 0;">→ Inventory Sync — prevents #1 buyer complaint</li>
+<li style="padding:4px 0;">→ Real Tally XML Testing — adapters untested against real data</li>
+<li style="padding:4px 0;">→ E-way Bill API — every dispatch needs this</li>
+<li style="padding:4px 0;">→ Document Upload/Search — factories need COA/COC management</li>
+<li style="padding:4px 0;">→ Subscription/Billing — need before charging money</li>
+</ul>
+</div>
+</div>
+
+<div class="summary-box">
+<h3 style="margin-bottom:12px;">🗺️ RECOMMENDED BUILD ORDER FOR HYDERABAD TRIAL</h3>
+<p style="font-size:13px; margin-bottom:8px;"><strong>Week 1-2:</strong> Tally adapter real-data testing + GST e-invoice/e-way bill integration + Document management (COA upload). These let a pharma factory see immediate compliance value.</p>
+<p style="font-size:13px; margin-bottom:8px;"><strong>Week 3-4:</strong> Buyer Portal (read-only order/shipment/QC view) + WhatsApp notification channel + Inventory sync from Tally. Now the buyer side sees value too.</p>
+<p style="font-size:13px; margin-bottom:8px;"><strong>Week 5:</strong> Polish Order-to-Cash flow end-to-end + Dispatch with auto-ASN. Make the core workflow feel seamless.</p>
+<p style="font-size:13px;"><strong>Then trial:</strong> Shadow Mode for 2 weeks at one Jeedimetla pharma exporter. Generate the risk report. The chargeback savings number closes the deal.</p>
+</div>
+
+</div>
+
+<script>
+// Open first layer by default, close others on click
+document.querySelectorAll('.layer').forEach((layer, i) => {
+  if (i === 0) layer.classList.add('open');
+});
+</script>
+</body>
+</html>

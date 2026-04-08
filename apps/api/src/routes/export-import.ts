@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { authenticate } from '../middleware/auth.js';
 import { tenantContext, getRequestContext } from '../middleware/tenant-context.js';
 import { validate, getValidatedQuery } from '../middleware/validate.js';
+import type { PoolClient } from '@fc/database';
 import { withTenantClient } from '@fc/database';
 
 export const exportRouter = Router();
@@ -31,7 +32,7 @@ exportRouter.get('/', validate({ query: ExportSchema }), async (req, res, next) 
     const q = getValidatedQuery<z.infer<typeof ExportSchema>>(req);
     const table = TABLE_MAP[q.entity_type];
 
-    const data = await withTenantClient(ctx, async (client) => {
+    const data = await withTenantClient(ctx, async (client: PoolClient) => {
       const params: unknown[] = [];
       let sql = `SELECT * FROM ${table} WHERE 1=1`;
       let idx = 1;

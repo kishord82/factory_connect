@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { authenticate } from '../middleware/auth.js';
 import { tenantContext, getRequestContext } from '../middleware/tenant-context.js';
 import { validate, getValidatedQuery } from '../middleware/validate.js';
+import type { PoolClient } from '@fc/database';
 import { withTenantClient } from '@fc/database';
 
 export const analyticsRouter = Router();
@@ -20,7 +21,7 @@ const DateRangeQuery = z.object({
 analyticsRouter.get('/overview', async (req, res, next) => {
   try {
     const ctx = getRequestContext(req);
-    const result = await withTenantClient(ctx, async (client) => {
+    const result = await withTenantClient(ctx, async (client: PoolClient) => {
       const [ordersByStatus, shipmentsByStatus, topBuyers, revenueByMonth] = await Promise.all([
         client.query(
           `SELECT status, COUNT(*)::int as count FROM canonical_orders GROUP BY status ORDER BY count DESC`,
@@ -75,7 +76,7 @@ analyticsRouter.get('/overview', async (req, res, next) => {
 analyticsRouter.get('/dashboard', async (req, res, next) => {
   try {
     const ctx = getRequestContext(req);
-    const stats = await withTenantClient(ctx, async (client) => {
+    const stats = await withTenantClient(ctx, async (client: PoolClient) => {
       const [orders, shipments, invoices, connections] = await Promise.all([
         client.query('SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE status = \'DRAFT\') as draft, COUNT(*) FILTER (WHERE status = \'CONFIRMED\') as confirmed FROM canonical_orders'),
         client.query('SELECT COUNT(*) as total FROM canonical_shipments'),
@@ -98,7 +99,7 @@ analyticsRouter.get('/order-volume', validate({ query: DateRangeQuery }), async 
   try {
     const ctx = getRequestContext(req);
     const q = getValidatedQuery<z.infer<typeof DateRangeQuery>>(req);
-    const result = await withTenantClient(ctx, async (client) => {
+    const result = await withTenantClient(ctx, async (client: PoolClient) => {
       const params: unknown[] = [];
       let sql = `SELECT DATE(created_at) as date, COUNT(*) as count FROM canonical_orders WHERE 1=1`;
       let idx = 1;
@@ -116,7 +117,7 @@ analyticsRouter.get('/order-volume', validate({ query: DateRangeQuery }), async 
 analyticsRouter.get('/saga-health', async (req, res, next) => {
   try {
     const ctx = getRequestContext(req);
-    const result = await withTenantClient(ctx, async (client) => {
+    const result = await withTenantClient(ctx, async (client: PoolClient) => {
       const r = await client.query(
         `SELECT current_step, COUNT(*) as count,
          COUNT(*) FILTER (WHERE step_deadline < NOW()) as breached
@@ -133,7 +134,7 @@ analyticsRouter.get('/escalations', validate({ query: DateRangeQuery }), async (
   try {
     const ctx = getRequestContext(req);
     const q = getValidatedQuery<z.infer<typeof DateRangeQuery>>(req);
-    const result = await withTenantClient(ctx, async (client) => {
+    const result = await withTenantClient(ctx, async (client: PoolClient) => {
       const params: unknown[] = [];
       let sql = `SELECT trigger_type, COUNT(*) as count, MAX(created_at) as latest FROM escalation_log WHERE 1=1`;
       let idx = 1;

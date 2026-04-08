@@ -4,11 +4,16 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "declaration": false,
-    "declarationMap": false
+    "declarationMap": false,
+    "paths": {
+      "@fc/shared": ["../../packages/shared/src/index.ts"],
+      "@fc/database": ["../../packages/database/src/index.ts"],
+      "@fc/observability": ["../../packages/observability/src/index.ts"]
+    },
+    "skipLibCheck": true,
+    "noImplicitReturns": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
   },
-  "include": ["src/**/*.ts"],
-  "references": [
-    { "path": "../../packages/shared" },
-    { "path": "../../packages/database" }
-  ]
+  "include": ["src/**/*.ts"]
 }

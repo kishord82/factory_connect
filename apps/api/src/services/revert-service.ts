@@ -2,6 +2,7 @@
  * B15: Revert service — safely revert entity changes using audit log.
  */
 import type { RequestContext } from '@fc/shared';
+import type { PoolClient } from '@fc/database';
 import { FcError } from '@fc/shared';
 import { withTenantTransaction, findOne } from '@fc/database';
 import { analyzeOrderImpact } from './impact-analyzer.js';
@@ -32,7 +33,7 @@ export async function revertOrder(
     }
   }
 
-  return withTenantTransaction(ctx, async (client) => {
+  return withTenantTransaction(ctx, async (client: PoolClient) => {
     // Find the audit log entry to revert to
     let auditEntry;
     if (options.targetAuditId) {

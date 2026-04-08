@@ -78,3 +78,6 @@ export interface RequestContext {
   correlationId: string;
   role: string;
 }
+
+// CA Platform types
+export * from './compliance.js';

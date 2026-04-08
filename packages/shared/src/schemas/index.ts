@@ -462,3 +462,6 @@ export type FieldMapping = z.infer<typeof FieldMappingSchema>;
 export type MappingConfig = z.infer<typeof MappingConfigSchema>;
 export type ResyncRequestCreate = z.infer<typeof ResyncRequestCreateSchema>;
 export type ResyncRequest = z.infer<typeof ResyncRequestSchema>;
+
+// CA Platform schemas
+export * from './compliance/index.js';

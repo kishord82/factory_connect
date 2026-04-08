@@ -1,0 +1,68 @@
+# FactoryConnect API Service — Production Build
+# Multi-stage build targeting linux/arm64
+
+# Build stage: Compile TypeScript to JavaScript
+FROM --platform=linux/arm64 node:22-alpine AS builder
+
+RUN apk add --no-cache python3 make
+
+WORKDIR /build
+
+# Copy pnpm configuration
+COPY pnpm-workspace.yaml .npmrc ./
+
+# Install pnpm
+RUN npm install -g pnpm@9.15.4
+
+# Copy root package.json
+COPY package.json ./
+
+# Copy all workspace packages and apps
+COPY packages ./packages
+COPY apps/api ./apps/api
+
+# Install dependencies (production only, skip devDependencies)
+RUN pnpm install --frozen-lockfile --prod
+
+# Build all packages in dependency order: shared → database → observability → api
+RUN pnpm --filter @fc/shared run build
+RUN pnpm --filter @fc/database run build
+RUN pnpm --filter @fc/observability run build
+RUN pnpm --filter @fc/api run build
+
+# Production stage: Minimal runtime image
+FROM --platform=linux/arm64 node:22-alpine
+
+# Install dumb-init for proper signal handling
+RUN apk add --no-cache dumb-init
+
+WORKDIR /app
+
+# Copy package files for runtime
+COPY --from=builder /build/pnpm-workspace.yaml .
+COPY --from=builder /build/.npmrc .
+
+# Copy built packages and apps
+COPY --from=builder /build/packages ./packages
+COPY --from=builder /build/apps/api/dist ./apps/api/dist
+COPY --from=builder /build/apps/api/package.json ./apps/api/
+
+# Copy node_modules (includes production dependencies only)
+COPY --from=builder /build/node_modules ./node_modules
+
+# Create non-root user for security
+RUN addgroup -g 1000 fc && adduser -D -u 1000 -G fc fc
+USER fc
+
+# Expose port
+EXPOSE 3000
+
+# Health check: curl localhost:3000/health (assumes /health endpoint exists)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3000/health', (r) => { if (r.statusCode !== 200) throw new Error(r.statusCode); })" || exit 1
+
+# Use dumb-init to handle signals properly
+ENTRYPOINT ["dumb-init", "--"]
+
+# Start API server
+CMD ["node", "apps/api/dist/index.js"]

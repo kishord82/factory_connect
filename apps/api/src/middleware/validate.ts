@@ -51,6 +51,11 @@ export function validate(schemas: ValidationSchemas) {
   };
 }
 
+/** Extract validated body from request. */
+export function getValidatedBody<T>(req: Request): T {
+  return req.body as T;
+}
+
 /** Extract validated query from request (set by validate middleware). */
 export function getValidatedQuery<T>(req: Request): T {
   const data = (req as unknown as Record<string, unknown>).validatedQuery as T | undefined;

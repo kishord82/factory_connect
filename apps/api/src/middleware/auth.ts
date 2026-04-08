@@ -13,9 +13,11 @@ import { getConfig } from '../config.js';
 
 export interface AuthPayload {
   sub: string;
-  factory_id: string;
+  factory_id?: string; // FactoryConnect tenants
+  ca_firm_id?: string; // CA Platform tenants
   role: string;
   email?: string;
+  subscription_tier?: string; // CA Platform subscription tier
 }
 
 declare global {
@@ -48,7 +50,7 @@ export function authenticate(req: Request, _res: Response, next: NextFunction): 
       // In production, use jwks-rsa to fetch public keys from Keycloak
       // For now, this will be enhanced when Keycloak is configured
       const decoded = jwt.decode(token) as AuthPayload | null;
-      if (!decoded?.factory_id || !decoded?.sub) {
+      if (!decoded?.sub || (!decoded?.factory_id && !decoded?.ca_firm_id)) {
         throw new Error('Invalid token claims');
       }
       req.auth = decoded;
@@ -56,7 +58,7 @@ export function authenticate(req: Request, _res: Response, next: NextFunction): 
       // Dev/Test: HS256 with shared secret
       const secret = process.env.JWT_SECRET || 'fc-dev-secret-do-not-use-in-prod';
       const decoded = jwt.verify(token, secret) as AuthPayload;
-      if (!decoded.factory_id || !decoded.sub) {
+      if (!decoded.sub || (!decoded.factory_id && !decoded.ca_firm_id)) {
         throw new Error('Invalid token claims');
       }
       req.auth = decoded;

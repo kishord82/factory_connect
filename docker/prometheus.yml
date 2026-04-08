@@ -1,0 +1,149 @@
+###############################################################################
+# FactoryConnect — Prometheus Configuration
+# Scrape targets: API, Portal, Redis, Postgres, Vault, MinIO, Keycloak
+###############################################################################
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'factoryconnect-prod'
+    environment: 'production'
+
+# Alertmanager configuration (optional)
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+rule_files:
+  # - "alerts.yml"
+
+scrape_configs:
+  # ─── API Gateway ──────────────────────────────────────────────────
+  - job_name: 'api-gateway'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['api-1:3000', 'api-2:3000']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+      - source_labels: [__scheme__]
+        target_label: __scheme__
+        replacement: 'http'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+
+  # ─── Portal (React) ───────────────────────────────────────────────
+  # Assumes portal exposes metrics at /metrics (if instrumented)
+  - job_name: 'portal'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['portal:3001']
+    scrape_interval: 30s
+    scrape_timeout: 10s
+
+  # ─── PostgreSQL ───────────────────────────────────────────────────
+  # Requires postgres_exporter sidecar or direct pg_stat_statements
+  # For now, assume postgres:5432 with built-in metrics endpoint
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres:5432']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        regex: '([^:]+)(?::\d+)?'
+        replacement: '${1}'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+
+  # ─── Redis ───────────────────────────────────────────────────────
+  # Requires redis_exporter sidecar
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+    scrape_interval: 30s
+    scrape_timeout: 10s
+
+  # ─── Keycloak ────────────────────────────────────────────────────
+  # Keycloak has built-in metrics endpoint at /metrics
+  - job_name: 'keycloak'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['keycloak:8080']
+    scrape_interval: 30s
+    scrape_timeout: 10s
+
+  # ─── HashiCorp Vault ─────────────────────────────────────────────
+  # Requires Vault telemetry enabled
+  - job_name: 'vault'
+    metrics_path: '/v1/sys/metrics'
+    bearer_token: '${VAULT_DEV_ROOT_TOKEN_ID}'
+    static_configs:
+      - targets: ['vault:8200']
+    scheme: 'http'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+
+  # ─── MinIO ───────────────────────────────────────────────────────
+  # MinIO metrics endpoint: /minio/v2/metrics/cluster
+  - job_name: 'minio'
+    bearer_token: ''
+    metrics_path: '/minio/v2/metrics/cluster'
+    static_configs:
+      - targets: ['minio:9000']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    scheme: 'http'
+
+  # ─── OpenAS2 (EDI AS2 Sidecar) ───────────────────────────────────
+  - job_name: 'openas2'
+    static_configs:
+      - targets: ['openas2:4080']
+    metrics_path: '/metrics'
+    scrape_interval: 60s
+    scrape_timeout: 10s
+
+  # ─── Prometheus Self-Monitoring ──────────────────────────────────
+  - job_name: 'prometheus'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['localhost:9090']
+    scrape_interval: 15s
+    scrape_timeout: 10s
+
+  # ─── Caddy (Reverse Proxy) ───────────────────────────────────────
+  # Caddy metrics endpoint (if admin API is enabled)
+  - job_name: 'caddy'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['caddy:2019']
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    scheme: 'http'
+
+# Service discovery via DNS (optional, for scaling)
+# Uncomment for k8s or consul-based service discovery:
+#
+# - job_name: 'kubernetes-pods'
+#   kubernetes_sd_configs:
+#     - role: pod
+#   relabel_configs:
+#     - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+#       action: keep
+#       regex: true
+#     - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+#       action: replace
+#       target_label: __metrics_path__
+#       regex: (.+)
+#     - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+#       action: replace
+#       regex: ([^:]+)(?::\d+)?;(\d+)
+#       replacement: $1:$2
+#       target_label: __address__

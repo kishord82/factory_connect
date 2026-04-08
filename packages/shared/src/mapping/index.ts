@@ -1,17 +1,46 @@
 export type {
   FieldType,
+  FieldMapping,
   MappingFieldDef,
   TransformRule,
   TransformType,
+  MappingConfig,
   MappingConfigDef,
   MappingContext,
   MappingResult,
   MappingError,
+  ValidationError,
   SourceAdapter,
 } from './types.js';
 
-export { applyMapping, getNestedValue, setNestedValue, getLeafPaths } from './engine.js';
-export { applyTransform, getAvailableTransforms } from './transform.js';
+export {
+  applyMapping,
+  validateMappingConfig,
+  validateRequiredFields,
+  getNestedValue,
+  setNestedValue,
+  getLeafPaths,
+} from './engine.js';
+
+export {
+  applyTransform,
+  applyTransformChain,
+  getAvailableTransforms,
+  dateFormat,
+  concatenate,
+  split,
+  valueMap,
+  conditional,
+  arithmetic,
+  defaultValue,
+  uppercase,
+  lowercase,
+  trim,
+  pad,
+  substring,
+  regexReplace,
+} from './transform.js';
+
 export {
   registerProvider,
   getProvider,
@@ -19,5 +48,8 @@ export {
   heuristicMap,
   generateMappingSuggestions,
   suggestionsToMappings,
+  createClaudeProvider,
+  createTestProvider,
 } from './ai-mapper.js';
+
 export type { LlmProvider, MappingSuggestion } from './ai-mapper.js';

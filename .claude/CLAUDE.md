@@ -141,19 +141,50 @@ import { validateOrder } from './validators';
 
 ## 5. DATABASE RULES
 
-### 5.1 Raw SQL Only
+### 5.1 Raw SQL Only — Explicit Column Names (NO SELECT *)
 ```typescript
-// ✅ CORRECT — raw SQL with parameterized queries
+// ✅ CORRECT — raw SQL with parameterized queries AND explicit columns
 const result = await pool.query(
-  'SELECT * FROM canonical_orders WHERE factory_id = $1 AND status = $2',
+  `SELECT id, factory_id, buyer_po_number, order_date, status, created_at
+   FROM orders.canonical_orders
+   WHERE factory_id = $1 AND status = $2`,
   [factoryId, status]
+);
+
+// ❌ WRONG — SELECT * (adding a column breaks code, pulls unnecessary data)
+const result = await pool.query(
+  'SELECT * FROM canonical_orders WHERE factory_id = $1',
+  [factoryId]
 );
 
 // ❌ WRONG — no ORM, no query builder
 const result = await prisma.canonicalOrder.findMany({ where: { factoryId } });
 ```
+**MANDATORY**: Every SELECT query MUST list columns explicitly. `SELECT *` is NEVER allowed.
+- Adding a new column to a table must NOT break existing queries or code
+- Each query should only fetch columns that the calling code actually uses
+- Use schema-qualified table names: `orders.canonical_orders`, `core.factories`, etc.
 
-### 5.2 RLS — Every Query Sets Tenant
+### 5.2 Database Schemas — 7 Schema Split
+All tables MUST be in their designated schema. Never use the `public` schema.
+
+| Schema | Purpose | Key Tables |
+|--------|---------|------------|
+| `core` | Factory & connection master data | factories, buyers, connections, item_master, rate_cards, connector_catalog, connector_requests, barcode_configs |
+| `orders` | Order processing & fulfillment | canonical_orders, canonical_order_line_items, canonical_shipments, shipment_packs, canonical_invoices, canonical_returns, message_log |
+| `workflow` | Saga, outbox & resync engine | order_sagas, outbox, resync_requests, resync_items, routing_rules |
+| `compliance` | CA platform & filings | ca_firms, ca_firm_staff, ca_clients, compliance_filings, compliance_exceptions, reconciliation_sessions, reconciliation_items, document_requests, document_templates, notices, client_health_scores, communication_log |
+| `audit` | Security, audit & history | audit_log, record_history, staff_activity_log, impersonation_sessions |
+| `ai` | LLM, AI & mapping | llm_cache, llm_usage_log, ai_fix_log, mapping_configs |
+| `platform` | Config, features, partners, notifications | app_config, feature_flags, factory_preferences, notification_templates, calendar_entries, operational_profile, escalation_rules, escalation_log, webhook_subscriptions, webhook_deliveries, relationship_registry, partners, partner_referrals, commission_ledger, subscription_tiers |
+
+**Rules:**
+- Always use schema-qualified names in queries: `orders.canonical_orders`, not just `canonical_orders`
+- RLS policies apply per-schema: `core` + `orders` = factory_id scoped, `compliance` = ca_firm_id scoped
+- `SET search_path` is NOT allowed — always use explicit schema prefix
+- Migrations must specify schema in CREATE TABLE statements
+
+### 5.4 RLS — Every Query Sets Tenant
 ```typescript
 // Every request MUST set tenant context before any query
 await client.query("SET LOCAL app.current_tenant = $1", [tenantId]);
@@ -161,10 +192,10 @@ await client.query("SET LOCAL app.current_user = $1", [userId]);
 await client.query("SET LOCAL app.correlation_id = $1", [correlationId]);
 ```
 
-### 5.3 Transactions for Multi-Table Writes
+### 5.5 Transactions for Multi-Table Writes
 All multi-table writes use explicit transactions (see Transactional Outbox pattern in Architecture Decisions History doc).
 
-### 5.4 Migrations
+### 5.6 Migrations
 ```bash
 # Create migration
 dbmate new "add_canonical_orders_table"

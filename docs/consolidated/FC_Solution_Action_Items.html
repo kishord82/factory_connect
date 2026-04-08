@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FactoryConnect — Complete Solution Action Items</title>
+<style>
+  :root {
+    --red: #DC2626; --red-bg: #FEF2F2; --red-border: #FECACA;
+    --yellow: #D97706; --yellow-bg: #FFFBEB; --yellow-border: #FDE68A;
+    --green: #059669; --green-bg: #ECFDF5; --green-border: #A7F3D0;
+    --blue: #2563EB; --blue-bg: #EFF6FF; --blue-border: #BFDBFE;
+    --purple: #7C3AED; --purple-bg: #F5F3FF; --purple-border: #DDD6FE;
+    --gray: #374151; --gray-bg: #F9FAFB; --gray-border: #E5E7EB;
+    --dark: #111827; --muted: #6B7280;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #F3F4F6; color: var(--dark); line-height: 1.6; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+  /* Header */
+  .header { background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%); color: white; padding: 48px 40px; border-radius: 16px; margin-bottom: 32px; }
+  .header h1 { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+  .header .subtitle { font-size: 18px; color: #94A3B8; margin-bottom: 24px; }
+  .header .meta { display: flex; gap: 24px; flex-wrap: wrap; font-size: 13px; color: #CBD5E1; }
+  .header .meta span { background: rgba(255,255,255,0.1); padding: 4px 12px; border-radius: 6px; }
+
+  /* Stats bar */
+  .stats-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 32px; }
+  .stat-card { background: white; border-radius: 12px; padding: 20px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .stat-card .number { font-size: 36px; font-weight: 800; }
+  .stat-card .label { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .stat-card.redesign .number { color: var(--yellow); }
+  .stat-card.new .number { color: var(--green); }
+  .stat-card.cut .number { color: var(--red); }
+  .stat-card.keep .number { color: var(--blue); }
+  .stat-card.critical .number { color: var(--purple); }
+
+  /* Navigation */
+  .nav { background: white; border-radius: 12px; padding: 16px 20px; margin-bottom: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+  .nav-title { font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .nav-links { display: flex; flex-wrap: wrap; gap: 8px; }
+  .nav-links a { text-decoration: none; font-size: 13px; padding: 6px 14px; border-radius: 6px; color: var(--dark); background: var(--gray-bg); border: 1px solid var(--gray-border); transition: all 0.2s; }
+  .nav-links a:hover { background: var(--blue-bg); border-color: var(--blue-border); color: var(--blue); }
+
+  /* Sections */
+  .section { background: white; border-radius: 16px; padding: 32px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .section h2 { font-size: 22px; font-weight: 800; margin-bottom: 4px; display: flex; align-items: center; gap: 10px; }
+  .section .section-desc { font-size: 14px; color: var(--muted); margin-bottom: 24px; }
+
+  /* Action Items */
+  .action-item { border: 1px solid var(--gray-border); border-radius: 12px; padding: 20px; margin-bottom: 16px; transition: all 0.2s; }
+  .action-item:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+  .action-item.redesign { border-left: 4px solid var(--yellow); }
+  .action-item.new-build { border-left: 4px solid var(--green); }
+  .action-item.cut { border-left: 4px solid var(--red); }
+  .action-item.keep { border-left: 4px solid var(--blue); }
+  .action-item.critical { border-left: 4px solid var(--purple); }
+
+  .action-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
+  .action-title { font-size: 16px; font-weight: 700; }
+  .action-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.3px; }
+  .badge.redesign { background: var(--yellow-bg); color: var(--yellow); border: 1px solid var(--yellow-border); }
+  .badge.new-build { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+  .badge.cut { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
+  .badge.keep { background: var(--blue-bg); color: var(--blue); border: 1px solid var(--blue-border); }
+  .badge.critical { background: var(--purple-bg); color: var(--purple); border: 1px solid var(--purple-border); }
+
+  .action-body { font-size: 14px; color: #4B5563; }
+  .action-body p { margin-bottom: 8px; }
+
+  .what-exists { background: var(--gray-bg); border-radius: 8px; padding: 12px 16px; margin: 10px 0; font-size: 13px; }
+  .what-exists .label { font-weight: 700; color: var(--dark); margin-bottom: 4px; }
+  .what-changes { background: var(--yellow-bg); border-radius: 8px; padding: 12px 16px; margin: 10px 0; font-size: 13px; }
+  .what-changes .label { font-weight: 700; color: var(--yellow); margin-bottom: 4px; }
+  .what-new { background: var(--green-bg); border-radius: 8px; padding: 12px 16px; margin: 10px 0; font-size: 13px; }
+  .what-new .label { font-weight: 700; color: var(--green); margin-bottom: 4px; }
+  .what-cut { background: var(--red-bg); border-radius: 8px; padding: 12px 16px; margin: 10px 0; font-size: 13px; }
+  .what-cut .label { font-weight: 700; color: var(--red); margin-bottom: 4px; }
+
+  .files { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .files span { background: #F3F4F6; padding: 2px 6px; border-radius: 4px; display: inline-block; margin: 2px 0; }
+
+  .consensus { background: #F0F9FF; border: 1px solid #BAE6FD; border-radius: 8px; padding: 10px 14px; margin-top: 10px; font-size: 13px; }
+  .consensus strong { color: #0369A1; }
+
+  /* Tech stack table */
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+  th { background: var(--gray-bg); text-align: left; padding: 10px 14px; font-weight: 700; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.3px; border-bottom: 2px solid var(--gray-border); }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--gray-border); }
+  tr:hover { background: var(--gray-bg); }
+
+  /* Priority order */
+  .priority-list { counter-reset: priority; }
+  .priority-item { counter-increment: priority; display: flex; align-items: flex-start; gap: 16px; padding: 16px; border: 1px solid var(--gray-border); border-radius: 10px; margin-bottom: 10px; }
+  .priority-item::before { content: counter(priority); background: var(--dark); color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; flex-shrink: 0; }
+  .priority-item .pi-content { flex: 1; }
+  .priority-item .pi-title { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+  .priority-item .pi-desc { font-size: 13px; color: var(--muted); }
+
+  @media (max-width: 768px) {
+    .container { padding: 12px; }
+    .header { padding: 24px 20px; }
+    .header h1 { font-size: 24px; }
+    .section { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- HEADER -->
+<div class="header">
+  <h1>FactoryConnect — Complete Solution Action Items</h1>
+  <div class="subtitle">3-Eye Consensus (Claude + GPT + Gemini) → Concrete Engineering Decisions</div>
+  <div class="meta">
+    <span>Date: April 3, 2026</span>
+    <span>Source: Claude (6.8/10) + GPT (6.5/10) + Gemini (7/10)</span>
+    <span>Scope: Entire Solution — Architecture to Deployment</span>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats-bar">
+  <div class="stat-card redesign"><div class="number">14</div><div class="label">Redesign / Simplify</div></div>
+  <div class="stat-card new"><div class="number">11</div><div class="label">New to Build</div></div>
+  <div class="stat-card cut"><div class="number">9</div><div class="label">Cut / Defer</div></div>
+  <div class="stat-card keep"><div class="number">8</div><div class="label">Keep As-Is</div></div>
+  <div class="stat-card critical"><div class="number">5</div><div class="label">Critical Priority</div></div>
+</div>
+
+<!-- NAVIGATION -->
+<div class="nav">
+  <div class="nav-title">Jump to Section</div>
+  <div class="nav-links">
+    <a href="#arch">Architecture</a>
+    <a href="#data">Data Model</a>
+    <a href="#saga">Saga & Workflow</a>
+    <a href="#bridge">Bridge Agent</a>
+    <a href="#edi">EDI & Integration</a>
+    <a href="#gst">GST-First Strategy</a>
+    <a href="#mapping">Mapping Engine</a>
+    <a href="#api">API Layer</a>
+    <a href="#portal">Portal UI</a>
+    <a href="#security">Security</a>
+    <a href="#techstack">Tech Stack</a>
+    <a href="#modules">Module Cuts</a>
+    <a href="#deploy">Deployment</a>
+    <a href="#pricing">Pricing & Billing</a>
+    <a href="#order">Build Order</a>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 1: ARCHITECTURE -->
+<!-- ============================================================ -->
+<div class="section" id="arch">
+  <h2>🏗️ Architecture</h2>
+  <div class="section-desc">Core architecture decisions — what stays, what changes, what's overkill</div>
+
+  <div class="action-item keep">
+    <div class="action-header">
+      <div class="action-title">A1. Multi-Tenant RLS + Shared Schema</div>
+      <div class="action-badges"><span class="badge keep">Keep</span></div>
+    </div>
+    <div class="action-body">
+      <p>All 3 AIs validated this. RLS with shared schema is correct for this stage. Schema-per-tenant would slow development, complicate migrations, and add operational drag.</p>
+      <div class="what-exists">
+        <div class="label">What Exists:</div>
+        RLS policies on all tenant tables via <span class="files">migration 001</span>. Tenant context middleware sets <code>app.current_tenant</code> before every query. Record history triggers on all tables.
+      </div>
+      <div class="consensus"><strong>3-Eye Consensus:</strong> All 3 agree — keep. No changes needed.</div>
+    </div>
+  </div>
+
+  <div class="action-item keep">
+    <div class="action-header">
+      <div class="action-title">A2. Transactional Outbox Pattern</div>
+      <div class="action-badges"><span class="badge keep">Keep</span></div>
+    </div>
+    <div class="action-body">
+      <p>Domain write + outbox insert + saga update + audit log in single transaction. Zero message loss guarantee. GPT called this "appropriate for a compliance-heavy integration product."</p>
+      <div class="what-exists">
+        <div class="label">What Exists:</div>
+        <span class="files">outbox-poller.ts</span> — polls outbox_events table, dispatches to BullMQ, marks processed. 4-write transaction pattern in order-service.ts.
+      </div>
+      <div class="consensus"><strong>3-Eye Consensus:</strong> All 3 validated. Keep as-is.</div>
+    </div>
+  </div>
+
+  <div class="action-item keep">
+    <div class="action-header">
+      <div class="action-title">A3. Idempotency Keys</div>
+      <div class="action-badges"><span class="badge keep">Keep</span></div>
+    </div>
+    <div class="action-body">
+      <p>X-Idempotency-Key header → Redis check → DB check → process. Critical for EDI where duplicate submissions cause chargebacks.</p>
+      <div class="what-exists">
+        <div class="label">What Exists:</div>
+        <span class="files">middleware/idempotency.ts</span> — full implementation with Redis + DB fallback.
+      </div>
+    </div>
+  </div>
+
+  <div class="action-item keep">
+    <div class="action-header">
+      <div class="action-title">A4. Audit Trail with Hash Chain</div>
+      <div class="action-badges"><span class="badge keep">Keep</span></div>
+    </div>
+    <div class="action-body">
+      <p>SHA-256 hash-chain audit log. Non-negotiable for compliance-heavy product. GPT explicitly called this out as appropriate.</p>
+      <div class="what-exists">
+        <div class="label">What Exists:</div>
+        <span class="files">audit_trail table</span> with hash chain verification. Immutable append-only.
+      </div>
+    </div>
+  </div>
+
+  <div class="action-item redesign">
+    <div class="action-header">
+      <div class="action-title">A5. Move ALL Intelligence to Cloud</div>
+      <div class="action-badges"><span class="badge redesign">Redesign</span><span class="badge critical">Critical</span></div>
+    </div>
+    <div class="action-body">
+      <p>All transformation, validation, EDI generation, mapping, and orchestration must live in the cloud API. Bridge Agent becomes read-push only. This is the single most important architectural shift.</p>
+      <div class="what-exists">
+        <div class="label">What Exists:</div>
+        Current design has some transformation logic planned for Bridge. EDI adapters (<span class="files">x12-adapter.ts, cxml-adapter.ts, json-adapter.ts</span>) are already in the cloud API.
+      </div>
+      <div class="what-changes">
+        <div class="label">What Changes:</div>
+        Ensure no canonical transformation, validation rules, or document generation runs on the Bridge. Bridge sends raw ERP data; cloud does everything else. Remove any Bridge-side transformation plans from architecture docs.
+      </div>
+      <div class="consensus"><strong>3-Eye Consensus:</strong> All 3 agree — keep Bridge dumb. GPT: "Leave only extraction, buffering, and local retry." Gemini: "Keep the Agent as dumb as possible (Read/Push only)."</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 2: DATA MODEL -->
+<!-- ============================================================ -->
+<div class="section" id="data">
+  <h2>🗃️ Data Model</h2>
+  <div class="section-desc">Schema changes, new tables, canonical model updates</div>
+
+  <div class="action-item new-build">
+    <div class="action-header">
+      <div class="action-title">D1. GST e-Invoice Fields in Canonical Model</div>
+      <div class="action-badges"><span class="badge new-build">New</span><span class="badge critical">Critical</span></div>
+    </div>
+    <div class="action-body">
+      <p>Gemini's GST-First strategy means e-Invoice data is the entry point, not an add-on. These fields become first-class citizens in the canonical order/invoice model.</p>
+      <div class="what-new">
+        <div class="label">New Fields (canonical_invoices or new gst_documents table):</div>
+        <code>irn</code> (Invoice Reference Number from NIC), <code>signed_qr_code</code>, <code>nic_ack_number</code>, <code>nic_ack_date</code>, <code>eway_bill_number</code>, <code>eway_bill_date</code>, <code>eway_bill_valid_until</code>, <code>gst_status</code> (PENDING/GENERATED/CANCELLED), <code>hsn_code</code> per line item, <code>place_of_supply</code>, <code>reverse_charge</code> flag.
+      </div>
+      <div class="files">Files: <span>packages/database/migrations/005_gst_einvoice.sql</span> <span>packages/shared/src/types/gst.ts</span> <span>packages/shared/src/schemas/gst-schema.ts</span></div>
+    </div>
+  </div>
+
+  <div class="action-item new-build">
+    <div class="action-header">
+      <div class="action-title">D2. Mapping Registry Table</div>
+      <div class="action-badges"><span class="badge new-build">New</span><span class="badge critical">Critical</span></div>
+    </div>
+    <div class="action-body">
+      <p>All 3 AIs identified this as the real moat. A versioned, reusable library of buyer-specific mapping templates. When you map Tally→H&M once, every H&M supplier becomes a 5-minute setup.</p>
+      <div class="what-new">
+        <div class="label">New Table: mapping_templates</div>
+        <code>id</code>, <code>buyer_id</code>, <code>buyer_name</code>, <code>document_type</code> (PO/ASN/Invoice), <code>edi_standard</code> (X12/EDIFACT/cXML), <code>version</code>, <code>field_rules</code> (JSONB — source→target mappings), <code>validation_rules</code> (JSONB), <code>transform_rules</code> (JSONB — unit conversions, date formats), <code>created_from_factory_id</code>, <code>usage_count</code>, <code>success_rate</code>, <code>is_golden</code> (verified by FC team), <code>created_at</code>, <code>updated_at</code>.
+      </div>
+      <div class="what-new">
+        <div class="label">New Table: mapping_usage_log</div>
+        Track every time a template is used, success/failure, field-level exceptions. This data compounds into defensibility.
+      </div>
+      <div class="consensus"><strong>3-Eye Consensus:</strong> All 3 agree — this IS the moat. GPT: "proprietary onboarding data: field dictionaries, buyer schema libraries, validation rule packs." Gemini: "Once you map Tally to H&M once, every other H&M supplier becomes a 5-minute setup."</div>
+    </div>
+  </div>
+
+  <div class="action-item new-build">
+    <div class="action-header">
+      <div class="action-title">D3. Chargeback Tracking Tables</div>
+      <div class="action-badges"><span class="badge new-build">New</span></div>
+    </div>
+    <div class="action-body">
+      <p>Chargeback prevention is the strongest sales pitch. Shadow Mode needs to calculate "FC saved you ₹X" — that requires tracking chargeback events and their root causes.</p>
+      <div class="what-new">
+        <div class="label">New Table: chargeback_events</div>
+        <code>id</code>, <code>factory_id</code>, <code>order_id</code>, <code>buyer_id</code>, <code>chargeback_type</code> (ASN_LATE/ASN_MISSING/PO_MISMATCH/LABEL_ERROR/QUANTITY_ERROR), <code>amount</code>, <code>currency</code>, <code>root_cause</code>, <code>detected_by</code> (SHADOW_MODE/LIVE/MANUAL), <code>prevented</code> (boolean), <code>savings_amount</code>, <code>created_at</code>.
+      </div>
+      <div class="what-new">
+        <div class="label">New Table: shadow_mode_reports</div>
+        <code>factory_id</code>, <code>report_period</code>, <code>total_documents_processed</code>, <code>errors_caught</code>, <code>chargebacks_prevented</code>, <code>estimated_savings</code>, <code>accuracy_score</code>. This feeds the sales conversion report.
+      </div>
+    </div>
+  </div>
+
+  <div class="action-item new-build">
+    <div class="action-header">
+      <div class="action-title">D4. Document Metering Table (for per-document billing)</div>
+      <div class="action-badges"><span class="badge new-build">New</span></div>
+    </div>
+    <div class="action-body">
+      <p>Gemini recommended ₹5k base + per-document fee instead of flat pricing. This requires document-level metering from day one.</p>
+      <div class="what-new">
+        <div class="label">New Table: document_meter</div>
+        <code>factory_id</code>, <code>document_type</code>, <code>direction</code> (INBOUND/OUTBOUND), <code>billing_period</code>, <code>document_count</code>, <code>billable_count</code>, <code>unit_rate</code>, <code>total_amount</code>. Increment on every document processed.
+      </div>
+    </div>
+  </div>
+
+  <div class="action-item redesign">
+    <div class="action-header">
+      <div class="action-title">D5. Simplify Connection/Partner Schema</div>
+      <div class="action-badges"><span class="badge redesign">Redesign</span></div>
+    </div>
+    <div class="action-body">
+      <p>Current schema has both <code>connections</code> and <code>partner_systems</code> tables with overlapping concerns. Simplify to a single <code>buyer_connections</code> table focused on what Phase 1 needs.</p>
+      <div class="what-exists">
+        <div class="label">What Exists:</div>
+        <span class="files">migration 004</span> — partner_systems with protocol configs, SLA settings, certificate storage.
+      </div>
+      <div class="what-changes">
+        <div class="label">What Changes:</div>
+        Keep partner_systems but defer certificate management, SLA monitoring, and protocol-level config until a real buyer integration demands it. Add <code>mapping_template_id</code> FK to link buyer connections to the mapping registry.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 3: SAGA & WORKFLOW -->
+<!-- ============================================================ -->
+<div class="section" id="saga">
+  <h2>🔄 Saga & Workflow Engine</h2>
+  <div class="section-desc">The biggest redesign — all 3 AIs flagged the 15-state saga as overkill</div>
+
+  <div class="action-item redesign">
+    <div class="action-header">
+      <div class="action-title">S1. Simplify 15-State Saga to 5-State Workflow</div>
+      <div class="action-badges"><span class="badge redesign">Redesign</span><span class="badge critical">Critical</span></div>
+    </div>
+    <div class="action-body">
+      <p>This is the highest-consensus action item across all 3 AIs. The current 15-state saga coordinator is enterprise-grade machinery for a product that hasn't processed its first real transaction.</p>
+      <div class="what-exists">
+        <div class="label">What Exists (15 States):</div>
+        RECEIVED → VALIDATED → MAPPED → QUEUED → SENT → DELIVERED → ACKNOWLEDGED → ACCEPTED → REJECTED → RETRYING → FAILED → CANCELLED → COMPENSATING → COMPENSATED → DEAD_LETTER. Full saga-service.ts with SLA monitoring, lock recovery, deadline tracking.
+      </div>
+      <div class="what-changes">
+        <div class="label">Phase 1 Replacement (5 States):</div>
+        <strong>RECEIVED → MAPPED → VALIDATED → SENT → ACKNOWLEDGED</strong><br><br>
+        Plus two terminal states: FAILED, CANCELLED.<br><br>
+        <strong>What gets removed:</strong> SLA monitoring, lock recovery, compensation sagas, dead letter handling, deadline tracking. These are all real needs — but for 10+ customers, not for customer #1.<br><br>
+        <strong>What replaces it:</strong> Simple state machine with BullMQ retry on failure. If a document fails 3 times, it goes to a human exception queue. That's it.<br><br>
+        <strong>Keep the saga_service.ts file</strong> but gut the internals. The state machine transition logic stays (validated transitions only), but remove the distributed coordination overhead.
+      </div>
+      <div class="files">Files to change: <span>apps/api/src/services/saga-service.ts</span> <span>packages/shared/src/types/enums.ts</span> (SagaState enum)</div>
+      <div class="consensus"><strong>3-Eye Consensus:</strong> All 3 agree. GPT: "Simplify the saga into a narrower workflow engine." Gemini: "Saga Coordinators and 15 states are overkill. A retry queue is enough." Claude: "Replace with 5-state workflow."</div>
+    </div>
+  </div>
+
+  <div class="action-item redesign">
+    <div class="action-header">
+      <div class="action-title">S2. Exception Queue (Human-in-the-Loop)</div>
+      <div class="action-badges"><span class="badge redesign">Redesign</span></div>
+    </div>
+    <div class="action-body">
+      <p>Instead of auto-compensation sagas, build a simple exception queue where failed documents land for human review. The factory's export manager resolves them manually — this IS the workflow for the first 5 customers.</p>
+      <div class="what-new">
+        <div class="label">New Implementation:</div>
+        <code>exception_queue</code> table: document_id, factory_id, error_code, error_detail, assigned_to, status (OPEN/IN_REVIEW/RESOLVED/ESCALATED), resolution_notes, created_at, resolved_at. BullMQ worker moves FAILED documents here after max retries. Portal shows this as a simple list with filters.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 4: BRIDGE AGENT -->
+<!-- ============================================================ -->
+<div class="section" id="bridge">
+  <h2>🌉 Bridge Agent</h2>
+  <div class="section-desc">On-premises agent for factory Windows PC — make it dumber, more resilient</div>
+
+  <div class="action-item redesign">
+    <div class="action-header">
+      <div class="action-title">B1. Strip Bridge to Read-Push-Buffer Only</div>
+      <div class="action-badges"><span class="badge redesign">Redesign</span><span class="badge critical">Critical</span></div>
+    </div>
+    <div class="action-body">
+      <p>Bridge Agent responsibilities after redesign: (1) Read from Tally XML port 9000, (2) Buffer in local SQLite, (3) Push raw data to cloud via WebSocket/HTTPS. Nothing else.</p>
+      <div class="what-exists">
+        <div class="label">What Exists:</div>
+        <span class="files">apps/bridge/src/</span> — tally-connector.ts (XML extraction), adaptive-poller.ts (5s-5min interval), cloud-sync.ts (WebSocket tunnel), local-queue.ts (SQLite offline buffer), erp-orchestrator.ts (multi-ERP coordination).
+      </div>
+      <div class="what-changes">
+        <div class="label">What Changes:</div>
+        <strong>Keep:</strong> tally-connector.ts, adaptive-poller.ts, local-queue.ts (SQLite buffer), cloud-sync.ts basic push.<br>
+        <strong>Remove from Bridge scope:</strong> Any field mapping, validation, transformation, EDI generation. Remove zoho-connector.ts and sap-b1-connector.ts for Phase 1 — Tally only.<br>
+        <strong>Add:</strong> Health-check reporting (port 9000 status, Tally version, TDL status, connectivity, disk space, last successful sync).
+      </div>
+      <div class="consensus"><strong>3-Eye Consensus:</strong> All 3 agree. Gemini: "Minimize the Windows Support Nightmare (updates, AV, registry locks)." GPT: "The biggest architectural risk is edge reliability and install friction."</div>
+    </div>
+  </div>
+
+  <div class="action-item new-build">
+    <div class="action-header">
+      <div class="action-title">B2. Tally TDL Push Events (Replace Pure Polling)</div>
+      <div class="action-badges"><span class="badge new-build">New</span></div>
+    </div>
+    <div class="action-body">
+      <p>Gemini flagged a critical gap: Port 9000 polling alone isn't sufficient. Custom TDL scripts can push events on voucher save, giving near-real-time data without constant polling overhead.</p>
+      <div class="what-new">
+        <div class="label">New Implementation:</div>
+        Build a minimal TDL (Tally Definition Language) script that fires an HTTP POST to the Bridge Agent's local endpoint whenever a voucher is saved/altered/deleted. Bridge Agent runs a tiny HTTP server on localhost to receive TDL push events. Fall back to polling when TDL isn't installed. This hybrid approach (TDL push + polling backup) is the most resilient.
+      </div>
+      <div class="consensus"><strong>Gemini unique insight:</strong> "Relying on adaptive polling without a custom TDL script to push events will lead to data latency and missed orders."</div>
+    </div>
+  </div>
+
+  <div class="action-item new-build">
+    <div class="action-header">
+      <div class="action-title">B3. Factory Environment Health Dashboard</div>
+      <div class="action-badges"><span class="badge new-build">New</span></div>
+    </div>
+    <div class="action-body">
+      <p>Before any data flows, the agent must validate the factory environment. This is the "pre-flight check" that prevents failed installations.</p>
+      <div class="what-new">
+        <div class="label">Health Probes:</div>
+        Port 9000 reachable (Y/N), Tally version detected, TDL installed (Y/N), Windows firewall status, antivirus interference check, internet connectivity to FC cloud, SQLite disk space, last successful Tally read timestamp, XML parser error count (last 24h). Surface all of this in the Portal as a "Factory Health" widget.
+      </div>
+    </div>
+  </div>
+
+  <div class="action-item cut">
+    <div class="action-header">
+      <div class="action-title">B4. Remove Multi-ERP Support for Phase 1</div>
+      <div class="action-badges"><span class="badge cut">Defer</span></div>
+    </div>
+    <div class="action-body">
+      <p>Zoho Books and SAP B1 connectors exist in code but are distractions. Tally is 95% of the target market. Build for one ERP first.</p>
+      <div class="what-cut">
+        <div class="label">Defer:</div>
+        <span class="files">zoho-connector.ts</span>, <span class="files">sap-b1-connector.ts</span>, <span class="files">erp-orchestrator.ts</span> multi-ERP routing. Keep the files but feature-flag them OFF. Re-enable when a paying customer needs Zoho or SAP B1.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 5: EDI & INTEGRATION -->
+<!-- ============================================================ -->
+<div class="section" id="edi">
+  <h2>📡 EDI & Integration Layer</h2>
+  <div class="section-desc">What to build, what to skip, and the pragmatic "manual upload" strategy</div>
+
+  <div class="action-item redesign">
+    <div class="action-header">
+      <div class="action-title">E1. Output Perfect Files First, Skip Direct API</div>
+      <div class="action-badges"><span class="badge redesign">Redesign</span></div>
+    </div>
+    <div class="action-body">
+      <p>Gemini's sharpest pragmatic insight: Don't build direct Ariba/Coupa API integration yet. Generate perfect EDI/cXML files that factories can upload manually to buyer portals. This proves 90% of the value while bypassing 6 months of supplier onboarding red tape.</p>
+      <div class="what-exists">
+        <div class="label">What Exists:</div>
+        <span class="files">x12-adapter.ts</span> (850/855/856/810 parse+generate), <span class="files">cxml-adapter.ts</span> (PO/Confirm/Ship/Invoice), <span class="files">json-adapter.ts</span> (REST webhook format). All have generate() methods.
+      </div>
+      <div class="what-changes">
+        <div class="label">What Changes:</div>
+        <strong>Phase 1:</strong> Generate downloadable EDI/cXML files. Add file export endpoints (GET /api/documents/:id/download). Factory downloads and uploads to buyer portal manually.<br>
+        <strong>Phase 2:</strong> Add direct API submission (Ariba PKI, Coupa OAuth, SPS Commerce SFTP) when a customer explicitly needs it.<br>
+        <strong>Keep the adapter code</strong> — it's well-built. Just change the "delivery" step from API submission to file generation + download.
+      </div>
+      <div class="consensus"><strong>Gemini:</strong> "Direct Ariba/Coupa integration is a vanity metric. Start by outputting perfect EDI files." <strong>GPT:</strong> "Real timelines will be dominated by customer-side configuration, buyer-side onboarding, and exception handling, not coding."</div>
+    </div>
+  </div>
+
+  <div class="action-item cut">
+    <div class="action-header">
+      <div class="action-title">E2. Defer OpenAS2 Integration</div>
+      <div class="action-badges"><span class="badge cut">Defer</span></div>
+    </div>
+    <div class="action-body">
+      <p>AS2 is the gold standard for EDI transport, but it requires buyer-side setup (certificates, trading partner config). Not needed when strategy is "generate files for manual upload."</p>
+      <div class="what-cut">
+        <div class="label">Defer:</div>
+        OpenAS2 Docker integration, certificate management, AS2 trading partner configuration. Re-enable when first customer needs automated EDI delivery over AS2.
+      </div>
+    </div>
+  </div>
+
+  <div class="action-item new-build">
+    <div class="action-header">
+      <div class="action-title">E3. Build 3 Gold Standard Buyer Templates</div>
+      <div class="action-badges"><span class="badge new-build">New</span></div>
+    </div>
+    <div class="action-body">
+      <p>Gemini's action item #4: Obtain/build specs for 3 representative buyers and create templates NOW.</p>
+      <div class="what-new">
+        <div class="label">Target Buyer Templates:</div>
+        1. <strong>Walmart</strong> — X12 850 (PO), 855 (PO Ack), 856 (ASN), 810 (Invoice). Strictest requirements, highest chargeback risk.<br>
+        2. <strong>H&M or similar EU buyer</strong> — EDIFACT ORDERS/DESADV/INVOIC. Tests EU format compliance.<br>
+        3. <strong>Indian domestic buyer (Reliance/Tata)</strong> — Custom format or cXML via Ariba. Tests domestic use case.<br><br>
+        Store as JSON in <span class="files">packages/shared/src/edi/templates/</span> and seed into mapping_templates table.
+      </div>
+    </div>
+  </div>
+
+  <div class="action-item keep">
+    <div class="action-header">
+      <div class="action-title">E4. Keep EDI Adapter Architecture</div>
+      <div class="action-badges"><span class="badge keep">Keep</span></div>
+    </div>
+    <div class="action-body">
+      <p>The pluggable adapter pattern (X12, cXML, JSON) is well-designed. Keep it — just add the "file download" output mode alongside future "API submit" mode.</p>
+      <div class="what-exists">
+        <div class="label">What Exists:</div>
+        <span class="files">x12-adapter.ts</span>, <span class="files">cxml-adapter.ts</span>, <span class="files">json-adapter.ts</span> — all implementing parse() and generate() methods with proper envelope handling.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 6: GST-FIRST -->
+<!-- ============================================================ -->
+<div class="section" id="gst">
+  <h2>🏛️ GST-First Strategy (Gemini's Key Insight)</h2>
+  <div class="section-desc">Enter through mandatory compliance, expand to voluntary EDI</div>
+
+  <div class="action-item new-build">
+    <div class="action-header">
+      <div class="action-title">G1. GST e-Invoice (NIC) Integration</div>
+      <div class="action-badges"><span class="badge new-build">New</span><span class="badge critical">Critical</span></div>
+    </div>
+    <div class="action-body">
+      <p>Every Indian factory MUST generate e-Invoices. By capturing this data, FC gets 90% of what's needed for EDI 810 (Invoice) and 856 (ASN). This is the zero-friction entry point.</p>
+      <div class="what-new">
+        <div class="label">New Service: gst-service.ts</div>
+        <strong>NIC API Integration:</strong><br>
+        — Auth: Client ID + Client Secret → auth token (valid 6 hrs)<br>
+        — Encryption: RSA public key from NIC + AES-256 for payload<br>
+        — Generate IRN: POST /eiapi/v1/Invoice with signed JSON<br>
+        — Cancel IRN: POST /eiapi/v1/Invoice/Cancel (within 24hrs)<br>
+        — IP Whitelist: Max 4 IPs (critical constraint — cloud API only, not Bridge)<br><br>
+        <strong>e-Way Bill:</strong><br>
+        — Generate from e-Invoice data: POST /ewbapi/v1/ewayapi<br>
+        — Auto-generate when invoice value > ₹50,000<br>
+        — Track validity period (distance-based: 100km/day)<br><br>
+        <strong>Data Flow:</strong> Tally invoice data → Bridge → Cloud → GST service generates e-Invoice → Same data feeds EDI document generation.
+      </div>
+      <div class="files">New files: <span>apps/api/src/services/gst-service.ts</span> <span>apps/api/src/routes/gst.ts</span> <span>packages/shared/src/types/gst.ts</span></div>
+      <div class="consensus"><strong>Gemini:</strong> "You cannot sell a Dispatch solution in India without this." <strong>GPT:</strong> "GST e-invoice/e-way bill not started is serious if you want to sit in live dispatch flows."</div>
+    </div>
+  </div>
+
+  <div class="action-item new-build">
+    <div class="action-header">
+      <div class="action-title">G2. GST-to-EDI Data Derivation Layer</div>
+      <div class="action-badges"><span class="badge new-build">New</span></div>
+    </div>
+    <div class="action-body">
+      <p>Map GST e-Invoice fields to EDI document fields automatically. This is the bridge between mandatory compliance and buyer-specific EDI.</p>
+      <div class="what-new">
+        <div class="label">Field Mapping:</div>
+        GST IRN → EDI Invoice Number, GSTIN → Supplier Tax ID, HSN Code → Product Classification, Place of Supply → Ship-To, e-Way Bill → ASN Transport Reference, Line items → EDI line items with UOM conversion. Build as a transformer in the mapping engine that auto-populates EDI fields from GST data, reducing manual mapping effort by ~60%.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 7: MAPPING ENGINE -->
+<!-- ============================================================ -->
+<div class="section" id="mapping">
+  <h2>🧠 Mapping Engine & AI Mapper</h2>
+  <div class="section-desc">Keep the mapper, build the registry, design for template reuse</div>
+
+  <div class="action-item keep">
+    <div class="action-header">
+      <div class="action-title">M1. Keep AI Field Mapper Architecture</div>
+      <div class="action-badges"><span class="badge keep">Keep</span></div>
+    </div>
+    <div class="action-body">
+      <p>The Error-Code-Only LLM pattern (send only error codes to LLM, never factory data) is correct. Keep the mapping engine and AI mapper as designed.</p>
+      <div class="what-exists">
+        <div class="label">What Exists:</div>
+        <span class="files">packages/shared/src/mapping/</span> — mapping-engine.ts with rule-based + AI-assisted field mapping. Transform rules for unit conversion, date formatting, etc.
+      </div>
+    </div>
+  </div>
+
+  <div class="action-item redesign">
+    <div class="action-header">
+      <div class="action-title">M2. Add Template Reuse System to Mapping Engine</div>
+      <div class="action-badges"><span class="badge redesign">Redesign</span></div>
+    </div>
+    <div class="action-body">
+      <p>The mapping engine works for one-off mappings. Redesign it to default to template lookup first, then fall back to AI mapping for new buyer-ERP combinations.</p>
+      <div class="what-changes">
+        <div class="label">New Flow:</div>
+        1. Factory connects → identify buyer<br>
+        2. Check mapping_templates for existing buyer template<br>
+        3. If golden template exists → apply with factory-specific field name overrides only<br>
+        4. If no template → AI Mapper generates initial mapping → human reviews → saves as new template<br>
+        5. Track success rate per template → promote to "golden" after 10 successful uses<br><br>
+        This is what makes the second customer faster than the first.
+      </div>
+    </div>
+  </div>
+
+  <div class="action-item new-build">
+    <div class="action-header">
+      <div class="action-title">M3. Field Fidelity Test Suite</div>
+      <div class="action-badges"><span class="badge new-build">New</span></div>
+    </div>
+    <div class="action-body">
+      <p>GPT's key insight: "The fatal module to cut is not buyer portal; it is real Tally validation. If you do not prove extraction and field fidelity on live data, everything else is theater."</p>
+      <div class="what-new">
+        <div class="label">New Implementation:</div>
+        A test harness that takes real Tally XML exports and validates: all expected fields present, data types correct, amounts sum correctly, dates parse properly, party names match master data, HSN codes are valid. Run this on every Bridge data push. Report field-level confidence scores. This catches the "weird non-standard Tally customizations" (ledger names like Sales_Local_Export) that Gemini flagged.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 8: API LAYER -->
+<!-- ============================================================ -->
+<div class="section" id="api">
+  <h2>🔌 API Layer</h2>
+  <div class="section-desc">Keep the Express.js API, add new endpoints, simplify middleware</div>
+
+  <div class="action-item keep">
+    <div class="action-header">
+      <div class="action-title">P1. Keep Express.js 5 + Middleware Stack</div>
+      <div class="action-badges"><span class="badge keep">Keep</span></div>
+    </div>
+    <div class="action-body">
+      <p>Auth middleware, tenant context, rate limiting, correlation ID, error handling — all well-built. No tech stack change needed.</p>
+      <div class="what-exists">
+        <div class="label">What Exists:</div>
+        8 middleware files: auth, tenant-context, rate-limiter, correlation-id, error-handler, idempotency, request-logger, validation. 13 route files covering orders, shipments, invoices, connections, notifications, analytics, admin, health, webhooks.
+      </div>
+    </div>
+  </div>
+
+  <div class="action-item new-build">
+    <div class="action-header">
+      <div class="action-title">P2. Document Download Endpoints</div>
+      <div class="action-badges"><span class="badge new-build">New</span></div>
+    </div>
+    <div class="action-body">
+      <div class="what-new">
+        <div class="label">New Routes:</div>
+        <code>GET /api/documents/:id/download</code> — download generated EDI/cXML file<br>
+        <code>GET /api/documents/:id/preview</code> — human-readable preview of document content<br>
+        <code>GET /api/factories/:id/documents</code> — list all generated documents with status<br>
+        These support the "manual upload" strategy where factories download perfect EDI files.
+      </div>
+    </div>
+  </div>
+
+  <div class="action-item new-build">
+    <div class="action-header">
+      <div class="action-title">P3. GST API Routes</div>
+      <div class="action-badges"><span class="badge new-build">New</span></div>
+    </div>
+    <div class="action-body">
+      <div class="what-new">
+        <div class="label">New Routes:</div>
+        <code>POST /api/gst/einvoice/generate</code> — generate e-Invoice via NIC<br>
+        <code>POST /api/gst/einvoice/cancel</code> — cancel within 24hr window<br>
+        <code>POST /api/gst/eway-bill/generate</code> — generate e-Way bill<br>
+        <code>GET /api/gst/status/:irn</code> — check e-Invoice status<br>
+      </div>
+    </div>
+  </div>
+
+  <div class="action-item new-build">
+    <div class="action-header">
+      <div class="action-title">P4. Shadow Mode API Routes</div>
+      <div class="action-badges"><span class="badge new-build">New</span></div>
+    </div>
+    <div class="action-body">
+      <div class="what-new">
+        <div class="label">New Routes:</div>
+        <code>POST /api/shadow/enable/:factoryId</code> — activate Shadow Mode<br>
+        <code>GET /api/shadow/report/:factoryId</code> — get savings report<br>
+        <code>GET /api/shadow/errors/:factoryId</code> — list errors Shadow Mode caught<br>
+        Shadow Mode processes documents through the full pipeline (validate, map, generate EDI) but doesn't dispatch. Compares against what the factory actually sent manually and reports discrepancies.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 9: PORTAL UI -->
+<!-- ============================================================ -->
+<div class="section" id="portal">
+  <h2>💻 Portal UI</h2>
+  <div class="section-desc">Simplify to 5 essential views for Phase 1</div>
+
+  <div class="action-item redesign">
+    <div class="action-header">
+      <div class="action-title">U1. Reduce Portal to 5 Core Pages</div>
+      <div class="action-badges"><span class="badge redesign">Redesign</span></div>
+    </div>
+    <div class="action-body">
+      <div class="what-exists">
+        <div class="label">What Exists (8 pages):</div>
+        Login, Dashboard, Orders, Shipments, Invoices, Connections, Calendar, Analytics
+      </div>
+      <div class="what-changes">
+        <div class="label">Phase 1 Pages (5 only):</div>
+        <strong>1. Dashboard</strong> — Factory health status, document counts, Shadow Mode savings summary, exception queue count.<br>
+        <strong>2. Documents</strong> — Unified view of all documents (orders, shipments, invoices). Generate, preview, download EDI files. Replace separate Orders/Shipments/Invoices pages.<br>
+        <strong>3. Mapping Studio</strong> — View/edit buyer mapping templates. Field-by-field mapping with AI suggestions. This is the value differentiator.<br>
+        <strong>4. Exception Queue</strong> — List of failed documents needing human attention. Resolve, reassign, escalate.<br>
+        <strong>5. Factory Setup</strong> — Bridge Agent status, Tally connection health, buyer connection config, GST credentials.
+      </div>
+      <div class="what-cut">
+        <div class="label">Defer:</div>
+        Calendar page, full Analytics page (basic stats go on Dashboard), separate Shipments/Invoices pages (merged into Documents).
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 10: SECURITY -->
+<!-- ============================================================ -->
+<div class="section" id="security">
+  <h2>🔒 Security</h2>
+  <div class="section-desc">All security patterns validated — keep everything, add GST credential security</div>
+
+  <div class="action-item keep">
+    <div class="action-header">
+      <div class="action-title">X1. Keep Entire Security Stack</div>
+      <div class="action-badges"><span class="badge keep">Keep</span></div>
+    </div>
+    <div class="action-body">
+      <p>RLS, PII redaction (Pino), FLE (Vault Transit for GSTIN/PAN/bank details), parameterized queries, JWT verification, HMAC webhooks, correlation IDs. All validated by all 3 AIs. No changes.</p>
+    </div>
+  </div>
+
+  <div class="action-item new-build">
+    <div class="action-header">
+      <div class="action-title">X2. GST Credential Security</div>
+      <div class="action-badges"><span class="badge new-build">New</span></div>
+    </div>
+    <div class="action-body">
+      <p>NIC API credentials (Client ID, Client Secret, RSA keys) must be stored in Vault. IP whitelist management for the 4-IP limit on NIC API. Auto-rotate auth tokens (6hr expiry).</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 11: TECH STACK -->
+<!-- ============================================================ -->
+<div class="section" id="techstack">
+  <h2>⚙️ Tech Stack Decisions</h2>
+  <div class="section-desc">What stays, what's questioned, what's confirmed</div>
+
+  <table>
+    <thead>
+      <tr><th>Component</th><th>Current</th><th>Verdict</th><th>Notes</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Runtime</td><td>Node.js 22 + TypeScript 5</td><td style="color:var(--green);font-weight:700;">✓ Keep</td><td>All 3 AIs validated. "Raw SQL + Postgres + TypeScript is fine" — GPT</td></tr>
+      <tr><td>API Framework</td><td>Express.js 5</td><td style="color:var(--green);font-weight:700;">✓ Keep</td><td>No reason to switch. Middleware stack is well-built.</td></tr>
+      <tr><td>Database</td><td>PostgreSQL 16 + Raw SQL</td><td style="color:var(--green);font-weight:700;">✓ Keep</td><td>RLS validated. No ORM — correct for this use case.</td></tr>
+      <tr><td>Queue</td><td>BullMQ 5 + Redis 7</td><td style="color:var(--green);font-weight:700;">✓ Keep</td><td>Takes over most saga responsibility after simplification</td></tr>
+      <tr><td>Auth</td><td>Keycloak 24 + MFA</td><td style="color:var(--yellow);font-weight:700;">⚠ Evaluate</td><td>Keycloak is heavy for Phase 1. Consider simple JWT + bcrypt for first 5 customers, Keycloak when RBAC complexity demands it.</td></tr>
+      <tr><td>Secrets</td><td>Vault (dev: env vars)</td><td style="color:var(--green);font-weight:700;">✓ Keep</td><td>Critical for FLE and GST credentials</td></tr>
+      <tr><td>Frontend</td><td>React 19 + Vite 6 + shadcn/ui</td><td style="color:var(--green);font-weight:700;">✓ Keep</td><td>Modern, fast, appropriate</td></tr>
+      <tr><td>Bridge DB</td><td>SQLite (local buffer)</td><td style="color:var(--green);font-weight:700;">✓ Keep</td><td>Perfect for offline buffering on factory Windows PC</td></tr>
+      <tr><td>EDI Transport</td><td>OpenAS2</td><td style="color:var(--red);font-weight:700;">✗ Defer</td><td>Not needed when outputting files for manual upload</td></tr>
+      <tr><td>Saga Coordinator</td><td>Custom 15-state</td><td style="color:var(--yellow);font-weight:700;">⚠ Simplify</td><td>Reduce to 5-state + BullMQ retry</td></tr>
+      <tr><td>Package Manager</td><td>pnpm 9.x</td><td style="color:var(--green);font-weight:700;">✓ Keep</td><td>Correct for monorepo</td></tr>
+      <tr><td>Migrations</td><td>dbmate</td><td style="color:var(--green);font-weight:700;">✓ Keep</td><td>Simple SQL migrations, up+down</td></tr>
+      <tr><td>Monitoring</td><td>Prometheus + Grafana + Jaeger</td><td style="color:var(--yellow);font-weight:700;">⚠ Later</td><td>Don't set up until you have live traffic. Simple Pino logs + health endpoints are enough for Phase 1.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 12: MODULE CUTS -->
+<!-- ============================================================ -->
+<div class="section" id="modules">
+  <h2>✂️ Module Cuts — What's IN vs OUT for Phase 1</h2>
+  <div class="section-desc">From 27 modules down to the essential 4 + 2 supporting capabilities</div>
+
+  <table>
+    <thead>
+      <tr><th>Module</th><th>Phase 1?</th><th>Reason</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Tally Connector + Bridge Agent</strong></td><td style="color:var(--green);font-weight:700;">✓ IN</td><td>Core product. Cannot function without it.</td></tr>
+      <tr><td><strong>AI Mapper + Mapping Registry</strong></td><td style="color:var(--green);font-weight:700;">✓ IN</td><td>Core product. The moat builder.</td></tr>
+      <tr><td><strong>EDI/GST Document Generator</strong></td><td style="color:var(--green);font-weight:700;">✓ IN</td><td>Core product. File generation + GST e-Invoice.</td></tr>
+      <tr><td><strong>Shadow Mode + Chargeback Dashboard</strong></td><td style="color:var(--green);font-weight:700;">✓ IN</td><td>Core GTM. Proves value before going live.</td></tr>
+      <tr><td>Exception Queue (human review)</td><td style="color:var(--green);font-weight:700;">✓ IN</td><td>Supporting. Needed for real-world error handling.</td></tr>
+      <tr><td>Factory Health Dashboard</td><td style="color:var(--green);font-weight:700;">✓ IN</td><td>Supporting. Needed to manage Bridge Agent installs.</td></tr>
+      <tr style="background:var(--red-bg)"><td>WhatsApp Intake</td><td style="color:var(--red);font-weight:700;">✗ OUT</td><td>Nice-to-have. Not on critical path. All 3 AIs agree.</td></tr>
+      <tr style="background:var(--red-bg)"><td>Production Scheduling</td><td style="color:var(--red);font-weight:700;">✗ OUT</td><td>Not your product. Gemini: "Delete from 2026 roadmap."</td></tr>
+      <tr style="background:var(--red-bg)"><td>Buyer Portal</td><td style="color:var(--red);font-weight:700;">✗ OUT</td><td>GPT + Gemini: "Buyers won't log into your system."</td></tr>
+      <tr style="background:var(--red-bg)"><td>Shop Floor Apps / Mobile</td><td style="color:var(--red);font-weight:700;">✗ OUT</td><td>Too far from core integration value.</td></tr>
+      <tr style="background:var(--red-bg)"><td>ESG / CBAM Modules</td><td style="color:var(--red);font-weight:700;">✗ OUT</td><td>EU DPP not mandatory until 2028. Claude research confirmed textiles not in CBAM scope yet.</td></tr>
+      <tr style="background:var(--red-bg)"><td>Advanced Analytics / BI</td><td style="color:var(--red);font-weight:700;">✗ OUT</td><td>Basic stats on dashboard. Full analytics when you have data.</td></tr>
+      <tr style="background:var(--red-bg)"><td>Multi-ERP Support (Zoho/SAP)</td><td style="color:var(--red);font-weight:700;">✗ OUT</td><td>Tally only for Phase 1. 95% of target market.</td></tr>
+      <tr style="background:var(--red-bg)"><td>Direct Ariba/Coupa API</td><td style="color:var(--red);font-weight:700;">✗ OUT</td><td>File generation first. Direct API when customer demands it.</td></tr>
+      <tr style="background:var(--red-bg)"><td>AS2 Transport</td><td style="color:var(--red);font-weight:700;">✗ OUT</td><td>Not needed with manual upload strategy.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 13: DEPLOYMENT -->
+<!-- ============================================================ -->
+<div class="section" id="deploy">
+  <h2>🚀 Deployment & Onboarding Design</h2>
+  <div class="section-desc">The "reusable onboarding kit" that GPT called the biggest force multiplier</div>
+
+  <div class="action-item new-build">
+    <div class="action-header">
+      <div class="action-title">O1. Factory Onboarding Kit</div>
+      <div class="action-badges"><span class="badge new-build">New</span></div>
+    </div>
+    <div class="action-body">
+      <p>Not a feature — a deployment artifact. This is what makes the second installation faster than the first.</p>
+      <div class="what-new">
+        <div class="label">Kit Contents:</div>
+        1. <strong>Pre-flight script</strong> — Run on factory PC. Checks: Windows version, port 9000 status, firewall rules, antivirus exclusions needed, Tally version, TDL compatibility, internet speed to FC cloud.<br>
+        2. <strong>Bridge Agent installer</strong> — One-click Windows installer (MSI or NSIS). Auto-configures SQLite, sets up service, creates desktop shortcut for health check.<br>
+        3. <strong>TDL package</strong> — Pre-built TDL for push events. Installation guide in Telugu and English.<br>
+        4. <strong>Sample mapping pack</strong> — Per buyer type. Pre-filled mapping template that factory's accountant can verify field-by-field.<br>
+        5. <strong>Validation test set</strong> — 10 sample vouchers per document type. Run through full pipeline. Compare output to expected. Pass/fail report.<br>
+        6. <strong>Rollback procedure</strong> — How to uninstall Bridge Agent, restore Tally to previous state, disable TDL.
+      </div>
+      <div class="consensus"><strong>GPT:</strong> "The biggest force multiplier to add is a reusable onboarding kit for one ERP + one buyer + one transaction family." <strong>Gemini:</strong> "Hire someone who can toggle Port 9000 and talk to the Tally accountant in Telugu."</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 14: PRICING -->
+<!-- ============================================================ -->
+<div class="section" id="pricing">
+  <h2>💰 Pricing & Billing Model</h2>
+  <div class="section-desc">Design implications of per-document pricing</div>
+
+  <div class="action-item redesign">
+    <div class="action-header">
+      <div class="action-title">$1. Design for Hybrid Pricing from Day One</div>
+      <div class="action-badges"><span class="badge redesign">Redesign</span></div>
+    </div>
+    <div class="action-body">
+      <div class="what-changes">
+        <div class="label">Pricing Model:</div>
+        <strong>₹5,000/month base</strong> (covers Bridge Agent, portal access, up to 50 documents/month)<br>
+        <strong>+ ₹50-100 per document</strong> beyond base (EDI generation, GST e-Invoice, each billable)<br>
+        <strong>Shadow Mode: FREE</strong> for 2 weeks (with hard cutoff and conversion report)<br><br>
+        <strong>Code implications:</strong> document_meter table (D4 above), metering middleware that increments on every document generation, monthly billing summary API, usage dashboard widget on Portal.
+      </div>
+      <div class="consensus"><strong>Gemini:</strong> "Indian SMEs hate fixed overhead but love paying for work done." This aligns with Tally's own pricing model which Indian accountants are used to.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 15: BUILD ORDER -->
+<!-- ============================================================ -->
+<div class="section" id="order">
+  <h2>📋 Recommended Build Order — Next 30 Days</h2>
+  <div class="section-desc">Sequenced to get to first live factory fastest</div>
+
+  <div class="priority-list">
+    <div class="priority-item">
+      <div class="pi-content">
+        <div class="pi-title">Saga Simplification + Exception Queue (Days 1-3)</div>
+        <div class="pi-desc">Strip 15 states to 5. Build exception_queue table. Update saga-service.ts. This unblocks everything else because the current saga complexity slows all feature development.</div>
+      </div>
+    </div>
+    <div class="priority-item">
+      <div class="pi-content">
+        <div class="pi-title">Live Tally Stress Test (Days 3-7)</div>
+        <div class="pi-desc">Find one friendly accountant in Jeedimetla/Hyderabad. Install Bridge Agent. Pull 1,000 real vouchers. Watch it fail. Fix the XML parser. Build the field fidelity test suite. This is Gemini's #1 action item.</div>
+      </div>
+    </div>
+    <div class="priority-item">
+      <div class="pi-content">
+        <div class="pi-title">GST e-Invoice Service (Days 5-12)</div>
+        <div class="pi-desc">Build gst-service.ts. NIC API integration (auth, encryption, IRN generation). e-Way bill generation. DB migration for GST fields. This is the mandatory compliance entry point.</div>
+      </div>
+    </div>
+    <div class="priority-item">
+      <div class="pi-content">
+        <div class="pi-title">Mapping Registry + Template System (Days 8-14)</div>
+        <div class="pi-desc">mapping_templates table. Template lookup in mapping engine. Build 3 gold standard buyer templates (Walmart X12, EU EDIFACT, Indian domestic). Seed into database.</div>
+      </div>
+    </div>
+    <div class="priority-item">
+      <div class="pi-content">
+        <div class="pi-title">Document Generation + Download (Days 12-18)</div>
+        <div class="pi-desc">File export endpoints. EDI/cXML file generation from mapped data. Preview endpoint for human-readable view. Download endpoint for manual buyer portal upload.</div>
+      </div>
+    </div>
+    <div class="priority-item">
+      <div class="pi-content">
+        <div class="pi-title">Shadow Mode Implementation (Days 15-20)</div>
+        <div class="pi-desc">Shadow Mode API routes. Run full pipeline without dispatch. Compare against manual process. Chargeback detection. Savings calculation. Shadow Mode report generation.</div>
+      </div>
+    </div>
+    <div class="priority-item">
+      <div class="pi-content">
+        <div class="pi-title">Portal — 5 Core Pages (Days 18-25)</div>
+        <div class="pi-desc">Dashboard (health + stats), Documents (unified list + download), Mapping Studio (view/edit templates), Exception Queue (resolve failures), Factory Setup (Bridge status + GST config).</div>
+      </div>
+    </div>
+    <div class="priority-item">
+      <div class="pi-content">
+        <div class="pi-title">Onboarding Kit + Demo Video (Days 25-30)</div>
+        <div class="pi-desc">Pre-flight script, installer, TDL package, sample mappings, validation tests. Record 3-minute Shadow Mode demo video showing it catching a Missing GSTIN error. This is your "Aha!" sales asset.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div style="text-align:center; padding: 32px; color: var(--muted); font-size: 13px;">
+  FactoryConnect Solution Action Items — 3-Eye Consensus (Claude + GPT + Gemini) — April 2026<br>
+  14 Redesign · 11 New Build · 9 Cut · 8 Keep · 5 Critical Priority
+</div>
+
+</div>
+</body>
+</html>

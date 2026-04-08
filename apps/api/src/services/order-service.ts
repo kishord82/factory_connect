@@ -65,7 +65,7 @@ export async function createOrder(
   ctx: RequestContext,
   data: CanonicalOrderCreate,
 ): Promise<OrderRow> {
-  return withTenantTransaction(ctx, async (client) => {
+  return withTenantTransaction(ctx, async (client: PoolClient) => {
     // 1. Insert canonical order
     const order = await insertOne<OrderRow>(
       client,
@@ -139,7 +139,7 @@ export async function confirmOrder(
   ctx: RequestContext,
   orderId: string,
 ): Promise<OrderRow> {
-  return withTenantTransaction(ctx, async (client) => {
+  return withTenantTransaction(ctx, async (client: PoolClient) => {
     const existing = await findOne<OrderRow>(
       client,
       'SELECT * FROM canonical_orders WHERE id = $1',
@@ -190,7 +190,7 @@ export async function getOrderById(
   ctx: RequestContext,
   orderId: string,
 ): Promise<{ order: OrderRow; line_items: LineItemRow[] } | null> {
-  return withTenantClient(ctx, async (client) => {
+  return withTenantClient(ctx, async (client: PoolClient) => {
     const order = await findOne<OrderRow>(
       client,
       'SELECT * FROM canonical_orders WHERE id = $1',
@@ -213,7 +213,7 @@ export async function listOrders(
   ctx: RequestContext,
   query: OrderListQuery,
 ): Promise<PaginatedResult<OrderRow>> {
-  return withTenantClient(ctx, async (client) => {
+  return withTenantClient(ctx, async (client: PoolClient) => {
     const filters: Record<string, unknown> = {};
     if (query.status) filters.status = query.status;
     if (query.buyer_id) filters.buyer_id = query.buyer_id;
@@ -240,7 +240,7 @@ export async function updateOrder(
   orderId: string,
   data: CanonicalOrderUpdate,
 ): Promise<OrderRow> {
-  return withTenantTransaction(ctx, async (client) => {
+  return withTenantTransaction(ctx, async (client: PoolClient) => {
     const existing = await findOne<OrderRow>(
       client,
       'SELECT * FROM canonical_orders WHERE id = $1',

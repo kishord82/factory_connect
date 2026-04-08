@@ -8,6 +8,7 @@ import { PaginationSchema } from '@fc/shared';
 import { authenticate } from '../middleware/auth.js';
 import { tenantContext, getRequestContext } from '../middleware/tenant-context.js';
 import { validate, getValidatedQuery } from '../middleware/validate.js';
+import type { PoolClient } from '@fc/database';
 import { withTenantTransaction, withTenantClient, insertOne, paginatedQuery } from '@fc/database';
 
 export const calendarRouter = Router();
@@ -25,7 +26,7 @@ const CalendarEntryCreate = z.object({
 calendarRouter.post('/', validate({ body: CalendarEntryCreate }), async (req, res, next) => {
   try {
     const ctx = getRequestContext(req);
-    const entry = await withTenantTransaction(ctx, async (client) => {
+    const entry = await withTenantTransaction(ctx, async (client: PoolClient) => {
       return insertOne(client,
         `INSERT INTO calendar_entries (factory_id, entry_date, entry_type, title, description, source, suppress_alerts)
          VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
@@ -43,7 +44,7 @@ calendarRouter.get('/', validate({ query: PaginationSchema.extend({
   try {
     const ctx = getRequestContext(req);
     const q = getValidatedQuery<{ page: number; pageSize: number; from?: Date; to?: Date }>(req);
-    const result = await withTenantClient(ctx, async (client) => {
+    const result = await withTenantClient(ctx, async (client: PoolClient) => {
       const params: unknown[] = [];
       let sql = 'SELECT * FROM calendar_entries WHERE 1=1';
       let idx = 1;

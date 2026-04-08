@@ -9,6 +9,7 @@ import { FcError } from '@fc/shared';
 import { authenticate } from '../middleware/auth.js';
 import { tenantContext, getRequestContext } from '../middleware/tenant-context.js';
 import { validate, getValidatedQuery, getValidatedParams } from '../middleware/validate.js';
+import type { PoolClient } from '@fc/database';
 import { withTenantTransaction, withTenantClient, insertOne, findOne, paginatedQuery } from '@fc/database';
 
 export const resyncRouter = Router();
@@ -27,7 +28,7 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
 resyncRouter.post('/', validate({ body: ResyncRequestCreateSchema }), async (req, res, next) => {
   try {
     const ctx = getRequestContext(req);
-    const resync = await withTenantTransaction(ctx, async (client) => {
+    const resync = await withTenantTransaction(ctx, async (client: PoolClient) => {
       // Check for duplicate active resync for same connection
       const existing = await findOne(
         client,
@@ -53,7 +54,7 @@ resyncRouter.get('/', validate({ query: PaginationSchema }), async (req, res, ne
   try {
     const ctx = getRequestContext(req);
     const q = getValidatedQuery<z.infer<typeof PaginationSchema>>(req);
-    const result = await withTenantClient(ctx, async (client) => {
+    const result = await withTenantClient(ctx, async (client: PoolClient) => {
       return paginatedQuery(client, 'SELECT * FROM resync_requests ORDER BY created_at DESC', [], q.page, q.pageSize);
     });
     res.json(result);
@@ -68,7 +69,7 @@ resyncRouter.post(
     try {
       const ctx = getRequestContext(req);
       const { target_status } = req.body;
-      const result = await withTenantTransaction(ctx, async (client) => {
+      const result = await withTenantTransaction(ctx, async (client: PoolClient) => {
         const current = await findOne<{ id: string; status: string }>(
           client, 'SELECT id, status FROM resync_requests WHERE id = $1', [getValidatedParams<z.infer<typeof IdParams>>(req).id],
         );

@@ -6,10 +6,11 @@ export interface AuthUser {
   role: string;
   factory_id: string;
   factory_name?: string;
+  ca_firm_id?: string;
 }
 
 /** Role hierarchy for UI visibility */
-export type FcRole = 'fc_admin' | 'factory_admin' | 'factory_operator' | 'factory_viewer';
+export type FcRole = 'fc_admin' | 'factory_admin' | 'factory_operator' | 'factory_viewer' | 'ca_admin' | 'ca_staff';
 
 /** Check if user has one of the allowed roles */
 export function hasRole(user: AuthUser | null, roles: FcRole[]): boolean {
@@ -25,6 +26,11 @@ export function canWrite(user: AuthUser | null): boolean {
 /** Check if user is platform admin */
 export function isAdmin(user: AuthUser | null): boolean {
   return hasRole(user, ['fc_admin']);
+}
+
+/** Check if user is a CA firm user */
+export function isCaUser(user: AuthUser | null): boolean {
+  return hasRole(user, ['ca_admin', 'ca_staff']);
 }
 
 export interface AuthContextType {

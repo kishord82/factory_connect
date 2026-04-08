@@ -1,8 +1,17 @@
 /**
  * C1-C2: Core mapping engine — applies field mappings with transforms.
+ * Validates inputs, applies transforms, detects unmapped fields.
  */
-import type { MappingConfigDef, MappingContext, MappingResult, MappingError } from './types.js';
-import { applyTransform } from './transform.js';
+import type {
+  MappingConfig,
+  MappingConfigDef,
+  MappingContext,
+  MappingResult,
+  ValidationError,
+  FieldMapping,
+  MappingFieldDef,
+} from './types.js';
+import { applyTransform, applyTransformChain } from './transform.js';
 
 /**
  * Get a nested value from an object using dot-notation path.
@@ -58,34 +67,162 @@ function getLeafPaths(obj: Record<string, unknown>, prefix: string = ''): string
 }
 
 /**
+ * Validate a mapping configuration structure.
+ * Returns validation errors if config is invalid.
+ */
+export function validateMappingConfig(
+  config: MappingConfig | MappingConfigDef,
+): ValidationError[] {
+  const errors: ValidationError[] = [];
+
+  if (!config.id || typeof config.id !== 'string') {
+    errors.push({
+      path: 'config.id',
+      message: 'Mapping ID is required and must be a string',
+      severity: 'error',
+    });
+  }
+
+  if (!config.name || typeof config.name !== 'string') {
+    errors.push({
+      path: 'config.name',
+      message: 'Mapping name is required and must be a string',
+      severity: 'error',
+    });
+  }
+
+  if (!config.source_type || typeof config.source_type !== 'string') {
+    errors.push({
+      path: 'config.source_type',
+      message: 'Source type is required',
+      severity: 'error',
+    });
+  }
+
+  if (!config.target_type || typeof config.target_type !== 'string') {
+    errors.push({
+      path: 'config.target_type',
+      message: 'Target type is required',
+      severity: 'error',
+    });
+  }
+
+  // Handle both new and legacy field names
+  let fields: (FieldMapping | MappingFieldDef)[] = [];
+  if ('field_mappings' in config) {
+    fields = config.field_mappings;
+  } else if ('fields' in config) {
+    fields = (config as MappingConfigDef).fields;
+  }
+
+  if (!Array.isArray(fields) || fields.length === 0) {
+    errors.push({
+      path: 'config.fields',
+      message: 'At least one field mapping is required',
+      severity: 'error',
+    });
+    return errors;
+  }
+
+  // Validate each field
+  for (let i = 0; i < fields.length; i++) {
+    const field = fields[i];
+
+    if (!field.source_path || typeof field.source_path !== 'string') {
+      errors.push({
+        path: `config.fields[${i}].source_path`,
+        message: 'source_path is required',
+        severity: 'error',
+      });
+    }
+
+    if (!field.target_path || typeof field.target_path !== 'string') {
+      errors.push({
+        path: `config.fields[${i}].target_path`,
+        message: 'target_path is required',
+        severity: 'error',
+      });
+    }
+  }
+
+  return errors;
+}
+
+/**
+ * Validate that all required fields are present in source data.
+ */
+export function validateRequiredFields(
+  sourceData: Record<string, unknown>,
+  config: MappingConfig | MappingConfigDef,
+): ValidationError[] {
+  const errors: ValidationError[] = [];
+  let fields: (FieldMapping | MappingFieldDef)[] = [];
+  if ('field_mappings' in config) {
+    fields = config.field_mappings;
+  } else if ('fields' in config) {
+    fields = (config as MappingConfigDef).fields;
+  }
+
+  for (const field of fields) {
+    // Check both is_required and required (for backward compat)
+    const isRequired = 'is_required' in field ? field.is_required : ('required' in field ? (field as MappingFieldDef).required : false);
+
+    if (isRequired) {
+      const value = getNestedValue(sourceData, field.source_path);
+      if (value === undefined || value === null) {
+        errors.push({
+          path: field.source_path,
+          message: `Required field missing: ${field.source_path}`,
+          severity: 'error',
+        });
+      }
+    }
+  }
+
+  return errors;
+}
+
+/**
  * Apply a mapping configuration to source data.
+ * Supports both new MappingConfig and legacy MappingConfigDef.
  */
 export function applyMapping(
   source: Record<string, unknown>,
-  config: MappingConfigDef,
+  config: MappingConfig | MappingConfigDef,
   _context?: MappingContext,
 ): MappingResult {
+  const startTime = performance.now();
   const result: Record<string, unknown> = {};
-  const errors: MappingError[] = [];
+  const errors: ValidationError[] = [];
   const warnings: string[] = [];
   const mappedSourcePaths = new Set<string>();
 
-  for (const field of config.fields) {
+  // Handle both new and legacy field names
+  let fields: (FieldMapping | MappingFieldDef)[] = [];
+  if ('field_mappings' in config) {
+    fields = config.field_mappings;
+  } else if ('fields' in config) {
+    fields = (config as MappingConfigDef).fields;
+  }
+
+  for (const field of fields) {
     mappedSourcePaths.add(field.source_path);
 
     try {
       let value = getNestedValue(source, field.source_path);
 
+      // Check required status (handle both is_required and required)
+      const isRequired = 'is_required' in field ? field.is_required : ('required' in field ? (field as MappingFieldDef).required : false);
+
       // Apply default if value is missing
       if (value === undefined || value === null) {
         if (field.default_value !== undefined) {
           value = field.default_value;
-        } else if (field.required) {
+        } else if (isRequired) {
           errors.push({
-            field: field.target_path,
-            source_path: field.source_path,
+            path: field.target_path,
             message: `Required field missing: ${field.source_path}`,
-            code: 'REQUIRED_FIELD_MISSING',
+            severity: 'error',
           });
           continue;
         } else {
@@ -93,18 +230,20 @@ export function applyMapping(
         }
       }
 
-      // Apply transform
-      if (field.transform) {
+      // Apply transform(s)
+      // Support both single transform (legacy) and chain (new)
+      if ('transform_rules' in field && field.transform_rules?.length) {
+        value = applyTransformChain(value, field.transform_rules);
+      } else if ('transform' in field && field.transform) {
         value = applyTransform(value, field.transform);
       }
 
       setNestedValue(result, field.target_path, value);
     } catch (err) {
       errors.push({
-        field: field.target_path,
-        source_path: field.source_path,
+        path: field.target_path,
         message: err instanceof Error ? err.message : 'Transform failed',
-        code: 'TRANSFORM_ERROR',
+        severity: 'error',
       });
     }
   }
@@ -116,12 +255,15 @@ export function applyMapping(
     warnings.push(`${unmapped.length} source fields not mapped`);
   }
 
+  const executionTime = performance.now() - startTime;
+
   return {
     success: errors.length === 0,
     data: result,
     errors,
     warnings,
     unmapped_fields: unmapped,
+    execution_time_ms: executionTime,
   };
 }
 

@@ -18,15 +18,16 @@ export function errorHandler(
   const correlationId = req.correlationId || 'unknown';
 
   if (err instanceof FcError) {
+    const fcErr = err as FcError;
     logger.warn(
-      { code: err.code, statusCode: err.statusCode, correlationId },
-      err.message,
+      { code: fcErr.code, statusCode: fcErr.statusCode, correlationId },
+      fcErr.message,
     );
-    res.status(err.statusCode).json({
+    res.status(fcErr.statusCode).json({
       error: {
-        code: err.code,
-        message: err.message,
-        details: err.details,
+        code: fcErr.code,
+        message: fcErr.message,
+        details: fcErr.details,
         correlationId,
       },
     });

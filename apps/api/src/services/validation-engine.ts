@@ -2,6 +2,7 @@
  * B25: Pre-dispatch validation engine — validates documents before EDI send.
  */
 import type { RequestContext } from '@fc/shared';
+import type { PoolClient } from '@fc/database';
 import { withTenantClient, findOne, findMany } from '@fc/database';
 interface ValidationResult {
   valid: boolean;
@@ -100,7 +101,7 @@ export function validateInvoice(data: Record<string, unknown>): ValidationResult
 }
 
 export async function validateOrderForDispatch(ctx: RequestContext, orderId: string): Promise<ValidationResult> {
-  return withTenantClient(ctx, async (client) => {
+  return withTenantClient(ctx, async (client: PoolClient) => {
     const order = await findOne<Record<string, unknown>>(client, 'SELECT * FROM canonical_orders WHERE id = $1', [orderId]);
     if (!order) {
       return { valid: false, errors: [{ field: 'id', rule: 'EXISTS', message: 'Order not found', severity: 'error' }], warnings: [] };

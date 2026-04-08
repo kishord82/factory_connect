@@ -1,0 +1,74 @@
+# Git and version control
+.git
+.gitignore
+.github
+.gitlab-ci.yml
+.travis.yml
+
+# Development
+node_modules
+dist
+build
+coverage
+*.log
+npm-debug.log
+pnpm-debug.log
+yarn-error.log
+.pnpm-store
+
+# IDE and Editor
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+.env
+
+# Documentation
+docs
+README.md
+*.md
+
+# Tests
+tests
+*.test.ts
+*.spec.ts
+vitest.config.ts
+jest.config.js
+
+# Docker
+.docker
+.dockerignore
+Dockerfile*
+docker-compose*.yml
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.circleci
+azure-pipelines.yml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Misc
+*.orig
+.editorconfig
+.prettierrc
+.eslintrc
+tsconfig.json
+pnpm-workspace.yaml
+
+# Keycloak (local development)
+keycloak/
+
+# Vault (local development)
+vault/
+
+# MinIO (local development)
+minio/
+
+# AS2 (local development)
+openas2/

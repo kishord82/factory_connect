@@ -6,6 +6,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { authenticate, authorize } from '../../middleware/auth.js';
 import { validate, getValidatedQuery, getValidatedParams } from '../../middleware/validate.js';
+import type { PoolClient } from '@fc/database';
 import { getPool } from '@fc/database';
 import { withTransaction, insertOne, paginatedQuery } from '@fc/database';
 import { PaginationSchema } from '@fc/shared';
@@ -36,7 +37,7 @@ adminRouter.post('/impersonate', validate({ body: z.object({
   reason: z.string().min(1).max(500),
 }) }), async (req, res, next) => {
   try {
-    const session = await withTransaction(async (client) => {
+    const session = await withTransaction(async (client: PoolClient) => {
       return insertOne(client,
         `INSERT INTO impersonation_sessions (fc_operator_id, factory_id, reason)
          VALUES ($1, $2, $3) RETURNING *`,

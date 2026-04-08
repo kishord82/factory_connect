@@ -74,6 +74,20 @@ const DEV_USERS: Record<
     factory_id: 'a0000000-0000-0000-0000-000000000001', // Default context; can impersonate any
     sub: 'user-fc-admin-001',
   },
+  // CA Firm Admin (compliance platform)
+  'ca_admin@demo.in': {
+    password: 'cademo123',
+    role: 'ca_admin',
+    factory_id: 'ca000000-0000-0000-0000-000000000001', // ca_firm_id used as factory_id for RLS
+    sub: 'user-ca-admin-001',
+  },
+  // CA Firm Staff
+  'ca_staff@demo.in': {
+    password: 'cademo123',
+    role: 'ca_staff',
+    factory_id: 'ca000000-0000-0000-0000-000000000001',
+    sub: 'user-ca-staff-001',
+  },
 };
 
 /** POST /auth/login — issue dev JWT */
@@ -97,20 +111,31 @@ authRouter.post('/login', validate({ body: LoginSchema }), async (req, res, next
       throw new FcError('FC_ERR_AUTH_INVALID_CREDENTIALS', 'Invalid email or password', {}, 401);
     }
 
-    // Lookup factory name — use SET LOCAL to satisfy RLS
-    let factoryName = 'Unknown';
+    // Check if this is a CA user
+    const isCaUser = devUser.role === 'ca_admin' || devUser.role === 'ca_staff';
+
+    // Lookup name — use SET LOCAL to satisfy RLS
+    let displayName = 'Unknown';
     try {
       const pool = getPool();
       const client = await pool.connect();
       try {
         await client.query('BEGIN');
         await client.query('SET LOCAL app.current_tenant = $1', [devUser.factory_id]);
-        const factoryResult = await client.query(
-          'SELECT id, factory_name, slug FROM factories WHERE id = $1',
-          [devUser.factory_id],
-        );
+        if (isCaUser) {
+          const caResult = await client.query(
+            'SELECT id, firm_name FROM compliance.ca_firms WHERE id = $1',
+            [devUser.factory_id],
+          );
+          displayName = caResult.rows[0]?.firm_name || 'CA Firm';
+        } else {
+          const factoryResult = await client.query(
+            'SELECT id, name, slug FROM factories WHERE id = $1',
+            [devUser.factory_id],
+          );
+          displayName = factoryResult.rows[0]?.name || 'Unknown';
+        }
         await client.query('COMMIT');
-        factoryName = factoryResult.rows[0]?.factory_name || 'Unknown';
       } catch {
         await client.query('ROLLBACK').catch(() => {});
       } finally {
@@ -121,26 +146,26 @@ authRouter.post('/login', validate({ body: LoginSchema }), async (req, res, next
     }
 
     const secret = process.env.JWT_SECRET || 'fc-dev-secret-do-not-use-in-prod';
-    const token = jwt.sign(
-      {
-        sub: devUser.sub,
-        factory_id: devUser.factory_id,
-        role: devUser.role,
-        email,
-        factory_name: factoryName,
-        iss: 'http://localhost:8080/realms/factoryconnect',
-        aud: 'fc-api',
-      },
-      secret,
-      { expiresIn: '8h' },
-    );
+    const tokenPayload: Record<string, unknown> = {
+      sub: devUser.sub,
+      factory_id: devUser.factory_id,
+      role: devUser.role,
+      email,
+      factory_name: displayName,
+      iss: 'http://localhost:8080/realms/factoryconnect',
+      aud: 'fc-api',
+    };
+    if (isCaUser) {
+      tokenPayload.ca_firm_id = devUser.factory_id;
+    }
+    const token = jwt.sign(tokenPayload, secret, { expiresIn: '8h' });
 
     res.json({
       access_token: token,
       token_type: 'Bearer',
       expires_in: 28800,
       role: devUser.role,
-      factory_name: factoryName,
+      factory_name: displayName,
     });
   } catch (err) {
     next(err);
