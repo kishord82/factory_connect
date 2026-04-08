@@ -3,8 +3,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api.js';
 import { useAuth, canWrite } from '../lib/auth.js';
 import { formatDate } from '../utils/date.js';
-import { TableLoading, TableEmpty, TableError } from '../components/common/TableStates.js';
 import { ChevronDown, Download, RotateCcw, Eye } from 'lucide-react';
+import { DataTable } from '../components/common/DataTable.js';
+import type { Column } from '../components/common/DataTable.js';
 
 interface CanonicalOrder {
   id: string;
@@ -42,7 +43,7 @@ interface OrderDetail extends CanonicalOrder {
   }>;
 }
 
-interface PaginatedResponse {
+interface PaginatedResult {
   data: CanonicalOrder[];
   total: number;
   page: number;
@@ -61,25 +62,61 @@ const statusColors: Record<string, string> = {
   FAILED: 'bg-red-100 text-red-700',
 };
 
+const columns: Column<CanonicalOrder>[] = [
+  {
+    key: 'buyer_po_number',
+    label: 'PO Number',
+    sortable: true,
+    render: (row) => <span className="font-medium text-gray-900">{row.buyer_po_number as string}</span>,
+  },
+  {
+    key: 'factory_order_number',
+    label: 'Factory Order',
+    render: (row) => <span className="text-gray-500">{(row.factory_order_number as string | null) ?? '—'}</span>,
+  },
+  {
+    key: 'status',
+    label: 'Status',
+    sortable: true,
+    render: (row) => (
+      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusColors[row.status as string] ?? 'bg-gray-100'}`}>
+        {row.status as string}
+      </span>
+    ),
+  },
+  {
+    key: 'total_amount',
+    label: 'Amount',
+    sortable: true,
+    render: (row) => (
+      <span className="text-gray-900">
+        {row.currency as string} {Number(row.total_amount as string).toLocaleString('en-IN')}
+      </span>
+    ),
+  },
+  {
+    key: 'created_at',
+    label: 'Date',
+    sortable: true,
+    render: (row) => <span className="text-gray-500">{formatDate(row.created_at as string)}</span>,
+  },
+  {
+    key: 'id',
+    label: 'Action',
+    render: () => (
+      <span className="flex items-center gap-1 text-sm text-indigo-600 font-medium">
+        <Eye size={14} /> View
+      </span>
+    ),
+  },
+];
+
 export function OrderExplorer() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<OrderDetail | null>(null);
   const [showDetail, setShowDetail] = useState(false);
-
-  const ordersQuery = useQuery({
-    queryKey: ['orders-explorer', page, statusFilter],
-    queryFn: () => {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        pageSize: '20',
-        ...(statusFilter && { status: statusFilter }),
-      });
-      return api.get<PaginatedResponse>(`/orders?${params}`);
-    },
-  });
 
   const orderDetailQuery = useQuery<OrderDetail | null, Error, OrderDetail | null>({
     queryKey: ['order-detail', selectedOrder?.id],
@@ -90,29 +127,26 @@ export function OrderExplorer() {
   const retryMutation = useMutation({
     mutationFn: (orderId: string) => api.post(`/orders/${orderId}/retry`, {}),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['orders-explorer'] });
       queryClient.invalidateQueries({ queryKey: ['order-detail'] });
     },
   });
 
   const exportMutation = useMutation({
-    mutationFn: () => {
-      const data = ordersQuery.data?.data || [];
+    mutationFn: async () => {
+      const params = new URLSearchParams({
+        page: '1',
+        pageSize: '1000',
+        sort: 'created_at',
+        order: 'desc',
+        ...(statusFilter && { status: statusFilter }),
+      });
+      const result = await api.get<PaginatedResult>(`/orders?${params}`);
       const csv = [
         ['ID', 'PO Number', 'Factory Order', 'Status', 'Amount', 'Currency', 'Created'].join(','),
-        ...data.map(o =>
-          [
-            o.id,
-            o.buyer_po_number,
-            o.factory_order_number || '',
-            o.status,
-            o.total_amount,
-            o.currency,
-            o.created_at,
-          ].join(',')
+        ...result.data.map(o =>
+          [o.id, o.buyer_po_number, o.factory_order_number ?? '', o.status, o.total_amount, o.currency, o.created_at].join(',')
         ),
       ].join('\n');
-
       const blob = new Blob([csv], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -122,9 +156,11 @@ export function OrderExplorer() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      return Promise.resolve();
     },
   });
+
+  const extraParams: Record<string, string> = {};
+  if (statusFilter) extraParams['status'] = statusFilter;
 
   return (
     <div className="grid grid-cols-3 gap-6">
@@ -134,7 +170,7 @@ export function OrderExplorer() {
           <h2 className="text-2xl font-bold text-gray-900">Orders</h2>
           <button
             onClick={() => exportMutation.mutate()}
-            disabled={!ordersQuery.data?.data.length}
+            disabled={exportMutation.isPending}
             className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
           >
             <Download size={16} />
@@ -142,108 +178,33 @@ export function OrderExplorer() {
           </button>
         </div>
 
-        {/* Filters */}
-        <div className="mb-6 flex gap-4">
+        {/* Status Filter */}
+        <div className="mb-6">
           <select
             value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
-              setPage(1);
-            }}
+            onChange={(e) => setStatusFilter(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
             <option value="">All statuses</option>
             {Object.keys(statusColors).map((status) => (
-              <option key={status} value={status}>
-                {status}
-              </option>
+              <option key={status} value={status}>{status}</option>
             ))}
           </select>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          {ordersQuery.isLoading ? (
-            <TableLoading message="Loading orders..." />
-          ) : ordersQuery.isError ? (
-            <TableError
-              message={ordersQuery.error instanceof Error ? ordersQuery.error.message : 'Unknown error'}
-              onRetry={() => ordersQuery.refetch()}
-            />
-          ) : !ordersQuery.data?.data?.length ? (
-            <TableEmpty entity="orders" />
-          ) : (
-            <>
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">PO Number</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Factory Order</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {ordersQuery.data.data.map((order) => (
-                    <tr key={order.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 text-sm font-medium text-gray-900">{order.buyer_po_number}</td>
-                      <td className="px-6 py-4 text-sm text-gray-500">{order.factory_order_number || '—'}</td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                            statusColors[order.status] || 'bg-gray-100'
-                          }`}
-                        >
-                          {order.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        {order.currency} {Number(order.total_amount).toLocaleString('en-IN')}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">{formatDate(order.created_at)}</td>
-                      <td className="px-6 py-4">
-                        <button
-                          onClick={() => {
-                            setSelectedOrder(order as OrderDetail);
-                            setShowDetail(true);
-                          }}
-                          className="flex items-center gap-1 text-sm text-indigo-600 hover:text-indigo-700 font-medium"
-                        >
-                          <Eye size={14} />
-                          View
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {ordersQuery.data.totalPages > 1 && (
-                <div className="px-6 py-3 border-t border-gray-200 flex justify-between items-center">
-                  <span className="text-sm text-gray-500">
-                    Page {ordersQuery.data.page} of {ordersQuery.data.totalPages} ({ordersQuery.data.total} total)
-                  </span>
-                  <div className="space-x-2">
-                    <button
-                      onClick={() => setPage(Math.max(1, page - 1))}
-                      disabled={page === 1}
-                      className="px-3 py-1 text-sm border rounded disabled:opacity-50"
-                    >
-                      Prev
-                    </button>
-                    <button
-                      onClick={() => setPage(page + 1)}
-                      disabled={page >= ordersQuery.data.totalPages}
-                      className="px-3 py-1 text-sm border rounded disabled:opacity-50"
-                    >
-                      Next
-                    </button>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </div>
+        <DataTable<CanonicalOrder>
+          key={statusFilter}
+          fetchUrl="/orders"
+          columns={columns}
+          entityLabel="orders"
+          defaultSort="created_at"
+          defaultOrder="desc"
+          extraParams={extraParams}
+          onRowClick={(row) => {
+            setSelectedOrder(row as OrderDetail);
+            setShowDetail(true);
+          }}
+        />
       </div>
 
       {/* Right: Detail Panel */}
@@ -260,7 +221,6 @@ export function OrderExplorer() {
           </div>
 
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
-            {/* Order Info */}
             <div>
               <h4 className="text-xs font-semibold text-gray-700 uppercase mb-3">Info</h4>
               <div className="space-y-2 text-sm">
@@ -270,15 +230,11 @@ export function OrderExplorer() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Factory Order:</span>
-                  <span className="font-medium">{selectedOrder.factory_order_number || '—'}</span>
+                  <span className="font-medium">{selectedOrder.factory_order_number ?? '—'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Status:</span>
-                  <span
-                    className={`px-2 py-0.5 text-xs font-medium rounded-full ${
-                      statusColors[selectedOrder.status] || 'bg-gray-100'
-                    }`}
-                  >
+                  <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${statusColors[selectedOrder.status] ?? 'bg-gray-100'}`}>
                     {selectedOrder.status}
                   </span>
                 </div>
@@ -295,12 +251,11 @@ export function OrderExplorer() {
               </div>
             </div>
 
-            {/* Line Items */}
-            {orderDetailQuery.data && orderDetailQuery.data !== null && (orderDetailQuery.data as OrderDetail).line_items?.length > 0 && (
+            {orderDetailQuery.data?.line_items && orderDetailQuery.data.line_items.length > 0 && (
               <div>
                 <h4 className="text-xs font-semibold text-gray-700 uppercase mb-3">Line Items</h4>
                 <div className="space-y-2 text-xs">
-                  {((orderDetailQuery.data as unknown) as OrderDetail).line_items.map((item) => (
+                  {orderDetailQuery.data.line_items.map((item) => (
                     <div key={item.id} className="p-2 bg-gray-50 rounded border border-gray-200">
                       <p className="font-medium text-gray-900">{item.sku}</p>
                       <p className="text-gray-600 text-xs">{item.description}</p>
@@ -313,12 +268,11 @@ export function OrderExplorer() {
               </div>
             )}
 
-            {/* Saga Timeline */}
-            {orderDetailQuery.data && orderDetailQuery.data !== null && (orderDetailQuery.data as OrderDetail).saga_timeline?.length > 0 && (
+            {orderDetailQuery.data?.saga_timeline && orderDetailQuery.data.saga_timeline.length > 0 && (
               <div>
                 <h4 className="text-xs font-semibold text-gray-700 uppercase mb-3">Saga Timeline</h4>
                 <div className="space-y-2 text-xs">
-                  {((orderDetailQuery.data as unknown) as OrderDetail).saga_timeline.map((event, idx) => (
+                  {orderDetailQuery.data.saga_timeline.map((event, idx) => (
                     <div key={idx} className="flex gap-2">
                       <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-indigo-600 mt-1.5" />
                       <div className="flex-1">
@@ -335,7 +289,6 @@ export function OrderExplorer() {
               </div>
             )}
 
-            {/* Actions */}
             {canWrite(user) && selectedOrder.status === 'FAILED' && (
               <button
                 onClick={() => retryMutation.mutate(selectedOrder.id)}

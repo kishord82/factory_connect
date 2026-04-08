@@ -1,7 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
-import { api } from '../../lib/api.js';
 import { useState } from 'react';
 import { Plus, MoreVertical } from 'lucide-react';
+import { DataTable } from '../../components/common/DataTable.js';
+import type { Column } from '../../components/common/DataTable.js';
 
 interface ReconSession {
   id: string;
@@ -16,14 +16,6 @@ interface ReconSession {
   created_at: string;
 }
 
-interface SessionsResponse {
-  data: ReconSession[];
-  total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-}
-
 const statusColor = (status: string | undefined) => {
   const colors: Record<string, string> = {
     completed: 'bg-green-100 text-green-700',
@@ -33,15 +25,85 @@ const statusColor = (status: string | undefined) => {
   return colors[status ?? ''] || 'bg-gray-100 text-gray-700';
 };
 
+const columns: Column<ReconSession>[] = [
+  {
+    key: 'client_name',
+    label: 'Client',
+    sortable: true,
+    render: (row) => <span className="font-medium text-gray-900">{(row.client_name as string) ?? '—'}</span>,
+  },
+  {
+    key: 'type',
+    label: 'Type',
+    sortable: true,
+    render: (row) => <span className="text-gray-500 uppercase">{(row.type as string) ?? '—'}</span>,
+  },
+  {
+    key: 'period',
+    label: 'Period',
+    render: (row) => <span className="text-gray-500">{(row.period as string) ?? '—'}</span>,
+  },
+  {
+    key: 'status',
+    label: 'Status',
+    sortable: true,
+    render: (row) => (
+      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusColor(row.status as string)}`}>
+        {(row.status as string) ?? '—'}
+      </span>
+    ),
+  },
+  {
+    key: 'match_rate',
+    label: 'Match Rate',
+    sortable: true,
+    render: (row) => {
+      const rate = (row.match_rate as number) ?? 0;
+      return (
+        <div className="flex items-center gap-2">
+          <div className="w-24 bg-gray-200 rounded-full h-2">
+            <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${rate}%` }} />
+          </div>
+          <span className="text-sm font-medium text-gray-900">{rate.toFixed(1)}%</span>
+        </div>
+      );
+    },
+  },
+  {
+    key: 'matched_items',
+    label: 'Matched',
+    sortable: true,
+    render: (row) => <span className="text-gray-900">{(row.matched_items as number) ?? 0}</span>,
+  },
+  {
+    key: 'unmatched_items',
+    label: 'Unmatched',
+    sortable: true,
+    render: (row) => {
+      const count = (row.unmatched_items as number) ?? 0;
+      return (
+        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+          count > 0 ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'
+        }`}>
+          {count}
+        </span>
+      );
+    },
+  },
+  {
+    key: 'id',
+    label: '',
+    render: () => (
+      <button className="text-gray-400 hover:text-gray-600" onClick={(e) => e.stopPropagation()}>
+        <MoreVertical className="w-5 h-5" />
+      </button>
+    ),
+  },
+];
+
 export function CaReconciliation() {
-  const [page, setPage] = useState(1);
   const [showNewSession, setShowNewSession] = useState(false);
   const [sessionType, setSessionType] = useState('bank');
-
-  const { data, isLoading } = useQuery({
-    queryKey: ['ca-recon-sessions', page],
-    queryFn: () => api.get<SessionsResponse>(`/ca/recon/sessions?page=${page}&pageSize=10`),
-  });
 
   return (
     <div className="space-y-6">
@@ -100,94 +162,13 @@ export function CaReconciliation() {
         </div>
       )}
 
-      {/* Sessions List */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-        {isLoading ? (
-          <div className="p-8 text-center text-gray-500">Loading sessions...</div>
-        ) : !data?.data?.length ? (
-          <div className="p-8 text-center text-gray-500">No reconciliation sessions</div>
-        ) : (
-          <>
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Client</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Period</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Match Rate</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Matched</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Unmatched</th>
-                  <th className="relative px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {data.data.map((session) => (
-                  <tr key={session.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{session.client_name ?? '—'}</td>
-                    <td className="px-6 py-4 text-sm text-gray-500 uppercase">{session.type ?? '—'}</td>
-                    <td className="px-6 py-4 text-sm text-gray-500">{session.period ?? '—'}</td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusColor(session.status ?? '')}`}>
-                        {session.status ?? '—'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-24 bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-blue-600 h-2 rounded-full"
-                            style={{ width: `${session.match_rate ?? 0}%` }}
-                          ></div>
-                        </div>
-                        <span className="text-sm font-medium text-gray-900">{(session.match_rate ?? 0).toFixed(1)}%</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">{session.matched_items ?? 0}</td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                        (session.unmatched_items ?? 0) > 0
-                          ? 'bg-yellow-100 text-yellow-700'
-                          : 'bg-green-100 text-green-700'
-                      }`}>
-                        {session.unmatched_items ?? 0}
-                      </span>
-                    </td>
-                    <td className="relative px-6 py-4 whitespace-nowrap text-right text-sm">
-                      <button className="text-gray-400 hover:text-gray-600">
-                        <MoreVertical className="w-5 h-5" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {data.totalPages > 1 && (
-              <div className="px-6 py-3 border-t border-gray-200 flex justify-between">
-                <span className="text-sm text-gray-500">
-                  Page {data.page} of {data.totalPages}
-                </span>
-                <div className="space-x-2">
-                  <button
-                    onClick={() => setPage(Math.max(1, page - 1))}
-                    disabled={page === 1}
-                    className="px-3 py-1 text-sm border rounded disabled:opacity-50"
-                  >
-                    Prev
-                  </button>
-                  <button
-                    onClick={() => setPage(page + 1)}
-                    disabled={page >= data.totalPages}
-                    className="px-3 py-1 text-sm border rounded disabled:opacity-50"
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-      </div>
+      <DataTable<ReconSession>
+        fetchUrl="/ca/recon/sessions"
+        columns={columns}
+        entityLabel="reconciliation sessions"
+        defaultSort="created_at"
+        defaultOrder="desc"
+      />
     </div>
   );
 }

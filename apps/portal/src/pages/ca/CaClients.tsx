@@ -1,8 +1,10 @@
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { api } from '../../lib/api.js';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Plus, Wifi, WifiOff, AlertCircle } from 'lucide-react';
+import { Plus, Wifi, WifiOff, AlertCircle } from 'lucide-react';
+import { DataTable } from '../../components/common/DataTable.js';
+import type { Column } from '../../components/common/DataTable.js';
 
 interface Client {
   id: string;
@@ -14,14 +16,6 @@ interface Client {
   active_filings: number;
   overdue_documents: number;
   created_at: string;
-}
-
-interface ClientsResponse {
-  data: Client[];
-  total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
 }
 
 const healthColor = (score: number) => {
@@ -36,17 +30,70 @@ const tallyStatusIcon = (status: string) => {
   return <AlertCircle className="w-4 h-4 text-yellow-600" />;
 };
 
+const columns: Column<Client>[] = [
+  {
+    key: 'client_name',
+    label: 'Client Name',
+    sortable: true,
+    render: (row) => <span className="font-medium text-gray-900">{row.client_name as string}</span>,
+  },
+  {
+    key: 'gst_number',
+    label: 'GST Number',
+    render: (row) => <span className="text-gray-500">{(row.gst_number as string) || '—'}</span>,
+  },
+  {
+    key: 'email',
+    label: 'Email',
+    sortable: true,
+    render: (row) => <span className="text-gray-500">{row.email as string}</span>,
+  },
+  {
+    key: 'tally_status',
+    label: 'Tally',
+    render: (row) => (
+      <div className="flex items-center gap-2">
+        {tallyStatusIcon(row.tally_status as string)}
+        <span className="text-sm capitalize">{row.tally_status as string}</span>
+      </div>
+    ),
+  },
+  {
+    key: 'health_score',
+    label: 'Health',
+    sortable: true,
+    render: (row) => (
+      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${healthColor(row.health_score as number)}`}>
+        {row.health_score as number}%
+      </span>
+    ),
+  },
+  {
+    key: 'active_filings',
+    label: 'Filings',
+    sortable: true,
+    render: (row) => <span className="text-gray-900">{row.active_filings as number}</span>,
+  },
+  {
+    key: 'overdue_documents',
+    label: 'Overdue',
+    sortable: true,
+    render: (row) => {
+      const count = row.overdue_documents as number;
+      return count > 0 ? (
+        <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-700">{count}</span>
+      ) : (
+        <span className="text-sm text-gray-500">0</span>
+      );
+    },
+  },
+];
+
 export function CaClients() {
   const navigate = useNavigate();
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({ client_name: '', gst_number: '', email: '' });
-
-  const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['ca-clients', page, search],
-    queryFn: () => api.get<ClientsResponse>(`/ca/clients?page=${page}&pageSize=20${search ? `&search=${search}` : ''}`),
-  });
+  const [tableKey, setTableKey] = useState(0);
 
   const createMutation = useMutation({
     mutationFn: (clientData: { client_name: string; gst_number: string; email: string }) =>
@@ -54,7 +101,7 @@ export function CaClients() {
     onSuccess: () => {
       setShowForm(false);
       setFormData({ client_name: '', gst_number: '', email: '' });
-      refetch();
+      setTableKey(k => k + 1); // remount DataTable to refresh
     },
   });
 
@@ -132,100 +179,15 @@ export function CaClients() {
         </div>
       )}
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-        <input
-          type="text"
-          placeholder="Search clients..."
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
-          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600"
-        />
-      </div>
-
-      {/* Clients Table */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-        {isLoading ? (
-          <div className="p-8 text-center text-gray-500">Loading clients...</div>
-        ) : isError ? (
-          <div className="p-8 text-center text-red-600">Failed to load clients</div>
-        ) : !data?.data?.length ? (
-          <div className="p-8 text-center text-gray-500">No clients found</div>
-        ) : (
-          <>
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Client Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">GST Number</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tally</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Health</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Filings</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Overdue</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {data.data.map((client) => (
-                  <tr key={client.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => navigate(`/ca/clients/${client.id}`)}>
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{client.client_name}</td>
-                    <td className="px-6 py-4 text-sm text-gray-500">{client.gst_number || '—'}</td>
-                    <td className="px-6 py-4 text-sm text-gray-500">{client.email}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        {tallyStatusIcon(client.tally_status)}
-                        <span className="text-sm capitalize">{client.tally_status}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${healthColor(client.health_score)}`}>
-                        {client.health_score}%
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">{client.active_filings}</td>
-                    <td className="px-6 py-4">
-                      {client.overdue_documents > 0 ? (
-                        <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-700">
-                          {client.overdue_documents}
-                        </span>
-                      ) : (
-                        <span className="text-sm text-gray-500">0</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {data.totalPages > 1 && (
-              <div className="px-6 py-3 border-t border-gray-200 flex justify-between items-center">
-                <span className="text-sm text-gray-500">
-                  Page {data.page} of {data.totalPages} ({data.total} total)
-                </span>
-                <div className="space-x-2">
-                  <button
-                    onClick={() => setPage(Math.max(1, page - 1))}
-                    disabled={page === 1}
-                    className="px-3 py-1 text-sm border rounded disabled:opacity-50"
-                  >
-                    Prev
-                  </button>
-                  <button
-                    onClick={() => setPage(page + 1)}
-                    disabled={page >= data.totalPages}
-                    className="px-3 py-1 text-sm border rounded disabled:opacity-50"
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-      </div>
+      <DataTable<Client>
+        key={tableKey}
+        fetchUrl="/ca/clients"
+        columns={columns}
+        entityLabel="clients"
+        defaultSort="client_name"
+        defaultOrder="asc"
+        onRowClick={(row) => navigate(`/ca/clients/${row.id as string}`)}
+      />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api.js';
-// @ts-expect-error - recharts not installed yet
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore -- recharts not installed yet
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 interface Analytics {
@@ -83,7 +84,7 @@ export function CaAnalytics() {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, value }: { name: string; value: number }) => `${name}: ${value}`}
+                  label={({ name, value }: { name?: string; value?: number }) => `${name ?? ''}: ${value ?? 0}`}
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"

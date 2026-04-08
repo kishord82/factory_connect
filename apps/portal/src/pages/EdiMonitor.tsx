@@ -1,27 +1,19 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api.js';
 import { formatDate } from '../utils/date.js';
-import { TableLoading, TableEmpty, TableError } from '../components/common/TableStates.js';
 import { ChevronDown, Copy } from 'lucide-react';
+import { DataTable } from '../components/common/DataTable.js';
+import type { Column } from '../components/common/DataTable.js';
 
 interface EdiMessage {
   id: string;
-  message_type: string; // 850, 855, 856, 810
+  message_type: string;
   partner_id: string;
-  status: string; // PENDING, SENT, DELIVERED, FAILED
+  status: string;
   raw_content: string;
   created_at: string;
   updated_at: string;
   error_message: string | null;
-}
-
-interface PaginatedResponse {
-  data: EdiMessage[];
-  total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
 }
 
 const statusColors: Record<string, string> = {
@@ -34,36 +26,61 @@ const statusColors: Record<string, string> = {
 
 const messageTypeLabels: Record<string, string> = {
   '850': 'Purchase Order (850)',
-  '855': 'Purchase Order Acknowledgment (855)',
+  '855': 'PO Acknowledgment (855)',
   '856': 'Advance Ship Notice (856)',
   '810': 'Invoice (810)',
 };
 
+const columns: Column<EdiMessage>[] = [
+  {
+    key: 'message_type',
+    label: 'Message Type',
+    sortable: true,
+    render: (row) => (
+      <span className="font-medium text-gray-900">
+        {messageTypeLabels[row.message_type as string] ?? (row.message_type as string)}
+      </span>
+    ),
+  },
+  {
+    key: 'partner_id',
+    label: 'Partner ID',
+    sortable: true,
+    render: (row) => <span className="text-gray-500">{row.partner_id as string}</span>,
+  },
+  {
+    key: 'status',
+    label: 'Status',
+    sortable: true,
+    render: (row) => (
+      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusColors[row.status as string] ?? 'bg-gray-100'}`}>
+        {row.status as string}
+      </span>
+    ),
+  },
+  {
+    key: 'created_at',
+    label: 'Created',
+    sortable: true,
+    render: (row) => <span className="text-gray-500">{formatDate(row.created_at as string)}</span>,
+  },
+];
+
 export function EdiMonitor() {
-  const [page, setPage] = useState(1);
   const [messageTypeFilter, setMessageTypeFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [partnerFilter, setPartnerFilter] = useState('');
   const [selectedMessage, setSelectedMessage] = useState<EdiMessage | null>(null);
 
-  const messagesQuery = useQuery({
-    queryKey: ['edi-messages', page, messageTypeFilter, statusFilter, partnerFilter],
-    queryFn: () => {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        pageSize: '20',
-        ...(messageTypeFilter && { message_type: messageTypeFilter }),
-        ...(statusFilter && { status: statusFilter }),
-        ...(partnerFilter && { partner_id: partnerFilter }),
-      });
-      return api.get<PaginatedResponse>(`/edi/messages?${params}`);
-    },
-  });
+  const filterKey = `${messageTypeFilter}:${statusFilter}:${partnerFilter}`;
+  const extraParams: Record<string, string> = {};
+  if (messageTypeFilter) extraParams['message_type'] = messageTypeFilter;
+  if (statusFilter) extraParams['status'] = statusFilter;
+  if (partnerFilter) extraParams['partner_id'] = partnerFilter;
 
   const handleResendMessage = async (messageId: string) => {
     try {
       await api.post(`/edi/messages/${messageId}/resend`, {});
-      messagesQuery.refetch();
     } catch (error) {
       alert(`Failed to resend message: ${error}`);
     }
@@ -83,33 +100,23 @@ export function EdiMonitor() {
         <div className="mb-6 flex gap-4">
           <select
             value={messageTypeFilter}
-            onChange={(e) => {
-              setMessageTypeFilter(e.target.value);
-              setPage(1);
-            }}
+            onChange={(e) => setMessageTypeFilter(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
             <option value="">All message types</option>
             {Object.entries(messageTypeLabels).map(([type, label]) => (
-              <option key={type} value={type}>
-                {label}
-              </option>
+              <option key={type} value={type}>{label}</option>
             ))}
           </select>
 
           <select
             value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
-              setPage(1);
-            }}
+            onChange={(e) => setStatusFilter(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
             <option value="">All statuses</option>
             {Object.keys(statusColors).map((status) => (
-              <option key={status} value={status}>
-                {status}
-              </option>
+              <option key={status} value={status}>{status}</option>
             ))}
           </select>
 
@@ -117,91 +124,21 @@ export function EdiMonitor() {
             type="text"
             placeholder="Filter by partner ID..."
             value={partnerFilter}
-            onChange={(e) => {
-              setPartnerFilter(e.target.value);
-              setPage(1);
-            }}
+            onChange={(e) => setPartnerFilter(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          {messagesQuery.isLoading ? (
-            <TableLoading message="Loading EDI messages..." />
-          ) : messagesQuery.isError ? (
-            <TableError
-              message={messagesQuery.error instanceof Error ? messagesQuery.error.message : 'Unknown error'}
-              onRetry={() => messagesQuery.refetch()}
-            />
-          ) : !messagesQuery.data?.data?.length ? (
-            <TableEmpty entity="EDI messages" />
-          ) : (
-            <>
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Message Type</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Partner ID</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {messagesQuery.data.data.map((msg) => (
-                    <tr key={msg.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                        {messageTypeLabels[msg.message_type] || msg.message_type}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">{msg.partner_id}</td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                            statusColors[msg.status] || 'bg-gray-100'
-                          }`}
-                        >
-                          {msg.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">{formatDate(msg.created_at)}</td>
-                      <td className="px-6 py-4">
-                        <button
-                          onClick={() => setSelectedMessage(msg)}
-                          className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
-                        >
-                          View
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {messagesQuery.data.totalPages > 1 && (
-                <div className="px-6 py-3 border-t border-gray-200 flex justify-between items-center">
-                  <span className="text-sm text-gray-500">
-                    Page {messagesQuery.data.page} of {messagesQuery.data.totalPages} ({messagesQuery.data.total} total)
-                  </span>
-                  <div className="space-x-2">
-                    <button
-                      onClick={() => setPage(Math.max(1, page - 1))}
-                      disabled={page === 1}
-                      className="px-3 py-1 text-sm border rounded disabled:opacity-50"
-                    >
-                      Prev
-                    </button>
-                    <button
-                      onClick={() => setPage(page + 1)}
-                      disabled={page >= messagesQuery.data.totalPages}
-                      className="px-3 py-1 text-sm border rounded disabled:opacity-50"
-                    >
-                      Next
-                    </button>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </div>
+        <DataTable<EdiMessage>
+          key={filterKey}
+          fetchUrl="/edi/messages"
+          columns={columns}
+          entityLabel="EDI messages"
+          defaultSort="created_at"
+          defaultOrder="desc"
+          extraParams={extraParams}
+          onRowClick={(row) => setSelectedMessage(row as EdiMessage)}
+        />
       </div>
 
       {/* Right: Message Detail */}
@@ -218,14 +155,13 @@ export function EdiMonitor() {
           </div>
 
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
-            {/* Header Info */}
             <div>
               <h4 className="text-xs font-semibold text-gray-700 uppercase mb-3">Info</h4>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Type:</span>
                   <span className="font-medium">
-                    {messageTypeLabels[selectedMessage.message_type] || selectedMessage.message_type}
+                    {messageTypeLabels[selectedMessage.message_type] ?? selectedMessage.message_type}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -234,11 +170,7 @@ export function EdiMonitor() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Status:</span>
-                  <span
-                    className={`px-2 py-0.5 text-xs font-medium rounded-full ${
-                      statusColors[selectedMessage.status] || 'bg-gray-100'
-                    }`}
-                  >
+                  <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${statusColors[selectedMessage.status] ?? 'bg-gray-100'}`}>
                     {selectedMessage.status}
                   </span>
                 </div>
@@ -253,7 +185,6 @@ export function EdiMonitor() {
               </div>
             </div>
 
-            {/* Error Message */}
             {selectedMessage.error_message && (
               <div className="p-3 bg-red-50 border border-red-200 rounded-md">
                 <p className="text-xs font-semibold text-red-800 mb-1">Error</p>
@@ -261,7 +192,6 @@ export function EdiMonitor() {
               </div>
             )}
 
-            {/* Raw Content */}
             <div>
               <div className="flex items-center justify-between mb-2">
                 <h4 className="text-xs font-semibold text-gray-700 uppercase">Raw EDI Content</h4>
@@ -278,7 +208,6 @@ export function EdiMonitor() {
               </pre>
             </div>
 
-            {/* Actions */}
             {selectedMessage.status === 'FAILED' && (
               <button
                 onClick={() => handleResendMessage(selectedMessage.id)}

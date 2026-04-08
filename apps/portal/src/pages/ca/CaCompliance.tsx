@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api.js';
 import { useState } from 'react';
 import { Filter } from 'lucide-react';
+import { DataTable } from '../../components/common/DataTable.js';
+import type { Column } from '../../components/common/DataTable.js';
 
 interface Filing {
   id: string;
@@ -29,14 +31,6 @@ interface Exception {
   status: string;
 }
 
-interface FilingsResponse {
-  data: Filing[];
-  total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-}
-
 interface ExceptionsResponse {
   data: Exception[];
   total: number;
@@ -45,7 +39,7 @@ interface ExceptionsResponse {
   totalPages: number;
 }
 
-const statusColor = (status: string | undefined) => {
+const filingStatusColor = (status: string | undefined) => {
   const colors: Record<string, string> = {
     filed: 'bg-green-100 text-green-700',
     in_progress: 'bg-blue-100 text-blue-700',
@@ -66,23 +60,62 @@ const severityColor = (severity: string | undefined) => {
   return colors[severity ?? ''] || 'text-gray-600 bg-gray-50 border-gray-200';
 };
 
-export function CaCompliance() {
-  const [filingPage, setFilingPage] = useState(1);
-  const [exceptionPage, setExceptionPage] = useState(1);
-  const [filingType, setFilingType] = useState('');
+const filingColumns: Column<Filing>[] = [
+  {
+    key: 'client_name',
+    label: 'Client',
+    sortable: true,
+    render: (row) => <span className="font-medium text-gray-900">{(row.client_name as string) ?? '—'}</span>,
+  },
+  {
+    key: 'type',
+    label: 'Type',
+    sortable: true,
+    render: (row) => <span className="text-gray-500 uppercase">{(row.type as string) ?? '—'}</span>,
+  },
+  {
+    key: 'period',
+    label: 'Period',
+    render: (row) => <span className="text-gray-500">{(row.period as string) ?? '—'}</span>,
+  },
+  {
+    key: 'status',
+    label: 'Status',
+    sortable: true,
+    render: (row) => (
+      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${filingStatusColor(row.status as string)}`}>
+        {(row.status as string) ?? '—'}
+      </span>
+    ),
+  },
+  {
+    key: 'due_date',
+    label: 'Due Date',
+    sortable: true,
+    render: (row) => (
+      <span className="text-gray-500">
+        {row.due_date ? new Date(row.due_date as string).toLocaleDateString() : '—'}
+      </span>
+    ),
+  },
+  {
+    key: 'document_count',
+    label: 'Documents',
+    render: (row) => <span className="text-gray-900">{(row.document_count as number) ?? 0}</span>,
+  },
+];
 
-  const { data: filings, isLoading: loadingFilings } = useQuery({
-    queryKey: ['ca-filings', filingPage, filingType],
-    queryFn: () =>
-      api.get<FilingsResponse>(
-        `/ca/compliance/filings?page=${filingPage}&pageSize=10${filingType ? `&type=${filingType}` : ''}`,
-      ),
-  });
+export function CaCompliance() {
+  const [filingType, setFilingType] = useState('');
+  const [exceptionPage, setExceptionPage] = useState(1);
 
   const { data: exceptions } = useQuery({
     queryKey: ['ca-exceptions', exceptionPage],
     queryFn: () => api.get<ExceptionsResponse>(`/ca/compliance/exceptions?page=${exceptionPage}&pageSize=10`),
   });
+
+  const extraParams: Record<string, string> = {};
+  if (filingType) extraParams['type'] = filingType;
 
   return (
     <div className="space-y-6">
@@ -101,10 +134,7 @@ export function CaCompliance() {
             <Filter className="w-4 h-4 text-gray-500" />
             <select
               value={filingType}
-              onChange={(e) => {
-                setFilingType(e.target.value);
-                setFilingPage(1);
-              }}
+              onChange={(e) => setFilingType(e.target.value)}
               className="px-3 py-1 border border-gray-300 rounded-lg text-sm"
             >
               <option value="">All Types</option>
@@ -116,70 +146,18 @@ export function CaCompliance() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-          {loadingFilings ? (
-            <div className="p-8 text-center text-gray-500">Loading filings...</div>
-          ) : !filings?.data?.length ? (
-            <div className="p-8 text-center text-gray-500">No filings found</div>
-          ) : (
-            <>
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Client</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Period</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Due Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Documents</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {filings.data.map((filing) => (
-                    <tr key={filing.id} className="hover:bg-gray-50 cursor-pointer">
-                      <td className="px-6 py-4 text-sm font-medium text-gray-900">{filing.client_name ?? '—'}</td>
-                      <td className="px-6 py-4 text-sm text-gray-500 uppercase">{filing.type ?? '—'}</td>
-                      <td className="px-6 py-4 text-sm text-gray-500">{filing.period ?? '—'}</td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusColor(filing.status)}`}>
-                          {filing.status ?? '—'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">{filing.due_date ? new Date(filing.due_date).toLocaleDateString() : '—'}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900">{filing.document_count ?? 0}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {filings.totalPages > 1 && (
-                <div className="px-6 py-3 border-t border-gray-200 flex justify-between">
-                  <span className="text-sm text-gray-500">
-                    Page {filings.page} of {filings.totalPages}
-                  </span>
-                  <div className="space-x-2">
-                    <button
-                      onClick={() => setFilingPage(Math.max(1, filingPage - 1))}
-                      disabled={filingPage === 1}
-                      className="px-3 py-1 text-sm border rounded disabled:opacity-50"
-                    >
-                      Prev
-                    </button>
-                    <button
-                      onClick={() => setFilingPage(filingPage + 1)}
-                      disabled={filingPage >= filings.totalPages}
-                      className="px-3 py-1 text-sm border rounded disabled:opacity-50"
-                    >
-                      Next
-                    </button>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </div>
+        <DataTable<Filing>
+          key={filingType}
+          fetchUrl="/ca/compliance/filings"
+          columns={filingColumns}
+          entityLabel="filings"
+          defaultSort="due_date"
+          defaultOrder="asc"
+          extraParams={extraParams}
+        />
       </div>
 
-      {/* Exceptions Section */}
+      {/* Exceptions Section — card list (not a table) */}
       <div className="space-y-4">
         <h2 className="text-xl font-semibold text-gray-900">Exceptions Queue</h2>
 
@@ -199,7 +177,7 @@ export function CaCompliance() {
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full capitalize`}>
+                        <span className="px-2 py-1 text-xs font-medium rounded-full capitalize">
                           {exc.severity ?? '—'}
                         </span>
                         <button className="text-indigo-600 hover:text-indigo-700 text-sm font-medium">

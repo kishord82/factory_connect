@@ -60,14 +60,32 @@ adminRouter.post('/impersonate', validate({ body: z.object({
   } catch (err) { next(err); }
 });
 
-/** GET /admin/feature-flags — list all flags */
-adminRouter.get('/feature-flags', async (_req, res, next) => {
+const FLAG_SORT_COLUMNS = ['flag_name', 'is_enabled', 'updated_at'];
+const FLAG_SEARCH_COLUMNS = ['flag_name', 'description'];
+
+/** GET /admin/feature-flags — list all flags (paginated) */
+adminRouter.get('/feature-flags', async (req, res, next) => {
   try {
-    const pool = getPool();
-    const result = await pool.query(
-      'SELECT flag_name, is_enabled, description, updated_at FROM platform.feature_flags ORDER BY flag_name',
+    const params = parsePagination(req, 'flag_name');
+    const { clause: searchClause, values: searchValues } = buildSearchWhere(
+      params.search, FLAG_SEARCH_COLUMNS, 1,
     );
-    res.json({ data: result.rows });
+    const whereClause = searchClause ? `WHERE ${searchClause}` : '';
+    const orderBy = buildOrderBy(params.sort, params.order, FLAG_SORT_COLUMNS);
+
+    const pool = getPool();
+    const client = await pool.connect();
+    try {
+      const result = await paginatedQuery(
+        client,
+        `SELECT flag_name, is_enabled, description, updated_at
+         FROM platform.feature_flags ${whereClause} ${orderBy}`,
+        [...searchValues],
+        params.page,
+        params.limit,
+      );
+      res.json(result);
+    } finally { client.release(); }
   } catch (err) { next(err); }
 });
 

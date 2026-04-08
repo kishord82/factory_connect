@@ -1,7 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api.js';
 import { useState } from 'react';
-import { Plus, Search } from 'lucide-react';
+import { Plus } from 'lucide-react';
+import { DataTable } from '../../components/common/DataTable.js';
+import type { Column } from '../../components/common/DataTable.js';
 
 interface DocumentRequest {
   id: string;
@@ -16,14 +18,6 @@ interface DocumentRequest {
   created_at: string;
 }
 
-interface RequestsResponse {
-  data: DocumentRequest[];
-  total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-}
-
 interface Dashboard {
   total_requests: number;
   verified: number;
@@ -33,7 +27,7 @@ interface Dashboard {
   status_breakdown: Array<{ status: string; count: number; percentage: number }>;
 }
 
-const statusColor = (status: string) => {
+const docStatusColor = (status: string) => {
   const colors: Record<string, string> = {
     verified: 'bg-green-100 text-green-700',
     submitted: 'bg-blue-100 text-blue-700',
@@ -54,22 +48,64 @@ const priorityColor = (priority: string) => {
   return colors[priority] || 'bg-gray-100 text-gray-700';
 };
 
+const columns: Column<DocumentRequest>[] = [
+  {
+    key: 'client_name',
+    label: 'Client',
+    sortable: true,
+    render: (row) => <span className="font-medium text-gray-900">{row.client_name as string}</span>,
+  },
+  {
+    key: 'document_type',
+    label: 'Type',
+    sortable: true,
+    render: (row) => <span className="text-gray-500 capitalize">{row.document_type as string}</span>,
+  },
+  {
+    key: 'status',
+    label: 'Status',
+    sortable: true,
+    render: (row) => (
+      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${docStatusColor(row.status as string)}`}>
+        {row.status as string}
+      </span>
+    ),
+  },
+  {
+    key: 'priority',
+    label: 'Priority',
+    sortable: true,
+    render: (row) => (
+      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${priorityColor(row.priority as string)}`}>
+        {row.priority as string}
+      </span>
+    ),
+  },
+  {
+    key: 'due_date',
+    label: 'Due Date',
+    sortable: true,
+    render: (row) => (
+      <span className="text-gray-500">{new Date(row.due_date as string).toLocaleDateString()}</span>
+    ),
+  },
+  {
+    key: 'verified_date',
+    label: 'Verified',
+    render: (row) => (
+      <span className="text-gray-500">
+        {row.verified_date ? new Date(row.verified_date as string).toLocaleDateString() : '—'}
+      </span>
+    ),
+  },
+];
+
 export function CaDocuments() {
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState('');
   const [showBulkRequest, setShowBulkRequest] = useState(false);
 
   const { data: dashboard } = useQuery({
     queryKey: ['ca-documents-dashboard'],
     queryFn: () => api.get<{ data: Dashboard }>('/ca/documents/dashboard'),
-  });
-
-  const { data: requests, isLoading } = useQuery({
-    queryKey: ['ca-document-requests', page, search],
-    queryFn: () =>
-      api.get<RequestsResponse>(
-        `/ca/documents/requests?page=${page}&pageSize=10${search ? `&type=${search}` : ''}`,
-      ),
   });
 
   const db = dashboard?.data;
@@ -146,11 +182,7 @@ export function CaDocuments() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                defaultChecked
-                className="rounded border-gray-300"
-              />
+              <input type="checkbox" defaultChecked className="rounded border-gray-300" />
               <label className="text-sm text-gray-700">Auto-chase if not submitted</label>
             </div>
             <div className="flex gap-2">
@@ -168,90 +200,13 @@ export function CaDocuments() {
         </div>
       )}
 
-      {/* Requests List */}
-      <div className="space-y-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search by type..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg"
-          />
-        </div>
-
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-          {isLoading ? (
-            <div className="p-8 text-center text-gray-500">Loading requests...</div>
-          ) : !requests?.data?.length ? (
-            <div className="p-8 text-center text-gray-500">No document requests</div>
-          ) : (
-            <>
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Client</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Priority</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Due Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Verified</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {requests.data.map((req) => (
-                    <tr key={req.id} className="hover:bg-gray-50 cursor-pointer">
-                      <td className="px-6 py-4 text-sm font-medium text-gray-900">{req.client_name}</td>
-                      <td className="px-6 py-4 text-sm text-gray-500 capitalize">{req.document_type}</td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusColor(req.status)}`}>
-                          {req.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${priorityColor(req.priority)}`}>
-                          {req.priority}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">{new Date(req.due_date).toLocaleDateString()}</td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {req.verified_date ? new Date(req.verified_date).toLocaleDateString() : '—'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {requests.totalPages > 1 && (
-                <div className="px-6 py-3 border-t border-gray-200 flex justify-between">
-                  <span className="text-sm text-gray-500">
-                    Page {requests.page} of {requests.totalPages}
-                  </span>
-                  <div className="space-x-2">
-                    <button
-                      onClick={() => setPage(Math.max(1, page - 1))}
-                      disabled={page === 1}
-                      className="px-3 py-1 text-sm border rounded disabled:opacity-50"
-                    >
-                      Prev
-                    </button>
-                    <button
-                      onClick={() => setPage(page + 1)}
-                      disabled={page >= requests.totalPages}
-                      className="px-3 py-1 text-sm border rounded disabled:opacity-50"
-                    >
-                      Next
-                    </button>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      </div>
+      <DataTable<DocumentRequest>
+        fetchUrl="/ca/documents/requests"
+        columns={columns}
+        entityLabel="document requests"
+        defaultSort="due_date"
+        defaultOrder="asc"
+      />
     </div>
   );
 }

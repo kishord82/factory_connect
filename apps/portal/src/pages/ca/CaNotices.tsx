@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api.js';
 import { useState } from 'react';
 import { Plus, AlertTriangle, Clock } from 'lucide-react';
+import { DataTable } from '../../components/common/DataTable.js';
+import type { Column } from '../../components/common/DataTable.js';
 
 interface Notice {
   id: string;
@@ -18,14 +20,6 @@ interface Notice {
   assigned_to: string | null;
 }
 
-interface NoticesResponse {
-  data: Notice[];
-  total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-}
-
 interface Dashboard {
   total_notices: number;
   in_progress: number;
@@ -35,7 +29,7 @@ interface Dashboard {
   upcoming_deadlines: Array<{ title: string; due_in_days: number }>;
 }
 
-const statusColor = (status: string) => {
+const noticeStatusColor = (status: string) => {
   const colors: Record<string, string> = {
     received: 'bg-gray-100 text-gray-700',
     under_review: 'bg-blue-100 text-blue-700',
@@ -47,14 +41,14 @@ const statusColor = (status: string) => {
   return colors[status] || 'bg-gray-100 text-gray-700';
 };
 
-const priorityColor = (priority: string) => {
+const noticePriorityColor = (priority: string) => {
   const colors: Record<string, string> = {
-    critical: 'text-red-600 border-l-4 border-red-600 bg-red-50',
-    high: 'text-orange-600 border-l-4 border-orange-600 bg-orange-50',
-    medium: 'text-yellow-600 border-l-4 border-yellow-600 bg-yellow-50',
-    low: 'text-blue-600 border-l-4 border-blue-600 bg-blue-50',
+    critical: 'bg-red-100 text-red-700',
+    high: 'bg-orange-100 text-orange-700',
+    medium: 'bg-yellow-100 text-yellow-700',
+    low: 'bg-blue-100 text-blue-700',
   };
-  return colors[priority] || 'text-gray-600 border-l-4 border-gray-600 bg-gray-50';
+  return colors[priority] || 'bg-gray-100 text-gray-700';
 };
 
 const daysRemainingColor = (days: number) => {
@@ -63,18 +57,82 @@ const daysRemainingColor = (days: number) => {
   return 'text-gray-600';
 };
 
+const columns: Column<Notice>[] = [
+  {
+    key: 'title',
+    label: 'Title',
+    sortable: true,
+    render: (row) => <span className="font-medium text-gray-900">{row.title as string}</span>,
+  },
+  {
+    key: 'client_name',
+    label: 'Client',
+    sortable: true,
+    render: (row) => <span className="text-gray-500">{row.client_name as string}</span>,
+  },
+  {
+    key: 'notice_type',
+    label: 'Type',
+    sortable: true,
+    render: (row) => (
+      <span className="text-gray-500 uppercase">
+        {(row.notice_type as string).replace('_', ' ')}
+      </span>
+    ),
+  },
+  {
+    key: 'notice_number',
+    label: 'Notice #',
+    render: (row) => <span className="text-gray-500">{(row.notice_number as string) || '—'}</span>,
+  },
+  {
+    key: 'priority',
+    label: 'Priority',
+    sortable: true,
+    render: (row) => (
+      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${noticePriorityColor(row.priority as string)}`}>
+        {row.priority as string}
+      </span>
+    ),
+  },
+  {
+    key: 'status',
+    label: 'Status',
+    sortable: true,
+    render: (row) => (
+      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${noticeStatusColor(row.status as string)}`}>
+        {row.status as string}
+      </span>
+    ),
+  },
+  {
+    key: 'days_remaining',
+    label: 'Days Left',
+    sortable: true,
+    render: (row) => (
+      <span className={daysRemainingColor(row.days_remaining as number)}>
+        {row.days_remaining as number}
+      </span>
+    ),
+  },
+  {
+    key: 'due_date',
+    label: 'Due Date',
+    sortable: true,
+    render: (row) => (
+      <span className="text-gray-500">
+        {new Date(row.due_date as string).toLocaleDateString()}
+      </span>
+    ),
+  },
+];
+
 export function CaNotices() {
-  const [page, setPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
 
   const { data: dashboard } = useQuery({
     queryKey: ['ca-notices-dashboard'],
     queryFn: () => api.get<{ data: Dashboard }>('/ca/notices/dashboard'),
-  });
-
-  const { data: notices, isLoading } = useQuery({
-    queryKey: ['ca-notices', page],
-    queryFn: () => api.get<NoticesResponse>(`/ca/notices?page=${page}&pageSize=10`),
   });
 
   const db = dashboard?.data;
@@ -194,70 +252,13 @@ export function CaNotices() {
         </div>
       )}
 
-      {/* Notices List */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-        {isLoading ? (
-          <div className="p-8 text-center text-gray-500">Loading notices...</div>
-        ) : !notices?.data?.length ? (
-          <div className="p-8 text-center text-gray-500">No notices</div>
-        ) : (
-          <>
-            <div className="divide-y divide-gray-200">
-              {notices.data.map((notice) => (
-                <div key={notice.id} className={`p-4 ${priorityColor(notice.priority)} cursor-pointer hover:opacity-80`}>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-gray-900">{notice.title}</h3>
-                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusColor(notice.status)}`}>
-                          {notice.status}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-600 mb-2">
-                        {notice.client_name} • {notice.notice_type.replace('_', ' ').toUpperCase()}
-                      </p>
-                      {notice.notice_number && (
-                        <p className="text-xs text-gray-500">Notice #: {notice.notice_number}</p>
-                      )}
-                    </div>
-                    <div className="text-right">
-                      <div className={`text-sm font-semibold ${daysRemainingColor(notice.days_remaining)}`}>
-                        {notice.days_remaining} days
-                      </div>
-                      <p className="text-xs text-gray-500">
-                        Due: {new Date(notice.due_date).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            {notices.totalPages > 1 && (
-              <div className="px-6 py-3 border-t border-gray-200 flex justify-between">
-                <span className="text-sm text-gray-500">
-                  Page {notices.page} of {notices.totalPages}
-                </span>
-                <div className="space-x-2">
-                  <button
-                    onClick={() => setPage(Math.max(1, page - 1))}
-                    disabled={page === 1}
-                    className="px-3 py-1 text-sm border rounded disabled:opacity-50"
-                  >
-                    Prev
-                  </button>
-                  <button
-                    onClick={() => setPage(page + 1)}
-                    disabled={page >= notices.totalPages}
-                    className="px-3 py-1 text-sm border rounded disabled:opacity-50"
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-      </div>
+      <DataTable<Notice>
+        fetchUrl="/ca/notices"
+        columns={columns}
+        entityLabel="notices"
+        defaultSort="days_remaining"
+        defaultOrder="asc"
+      />
     </div>
   );
 }

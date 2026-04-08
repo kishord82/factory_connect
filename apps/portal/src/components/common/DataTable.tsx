@@ -24,7 +24,7 @@ interface PaginatedResult<T> {
   totalPages: number;
 }
 
-interface DataTableProps<T extends Record<string, unknown>> {
+interface DataTableProps<T extends object> {
   /** API path, e.g. "/orders". DataTable appends search/sort/page params. */
   fetchUrl: string;
   columns: Column<T>[];
@@ -61,7 +61,7 @@ function SortIcon({ direction }: { direction: 'asc' | 'desc' | null }) {
   );
 }
 
-export function DataTable<T extends Record<string, unknown>>({
+export function DataTable<T extends object>({
   fetchUrl,
   columns,
   entityLabel = 'records',
@@ -199,7 +199,7 @@ export function DataTable<T extends Record<string, unknown>>({
                 <tbody className="divide-y divide-gray-200">
                   {data.data.map((row, idx) => (
                     <tr
-                      key={(row.id as string) ?? idx}
+                      key={((row as Record<string, unknown>).id as string) ?? idx}
                       className={`${onRowClick ? 'cursor-pointer hover:bg-gray-50' : 'hover:bg-gray-50'} ${idx % 2 === 1 ? 'bg-gray-50/40' : ''}`}
                       onClick={onRowClick ? () => onRowClick(row) : undefined}
                     >
@@ -207,7 +207,7 @@ export function DataTable<T extends Record<string, unknown>>({
                         <td key={col.key} className="px-6 py-4 text-sm text-gray-700 whitespace-nowrap">
                           {col.render
                             ? col.render(row)
-                            : String(row[col.key] ?? '—')}
+                            : String((row as Record<string, unknown>)[col.key] ?? '—')}
                         </td>
                       ))}
                     </tr>
