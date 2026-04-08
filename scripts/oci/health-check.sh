@@ -146,11 +146,11 @@ else
   check_fail "HTTP port 80: $caddy_http"
 fi
 
-caddy_api=$(curl -sf --max-time 5 -o /dev/null -w "%{http_code}" "http://localhost/api/healthz" 2>/dev/null || echo "000")
+caddy_api=$(curl -sf --max-time 5 -o /dev/null -w "%{http_code}" "http://localhost/healthz" 2>/dev/null || echo "000")
 if [ "$caddy_api" = "200" ]; then
-  check_pass "API proxy /api/healthz: $caddy_api"
+  check_pass "Caddy /healthz: $caddy_api"
 else
-  check_warn "API proxy /api/healthz: $caddy_api"
+  check_warn "Caddy /healthz: $caddy_api"
 fi
 
 echo ""
