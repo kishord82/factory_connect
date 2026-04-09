@@ -2,9 +2,9 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "paths": {
-      "@fc/shared": ["../../packages/shared/dist"],
-      "@fc/database": ["../../packages/database/dist"],
-      "@fc/observability": ["../../packages/observability/dist"]
+      "@fc/shared": ["../../packages/shared/dist/index.d.ts"],
+      "@fc/database": ["../../packages/database/dist/index.d.ts"],
+      "@fc/observability": ["../../packages/observability/dist/index.d.ts"]
     }
   }
 }
