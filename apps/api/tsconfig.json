@@ -5,6 +5,11 @@
     "rootDir": "./src",
     "declaration": false,
     "declarationMap": false,
+    "paths": {
+      "@fc/shared": ["../../packages/shared/dist/index.d.ts"],
+      "@fc/database": ["../../packages/database/dist/index.d.ts"],
+      "@fc/observability": ["../../packages/observability/dist/index.d.ts"]
+    },
     "skipLibCheck": true,
     "noImplicitReturns": false,
     "noUnusedLocals": false,
