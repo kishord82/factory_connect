@@ -31,9 +31,6 @@ RUN pnpm --filter @fc/shared run build
 RUN pnpm --filter @fc/database run build
 RUN pnpm --filter @fc/observability run build
 
-# Verify declaration files were generated before building API
-RUN ls packages/shared/dist/index.d.ts packages/database/dist/index.d.ts packages/observability/dist/index.d.ts && echo "All .d.ts files present"
-
 RUN cd apps/api && npx tsc -b tsconfig.build.json
 
 # Prune devDependencies after build for smaller production image
