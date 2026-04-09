@@ -16,8 +16,8 @@ COPY pnpm-lock.yaml ./
 # Install pnpm
 RUN npm install -g pnpm@9.15.4
 
-# Copy root package.json
-COPY package.json ./
+# Copy root package.json and tsconfig
+COPY package.json tsconfig.base.json ./
 
 # Copy all workspace packages and apps
 COPY packages ./packages
