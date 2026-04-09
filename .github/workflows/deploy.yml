@@ -1,0 +1,188 @@
+###############################################################################
+# FactoryConnect — Build, Push to Docker Hub & Deploy to OCI
+# Triggers: push to main (production) or manual dispatch
+# Requires repository secrets:
+#   DOCKERHUB_USERNAME    — Docker Hub username
+#   DOCKERHUB_TOKEN       — Docker Hub access token
+#   OCI_SSH_KEY           — Private SSH key for OCI VM
+#   OCI_HOST              — OCI VM IP (92.4.94.2)
+###############################################################################
+
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "docs/**"
+      - "*.md"
+      - ".claude/**"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Deployment target"
+        required: true
+        default: "production"
+        type: choice
+        options:
+          - production
+          - staging
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: docker.io
+  API_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/fc-api
+  PORTAL_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/fc-portal
+
+jobs:
+  # ─── Run CI First ───────────────────────────────────────────────────
+  ci:
+    name: CI Checks
+    uses: ./.github/workflows/ci.yml
+
+  # ─── Build & Push Docker Images ─────────────────────────────────────
+  build-push:
+    name: Build & Push
+    runs-on: ubuntu-latest
+    needs: ci
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      api_tag: ${{ steps.meta-api.outputs.tags }}
+      portal_tag: ${{ steps.meta-portal.outputs.tags }}
+      sha_short: ${{ steps.vars.outputs.sha_short }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set variables
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # ── API Image ──
+      - name: Docker meta (API)
+        id: meta-api
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.API_IMAGE }}
+          tags: |
+            type=sha,prefix=
+            type=raw,value=latest
+
+      - name: Build & push API
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.api
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta-api.outputs.tags }}
+          labels: ${{ steps.meta-api.outputs.labels }}
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,scope=api,mode=max
+
+      # ── Portal Image ──
+      - name: Docker meta (Portal)
+        id: meta-portal
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.PORTAL_IMAGE }}
+          tags: |
+            type=sha,prefix=
+            type=raw,value=latest
+
+      - name: Build & push Portal
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.portal
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta-portal.outputs.tags }}
+          labels: ${{ steps.meta-portal.outputs.labels }}
+          cache-from: type=gha,scope=portal
+          cache-to: type=gha,scope=portal,mode=max
+
+  # ─── Deploy to OCI ─────────────────────────────────────────────────
+  deploy:
+    name: Deploy to OCI
+    runs-on: ubuntu-latest
+    needs: build-push
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          SHA_SHORT: ${{ needs.build-push.outputs.sha_short }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+        with:
+          host: ${{ secrets.OCI_HOST }}
+          username: opc
+          key: ${{ secrets.OCI_SSH_KEY }}
+          envs: SHA_SHORT,DOCKERHUB_USERNAME
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd ~/fc/scripts/oci
+
+            echo "=== Pulling new images (sha: $SHA_SHORT) ==="
+            docker pull ${DOCKERHUB_USERNAME}/fc-api:${SHA_SHORT}
+            docker pull ${DOCKERHUB_USERNAME}/fc-portal:${SHA_SHORT}
+
+            # Tag as latest for compose
+            docker tag ${DOCKERHUB_USERNAME}/fc-api:${SHA_SHORT} fc-api:latest
+            docker tag ${DOCKERHUB_USERNAME}/fc-portal:${SHA_SHORT} fc-portal:latest
+
+            echo "=== Backing up current state ==="
+            docker compose -f docker-compose.local.yml --env-file .env.production \
+              exec -T postgres pg_dump -U fc_app factoryconnect > /tmp/fc-backup-$(date +%Y%m%d%H%M%S).sql || true
+
+            echo "=== Rolling restart ==="
+            docker compose -f docker-compose.local.yml --env-file .env.production up -d --no-build api portal
+            sleep 10
+
+            echo "=== Health check ==="
+            for i in 1 2 3 4 5; do
+              if curl -sf http://localhost/healthz > /dev/null 2>&1; then
+                echo "Health check passed on attempt $i"
+                exit 0
+              fi
+              echo "Waiting... (attempt $i/5)"
+              sleep 5
+            done
+            echo "ERROR: Health check failed after 5 attempts"
+            exit 1
+
+      - name: Post-deploy verification
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.OCI_HOST }}
+          username: opc
+          key: ${{ secrets.OCI_SSH_KEY }}
+          script: |
+            echo "=== Container status ==="
+            docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Image}}"
+            echo ""
+            echo "=== API health ==="
+            curl -sf http://localhost/healthz && echo " OK" || echo " FAILED"
+            echo ""
+            echo "=== Auth test ==="
+            curl -sf http://localhost/api/v1/auth/login \
+              -H "Content-Type: application/json" \
+              -d '{"email":"admin@factoryconnect.io","password":"fcadmin123"}' \
+              | python3 -c "import sys,json; d=json.load(sys.stdin); print(f'Login OK: role={d[\"role\"]}')" \
+              || echo "Auth test FAILED"

@@ -21,6 +21,10 @@ import { authRouter } from './routes/auth.js';
 import { caRouter } from './routes/ca/index.js';
 import { webhookRouter } from './routes/webhooks.js';
 import { settingsRouter } from './routes/settings.js';
+import { dashboardRouter } from './routes/dashboard.js';
+import { mappingsRouter } from './routes/mappings.js';
+import { ediRouter } from './routes/edi.js';
+import { bridgeRouter } from './routes/bridge.js';
 import { rateLimiter } from './middleware/rate-limiter.js';
 
 export function createApp(): express.Express {
@@ -41,12 +45,16 @@ export function createApp(): express.Express {
   app.use('/api/v1/auth', authRouter);
 
   // API routes (auth applied per-router)
+  app.use('/api/v1/dashboard', dashboardRouter);
   app.use('/api/v1/orders', orderRouter);
   app.use('/api/v1/shipments', shipmentRouter);
   app.use('/api/v1/invoices', invoiceRouter);
   app.use('/api/v1/connections', connectionRouter);
   app.use('/api/v1/resync', resyncRouter);
   app.use('/api/v1/calendar', calendarRouter);
+  app.use('/api/v1/mappings', mappingsRouter);
+  app.use('/api/v1/edi', ediRouter);
+  app.use('/api/v1/bridge', bridgeRouter);
   app.use('/api/v1/admin', adminRouter);
   app.use('/api/v1/export', exportRouter);
   app.use('/api/v1/notifications', notificationRouter);

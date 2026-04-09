@@ -34,6 +34,29 @@ orderRouter.post(
   },
 );
 
+/** GET /api/v1/orders/explorer — Order explorer (must be before :id route) */
+orderRouter.get(
+  '/explorer',
+  async (req, res, next) => {
+    try {
+      const ctx = getRequestContext(req);
+      // Explorer returns advanced filtering/search interface
+      // For now, return empty data structure
+      res.json({
+        data: {
+          filters: {
+            statuses: ['INITIATED', 'GATHERING_INFO', 'COMPLETE', 'SEARCHING', 'QUOTED'],
+            dateRange: { from: new Date(), to: new Date() },
+          },
+          results: [],
+        },
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
 /** GET /api/v1/orders — List orders */
 orderRouter.get(
   '/',

@@ -22,9 +22,7 @@ const CalendarEntryCreate = z.object({
   entry_date: z.coerce.date(),
   entry_type: z.string().max(50),
   title: z.string().max(255),
-  description: z.string().optional(),
   source: z.string().max(50).default('manual'),
-  suppress_alerts: z.boolean().default(false),
 });
 
 const CalendarListQuery = PaginationSchema.extend({
@@ -37,10 +35,9 @@ calendarRouter.post('/', validate({ body: CalendarEntryCreate }), async (req, re
     const ctx = getRequestContext(req);
     const entry = await withTenantTransaction(ctx, async (client: PoolClient) => {
       return insertOne(client,
-        `INSERT INTO platform.calendar_entries (factory_id, entry_date, entry_type, title, description, source, suppress_alerts)
-         VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
-        [ctx.tenantId, req.body.entry_date, req.body.entry_type, req.body.title,
-         req.body.description ?? null, req.body.source, req.body.suppress_alerts]);
+        `INSERT INTO platform.calendar_entries (factory_id, entry_date, entry_type, title, source)
+         VALUES ($1,$2,$3,$4,$5) RETURNING id, factory_id, title, entry_date, entry_type, source, priority, metadata, created_at`,
+        [ctx.tenantId, req.body.entry_date, req.body.entry_type, req.body.title, req.body.source]);
     });
     res.status(201).json({ data: entry });
   } catch (err) { next(err); }
@@ -70,7 +67,7 @@ calendarRouter.get('/', validate({ query: CalendarListQuery }), async (req, res,
     const result = await withTenantClient(ctx, async (client: PoolClient) => {
       return paginatedQuery(
         client,
-        `SELECT id, factory_id, entry_date, entry_type, title, description, source, suppress_alerts, created_at
+        `SELECT id, factory_id, entry_date, entry_type, title, source, priority, metadata, created_at
          FROM platform.calendar_entries ce
          WHERE ce.factory_id = $1 ${whereSearch} ${whereExtra} ${orderBy}`,
         [ctx.tenantId, ...searchValues, ...extraParams],
