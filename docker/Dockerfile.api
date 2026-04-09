@@ -2,7 +2,8 @@
 # Multi-stage build targeting linux/arm64
 
 # Build stage: Compile TypeScript to JavaScript
-FROM --platform=linux/arm64 node:22-alpine AS builder
+# Platform is set by Docker Buildx (--platform flag) for multi-arch builds
+FROM node:22-alpine AS builder
 
 RUN apk add --no-cache python3 make
 
@@ -21,8 +22,8 @@ COPY package.json ./
 COPY packages ./packages
 COPY apps/api ./apps/api
 
-# Install dependencies (production only, skip devDependencies)
-RUN pnpm install --frozen-lockfile --prod
+# Install ALL dependencies (devDependencies needed for TypeScript compilation)
+RUN pnpm install --frozen-lockfile
 
 # Build all packages in dependency order: shared → database → observability → api
 RUN pnpm --filter @fc/shared run build
@@ -30,8 +31,11 @@ RUN pnpm --filter @fc/database run build
 RUN pnpm --filter @fc/observability run build
 RUN pnpm --filter @fc/api run build
 
+# Prune devDependencies after build for smaller production image
+RUN pnpm prune --prod
+
 # Production stage: Minimal runtime image
-FROM --platform=linux/arm64 node:22-alpine
+FROM node:22-alpine
 
 # Install dumb-init for proper signal handling
 RUN apk add --no-cache dumb-init
