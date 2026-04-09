@@ -11,6 +11,7 @@ WORKDIR /build
 
 # Copy pnpm configuration
 COPY pnpm-workspace.yaml .npmrc ./
+COPY pnpm-lock.yaml ./
 
 # Install pnpm
 RUN npm install -g pnpm@9.15.4
