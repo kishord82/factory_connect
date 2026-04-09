@@ -6,19 +6,14 @@
     "declaration": false,
     "declarationMap": false,
     "paths": {
-      "@fc/shared": ["../../packages/shared/dist/index.d.ts"],
-      "@fc/database": ["../../packages/database/dist/index.d.ts"],
-      "@fc/observability": ["../../packages/observability/dist/index.d.ts"]
+      "@fc/shared": ["../../packages/shared/dist/index.js"],
+      "@fc/database": ["../../packages/database/dist/index.js"],
+      "@fc/observability": ["../../packages/observability/dist/index.js"]
     },
     "skipLibCheck": true,
     "noImplicitReturns": false,
     "noUnusedLocals": false,
     "noUnusedParameters": false
   },
-  "include": ["src/**/*.ts"],
-  "references": [
-    { "path": "../../packages/shared" },
-    { "path": "../../packages/database" },
-    { "path": "../../packages/observability" }
-  ]
+  "include": ["src/**/*.ts"]
 }
