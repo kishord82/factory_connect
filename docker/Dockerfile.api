@@ -26,11 +26,14 @@ COPY apps/api ./apps/api
 # Install ALL dependencies (devDependencies needed for TypeScript compilation)
 RUN pnpm install --frozen-lockfile
 
-# Build packages with plain tsc (no -b) to guarantee .d.ts emission
-# tsc -b with composite projects can consider output up-to-date and skip emission
-RUN cd packages/shared && npx tsc --project tsconfig.json
-RUN cd packages/database && npx tsc --project tsconfig.json
-RUN cd packages/observability && npx tsc --project tsconfig.json
+# Delete stale .tsbuildinfo files so tsc -b does a full build
+# (.tsbuildinfo files cause tsc -b to skip emission when dist/ is absent)
+RUN find packages -name "*.tsbuildinfo" -delete
+
+# Build all packages in dependency order: shared → database → observability → api
+RUN pnpm --filter @fc/shared run build
+RUN pnpm --filter @fc/database run build
+RUN pnpm --filter @fc/observability run build
 
 RUN cd apps/api && npx tsc -b tsconfig.build.json
 
