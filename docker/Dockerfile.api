@@ -26,6 +26,10 @@ COPY apps/api ./apps/api
 # Install ALL dependencies (devDependencies needed for TypeScript compilation)
 RUN pnpm install --frozen-lockfile
 
+# Delete stale .tsbuildinfo files so tsc -b does a full build
+# (committed tsbuildinfo files cause tsc -b to skip emission when dist/ is excluded by .dockerignore)
+RUN find packages -name "*.tsbuildinfo" -delete
+
 # Build all packages in dependency order: shared → database → observability → api
 RUN pnpm --filter @fc/shared run build
 RUN pnpm --filter @fc/database run build
@@ -56,9 +60,8 @@ COPY --from=builder /build/apps/api/package.json ./apps/api/
 # Copy node_modules (includes production dependencies only)
 COPY --from=builder /build/node_modules ./node_modules
 
-# Create non-root user for security
-RUN addgroup -g 1000 fc && adduser -D -u 1000 -G fc fc
-USER fc
+# Use existing non-root node user (UID/GID 1000, already in node:alpine)
+USER node
 
 # Expose port
 EXPOSE 3000
