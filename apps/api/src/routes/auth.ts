@@ -124,10 +124,10 @@ authRouter.post('/login', validate({ body: LoginSchema }), async (req, res, next
         await client.query('SELECT set_config($1, $2, true)', ['app.current_tenant', devUser.factory_id]);
         if (isCaUser) {
           const caResult = await client.query(
-            'SELECT id, firm_name FROM compliance.ca_firms WHERE id = $1',
+            'SELECT id, name FROM compliance.ca_firms WHERE id = $1',
             [devUser.factory_id],
           );
-          displayName = caResult.rows[0]?.firm_name || 'CA Firm';
+          displayName = caResult.rows[0]?.name || 'CA Firm';
         } else {
           const factoryResult = await client.query(
             'SELECT id, name, slug FROM core.factories WHERE id = $1',
