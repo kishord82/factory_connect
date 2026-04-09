@@ -30,7 +30,7 @@ RUN pnpm install --frozen-lockfile
 RUN pnpm --filter @fc/shared run build
 RUN pnpm --filter @fc/database run build
 RUN pnpm --filter @fc/observability run build
-RUN pnpm --filter @fc/api run build
+RUN cd apps/api && npx tsc -b tsconfig.build.json
 
 # Prune devDependencies after build for smaller production image
 RUN pnpm prune --prod

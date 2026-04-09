@@ -257,7 +257,7 @@ const NotifUpdateSchema = z.object({
 settingsRouter.patch('/notifications/:id', validate({ body: NotifUpdateSchema }), async (req, res, next) => {
   try {
     const ctx = getRequestContext(req);
-    const prefId = req.params.id;
+    const prefId = req.params['id'] as string;
     const { enabled } = req.body as z.infer<typeof NotifUpdateSchema>;
 
     // Skip update for default (in-memory) preferences
