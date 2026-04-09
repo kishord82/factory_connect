@@ -6,10 +6,5 @@
       "@fc/database": ["../../packages/database/dist"],
       "@fc/observability": ["../../packages/observability/dist"]
     }
-  },
-  "references": [
-    { "path": "../../packages/shared" },
-    { "path": "../../packages/database" },
-    { "path": "../../packages/observability" }
-  ]
+  }
 }
