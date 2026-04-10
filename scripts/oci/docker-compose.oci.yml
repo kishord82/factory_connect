@@ -152,9 +152,7 @@ services:
 
   # ─── FactoryConnect API ────────────────────────────────────────────
   api:
-    build:
-      context: ../..
-      dockerfile: docker/Dockerfile.api
+    image: ghcr.io/kishord82/fc-api:latest
     container_name: fc-api
     restart: always
     environment:
@@ -197,9 +195,7 @@ services:
 
   # ─── FactoryConnect Portal (nginx serving Vite build) ──────────────
   portal:
-    build:
-      context: ../..
-      dockerfile: docker/Dockerfile.portal
+    image: ghcr.io/kishord82/fc-portal:latest
     container_name: fc-portal
     restart: always
     networks:
