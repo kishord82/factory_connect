@@ -19,6 +19,7 @@ import { EdiMonitor } from './pages/EdiMonitor.js';
 import { BridgeStatus } from './pages/BridgeStatus.js';
 import { Settings } from './pages/Settings.js';
 import { OrderDetail } from './pages/OrderDetail.js';
+import { NewOrder } from './pages/NewOrder.js';
 import { Notifications } from './pages/Notifications.js';
 import { Export } from './pages/Export.js';
 import { CaLayout } from './components/ca/CaLayout.js';
@@ -75,7 +76,7 @@ function App() {
             <Route element={user ? <Layout /> : <Navigate to="/login" />}>
               <Route index element={<Dashboard />} />
               <Route path="orders" element={<Orders />} />
-              <Route path="orders/new" element={<OrderDetail />} />
+              <Route path="orders/new" element={<NewOrder />} />
               <Route path="orders/:id" element={<OrderDetail />} />
               <Route path="orders/explorer" element={<OrderExplorer />} />
               <Route path="shipments" element={<Shipments />} />

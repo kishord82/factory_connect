@@ -24,6 +24,10 @@ interface OrderDetail {
   currency: string;
   created_at: string;
   updated_at: string;
+}
+
+interface OrderDetailResponse {
+  order: OrderDetail;
   line_items: OrderLineItem[];
 }
 
@@ -43,7 +47,7 @@ export function OrderDetail() {
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['order', id],
-    queryFn: () => api.get<{ data: OrderDetail }>(`/orders/${id}`),
+    queryFn: () => api.get<{ data: OrderDetailResponse }>(`/orders/${id}`),
     enabled: !!id,
   });
 
@@ -56,7 +60,7 @@ export function OrderDetail() {
     );
   }
 
-  if (isError || !data?.data) {
+  if (isError || !data?.data?.order) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-4">
         <p className="text-red-700">Failed to load order details.</p>
@@ -70,7 +74,8 @@ export function OrderDetail() {
     );
   }
 
-  const order = data.data;
+  const order = data.data.order;
+  const lineItems = data.data.line_items ?? [];
 
   return (
     <div className="space-y-6">
@@ -114,7 +119,7 @@ export function OrderDetail() {
       </div>
 
       {/* Line Items */}
-      {(order.line_items ?? []).length > 0 && (
+      {lineItems.length > 0 && (
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <h3 className="text-lg font-semibold text-gray-900">Line Items</h3>
@@ -131,7 +136,7 @@ export function OrderDetail() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {order.line_items.map((item) => (
+              {lineItems.map((item) => (
                 <tr key={item.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 text-sm text-gray-500">{item.line_number}</td>
                   <td className="px-6 py-4 text-sm font-medium text-gray-900">{item.item_code}</td>
