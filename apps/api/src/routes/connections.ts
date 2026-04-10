@@ -18,7 +18,7 @@ connectionRouter.use(authenticate, tenantContext);
 const IdParams = z.object({ id: z.string().uuid() });
 
 const CONNECTION_SORT_COLUMNS = ['created_at', 'status', 'mode', 'source_type'];
-const CONNECTION_SEARCH_COLUMNS = ['c.buyer_endpoint', 'c.mode', 'c.status'];
+const CONNECTION_SEARCH_COLUMNS = ['c.mode', 'c.status', 'c.source_type'];
 
 interface ConnectionRow {
   id: string;
@@ -29,6 +29,7 @@ interface ConnectionRow {
   status: string;
   created_at: Date;
   updated_at: Date;
+  // Note: protocol and buyer_endpoint removed — not in current schema
 }
 
 connectionRouter.post('/', validate({ body: ConnectionCreateSchema }), async (req, res, next) => {
@@ -61,8 +62,8 @@ connectionRouter.get('/', validate({ query: PaginationSchema }), async (req, res
     const result = await withTenantClient(ctx, async (client: PoolClient) => {
       return paginatedQuery<ConnectionRow>(
         client,
-        `SELECT id, factory_id, buyer_id, source_type, mode, protocol,
-                buyer_endpoint, status, created_at, updated_at
+        `SELECT id, factory_id, buyer_id, source_type, mode,
+                status, created_at, updated_at
          FROM core.connections c
          WHERE c.factory_id = $1 ${whereSearch} ${orderBy}`,
         [ctx.tenantId, ...searchValues],
@@ -81,8 +82,8 @@ connectionRouter.get('/:id', validate({ params: IdParams }), async (req, res, ne
       const { id } = getValidatedParams<z.infer<typeof IdParams>>(req);
       return findOne<ConnectionRow>(
         client,
-        `SELECT id, factory_id, buyer_id, source_type, mode, protocol,
-                buyer_endpoint, status, created_at, updated_at
+        `SELECT id, factory_id, buyer_id, source_type, mode,
+                status, created_at, updated_at
          FROM core.connections WHERE id = $1`,
         [id],
       );
