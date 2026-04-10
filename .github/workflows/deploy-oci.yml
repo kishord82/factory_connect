@@ -1,6 +1,12 @@
 ###############################################################################
-# FactoryConnect — Build (ARM64), Push to GHCR & Deploy to OCI
-# Trigger: manual only (workflow_dispatch — click "Run workflow" in GitHub UI)
+# FactoryConnect — Smart Selective Deploy to OCI
+#
+# Detects what changed and only builds/deploys affected images:
+#   - portal-only changes  → build + deploy portal only
+#   - api-only changes     → build + deploy API only
+#   - shared packages      → build + deploy both (both depend on @fc/shared)
+#   - infra-only changes   → deploy both, no rebuild (compose/scripts updated)
+#   - manual trigger       → respects "scope" dropdown (auto-detect | api-only | portal-only | both)
 #
 # Required repository secrets:
 #   OCI_SSH_KEY   — Private SSH key for OCI VM (opc@92.4.94.2)
@@ -9,7 +15,7 @@
 #   GITHUB_TOKEN  — Auto-provided by Actions; used for GHCR push (packages:write)
 ###############################################################################
 
-name: Deploy to OCI (manual)
+name: Deploy to OCI
 
 on:
   push:
@@ -25,6 +31,16 @@ on:
         required: true
         default: "phase1-dev"
         type: string
+      scope:
+        description: "What to build & deploy"
+        required: true
+        default: "auto-detect"
+        type: choice
+        options:
+          - auto-detect
+          - both
+          - api-only
+          - portal-only
       reason:
         description: "Reason for this deploy"
         required: false
@@ -40,36 +56,169 @@ env:
   REGISTRY_OWNER: kishord82
   OCI_HOST: 92.4.94.2
   OCI_USER: opc
-  OCI_PROJECT_DIR: /home/opc/fc
   COMPOSE_FILE: /home/opc/fc/scripts/oci/docker-compose.oci.yml
   ENV_FILE: /home/opc/fc/scripts/oci/.env.production
 
 jobs:
-  # ─── Build & Push ARM64 Images to GHCR ──────────────────────────────
-  build-push:
-    name: Build & Push (linux/arm64)
+  # ─── Detect Changes ──────────────────────────────────────────────────
+  detect:
+    name: Detect Changes
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
     outputs:
-      sha_short: ${{ steps.vars.outputs.sha_short }}
-      api_image: ${{ steps.vars.outputs.api_image }}
-      portal_image: ${{ steps.vars.outputs.portal_image }}
+      build_api: ${{ steps.resolve.outputs.build_api }}
+      build_portal: ${{ steps.resolve.outputs.build_portal }}
+      deploy_api: ${{ steps.resolve.outputs.deploy_api }}
+      deploy_portal: ${{ steps.resolve.outputs.deploy_portal }}
+      infra_only: ${{ steps.resolve.outputs.infra_only }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.branch }}
+          ref: ${{ github.event.inputs.branch || github.ref }}
+          fetch-depth: 2
+
+      # dorny/paths-filter compares HEAD against the previous commit on push,
+      # or against the base branch on pull_request. On workflow_dispatch it
+      # falls back to comparing HEAD~1 (fetch-depth: 2 above ensures this works).
+      - name: Filter changed paths
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            api:
+              - 'apps/api/**'
+              - 'docker/Dockerfile.api'
+            portal:
+              - 'apps/portal/**'
+              - 'docker/Dockerfile.portal'
+            shared:
+              - 'packages/shared/**'
+              - 'packages/database/**'
+              - 'packages/config/**'
+            infra:
+              - 'scripts/oci/**'
+              - 'docker-compose*.yml'
+              - '.github/workflows/**'
+
+      - name: Resolve build/deploy scope
+        id: resolve
+        env:
+          # Dispatch inputs (empty string when triggered by push)
+          DISPATCH_SCOPE: ${{ github.event.inputs.scope }}
+          # Path-filter outputs
+          CHANGED_API: ${{ steps.filter.outputs.api }}
+          CHANGED_PORTAL: ${{ steps.filter.outputs.portal }}
+          CHANGED_SHARED: ${{ steps.filter.outputs.shared }}
+          CHANGED_INFRA: ${{ steps.filter.outputs.infra }}
+        run: |
+          build_api=false
+          build_portal=false
+          deploy_api=false
+          deploy_portal=false
+          infra_only=false
+
+          # Manual dispatch: honour explicit scope first
+          if [[ "$DISPATCH_SCOPE" == "api-only" ]]; then
+            build_api=true
+            deploy_api=true
+          elif [[ "$DISPATCH_SCOPE" == "portal-only" ]]; then
+            build_portal=true
+            deploy_portal=true
+          elif [[ "$DISPATCH_SCOPE" == "both" ]]; then
+            build_api=true
+            build_portal=true
+            deploy_api=true
+            deploy_portal=true
+          else
+            # auto-detect (used by push trigger AND manual with "auto-detect")
+
+            # shared packages → rebuild both
+            if [[ "$CHANGED_SHARED" == "true" ]]; then
+              build_api=true
+              build_portal=true
+              deploy_api=true
+              deploy_portal=true
+            fi
+
+            # API-specific changes
+            if [[ "$CHANGED_API" == "true" ]]; then
+              build_api=true
+              deploy_api=true
+            fi
+
+            # Portal-specific changes
+            if [[ "$CHANGED_PORTAL" == "true" ]]; then
+              build_portal=true
+              deploy_portal=true
+            fi
+
+            # Infra-only change (compose/scripts/workflows) — deploy without rebuild
+            if [[ "$CHANGED_INFRA" == "true" ]] && \
+               [[ "$CHANGED_API" == "false" ]] && \
+               [[ "$CHANGED_PORTAL" == "false" ]] && \
+               [[ "$CHANGED_SHARED" == "false" ]]; then
+              deploy_api=true
+              deploy_portal=true
+              infra_only=true
+            fi
+
+            # Nothing detected (e.g. docs-only push slipped through) → no-op
+            if [[ "$build_api" == "false" && "$build_portal" == "false" && \
+                  "$deploy_api" == "false" && "$deploy_portal" == "false" ]]; then
+              echo "No relevant changes detected — skipping deploy."
+            fi
+          fi
+
+          echo "build_api=$build_api"       >> $GITHUB_OUTPUT
+          echo "build_portal=$build_portal" >> $GITHUB_OUTPUT
+          echo "deploy_api=$deploy_api"     >> $GITHUB_OUTPUT
+          echo "deploy_portal=$deploy_portal" >> $GITHUB_OUTPUT
+          echo "infra_only=$infra_only"     >> $GITHUB_OUTPUT
+
+          echo "### Change Detection" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Signal | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| api files changed | $CHANGED_API |" >> $GITHUB_STEP_SUMMARY
+          echo "| portal files changed | $CHANGED_PORTAL |" >> $GITHUB_STEP_SUMMARY
+          echo "| shared packages changed | $CHANGED_SHARED |" >> $GITHUB_STEP_SUMMARY
+          echo "| infra files changed | $CHANGED_INFRA |" >> $GITHUB_STEP_SUMMARY
+          echo "| dispatch scope | ${DISPATCH_SCOPE:-push} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Decision | Result |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| build API | $build_api |" >> $GITHUB_STEP_SUMMARY
+          echo "| build Portal | $build_portal |" >> $GITHUB_STEP_SUMMARY
+          echo "| deploy API | $deploy_api |" >> $GITHUB_STEP_SUMMARY
+          echo "| deploy Portal | $deploy_portal |" >> $GITHUB_STEP_SUMMARY
+          echo "| infra-only (no rebuild) | $infra_only |" >> $GITHUB_STEP_SUMMARY
+
+  # ─── Build & Push API Image ──────────────────────────────────────────
+  build-api:
+    name: Build & Push API (linux/arm64)
+    runs-on: ubuntu-latest
+    needs: detect
+    if: needs.detect.outputs.build_api == 'true'
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      sha_short: ${{ steps.vars.outputs.sha_short }}
+      image: ${{ steps.vars.outputs.image }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch || github.ref }}
 
       - name: Set image variables
         id: vars
         run: |
           SHA_SHORT=$(git rev-parse --short HEAD)
           echo "sha_short=${SHA_SHORT}" >> $GITHUB_OUTPUT
-          echo "api_image=ghcr.io/${{ env.REGISTRY_OWNER }}/fc-api" >> $GITHUB_OUTPUT
-          echo "portal_image=ghcr.io/${{ env.REGISTRY_OWNER }}/fc-portal" >> $GITHUB_OUTPUT
+          echo "image=ghcr.io/${{ env.REGISTRY_OWNER }}/fc-api" >> $GITHUB_OUTPUT
 
       - name: Set up QEMU (ARM64 emulation)
         uses: docker/setup-qemu-action@v3
@@ -78,8 +227,6 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        with:
-          platforms: linux/arm64
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -88,12 +235,11 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # ── API Image ──────────────────────────────────────────────────
       - name: Docker meta (API)
-        id: meta-api
+        id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ steps.vars.outputs.api_image }}
+          images: ${{ steps.vars.outputs.image }}
           tags: |
             type=sha,prefix=
             type=raw,value=latest
@@ -106,17 +252,57 @@ jobs:
           file: docker/Dockerfile.api
           platforms: linux/arm64
           push: true
-          tags: ${{ steps.meta-api.outputs.tags }}
-          labels: ${{ steps.meta-api.outputs.labels }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=arm64-api
           cache-to: type=gha,scope=arm64-api,mode=max
 
-      # ── Portal Image ───────────────────────────────────────────────
+  # ─── Build & Push Portal Image ───────────────────────────────────────
+  build-portal:
+    name: Build & Push Portal (linux/arm64)
+    runs-on: ubuntu-latest
+    needs: detect
+    if: needs.detect.outputs.build_portal == 'true'
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      sha_short: ${{ steps.vars.outputs.sha_short }}
+      image: ${{ steps.vars.outputs.image }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch || github.ref }}
+
+      - name: Set image variables
+        id: vars
+        run: |
+          SHA_SHORT=$(git rev-parse --short HEAD)
+          echo "sha_short=${SHA_SHORT}" >> $GITHUB_OUTPUT
+          echo "image=ghcr.io/${{ env.REGISTRY_OWNER }}/fc-portal" >> $GITHUB_OUTPUT
+
+      - name: Set up QEMU (ARM64 emulation)
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Docker meta (Portal)
-        id: meta-portal
+        id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ steps.vars.outputs.portal_image }}
+          images: ${{ steps.vars.outputs.image }}
           tags: |
             type=sha,prefix=
             type=raw,value=latest
@@ -129,8 +315,8 @@ jobs:
           file: docker/Dockerfile.portal
           platforms: linux/arm64
           push: true
-          tags: ${{ steps.meta-portal.outputs.tags }}
-          labels: ${{ steps.meta-portal.outputs.labels }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=arm64-portal
           cache-to: type=gha,scope=arm64-portal,mode=max
 
@@ -138,7 +324,14 @@ jobs:
   deploy:
     name: Deploy to OCI
     runs-on: ubuntu-latest
-    needs: build-push
+    # Wait for whichever build jobs actually ran (skipped jobs are ignored by needs)
+    needs: [detect, build-api, build-portal]
+    if: |
+      always() &&
+      needs.detect.result == 'success' &&
+      (needs.detect.outputs.deploy_api == 'true' || needs.detect.outputs.deploy_portal == 'true') &&
+      (needs.build-api.result == 'success' || needs.build-api.result == 'skipped') &&
+      (needs.build-portal.result == 'success' || needs.build-portal.result == 'skipped')
     environment: phase1-dev
 
     steps:
@@ -149,14 +342,26 @@ jobs:
           chmod 600 ~/.ssh/oci_key
           ssh-keyscan -H ${{ env.OCI_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
 
-      - name: Pull images & restart containers on OCI
+      - name: Pull & restart on OCI
         env:
-          SHA_SHORT: ${{ needs.build-push.outputs.sha_short }}
-          API_IMAGE: ${{ needs.build-push.outputs.api_image }}
-          PORTAL_IMAGE: ${{ needs.build-push.outputs.portal_image }}
+          DEPLOY_API: ${{ needs.detect.outputs.deploy_api }}
+          DEPLOY_PORTAL: ${{ needs.detect.outputs.deploy_portal }}
+          BUILD_API: ${{ needs.detect.outputs.build_api }}
+          BUILD_PORTAL: ${{ needs.detect.outputs.build_portal }}
+          INFRA_ONLY: ${{ needs.detect.outputs.infra_only }}
+          API_SHA: ${{ needs.build-api.outputs.sha_short }}
+          PORTAL_SHA: ${{ needs.build-portal.outputs.sha_short }}
+          API_IMAGE: ${{ needs.build-api.outputs.image }}
+          PORTAL_IMAGE: ${{ needs.build-portal.outputs.image }}
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_ACTOR: ${{ github.actor }}
         run: |
+          # Build the list of services to restart
+          SERVICES=""
+          [[ "$DEPLOY_API" == "true" ]]    && SERVICES="$SERVICES api"
+          [[ "$DEPLOY_PORTAL" == "true" ]] && SERVICES="$SERVICES portal"
+          SERVICES="${SERVICES# }"  # trim leading space
+
           ssh -i ~/.ssh/oci_key \
               -o StrictHostKeyChecking=no \
               -o ConnectTimeout=30 \
@@ -166,21 +371,28 @@ jobs:
               echo '=== Logging in to GHCR ==='
               echo '${GHCR_TOKEN}' | docker login ghcr.io -u '${GITHUB_ACTOR}' --password-stdin
 
-              echo '=== Pulling API image (arm64) ==='
-              docker pull --platform linux/arm64 ${API_IMAGE}:${SHA_SHORT}
+              # Pull and tag only the images that were rebuilt
+              if [[ '${BUILD_API}' == 'true' && -n '${API_IMAGE}' ]]; then
+                echo '=== Pulling API image (arm64, sha: ${API_SHA}) ==='
+                docker pull --platform linux/arm64 ${API_IMAGE}:${API_SHA}
+                docker tag ${API_IMAGE}:${API_SHA} ${API_IMAGE}:latest
+              fi
 
-              echo '=== Pulling Portal image (arm64) ==='
-              docker pull --platform linux/arm64 ${PORTAL_IMAGE}:${SHA_SHORT}
+              if [[ '${BUILD_PORTAL}' == 'true' && -n '${PORTAL_IMAGE}' ]]; then
+                echo '=== Pulling Portal image (arm64, sha: ${PORTAL_SHA}) ==='
+                docker pull --platform linux/arm64 ${PORTAL_IMAGE}:${PORTAL_SHA}
+                docker tag ${PORTAL_IMAGE}:${PORTAL_SHA} ${PORTAL_IMAGE}:latest
+              fi
 
-              echo '=== Tagging images as latest ==='
-              docker tag ${API_IMAGE}:${SHA_SHORT} ${API_IMAGE}:latest
-              docker tag ${PORTAL_IMAGE}:${SHA_SHORT} ${PORTAL_IMAGE}:latest
+              if [[ '${INFRA_ONLY}' == 'true' ]]; then
+                echo '=== Infra-only deploy — no new images, restarting containers with updated compose/env ==='
+              fi
 
-              echo '=== Restarting containers via docker compose ==='
+              echo '=== Restarting: ${SERVICES} ==='
               docker compose \
                 -f ${{ env.COMPOSE_FILE }} \
                 --env-file ${{ env.ENV_FILE }} \
-                up -d --no-build --pull never api portal
+                up -d --no-build --pull never --no-deps ${SERVICES}
 
               echo '=== Waiting for containers to stabilise ==='
               sleep 10
@@ -189,7 +401,7 @@ jobs:
               docker compose \
                 -f ${{ env.COMPOSE_FILE }} \
                 --env-file ${{ env.ENV_FILE }} \
-                ps api portal
+                ps ${SERVICES}
               "
 
       - name: Health check
@@ -200,7 +412,7 @@ jobs:
               ${{ env.OCI_USER }}@${{ env.OCI_HOST }} \
               "set -euo pipefail
 
-              echo '=== Health check (up to 10 attempts) ==='
+              echo '=== Health check (up to 10 attempts, 60s window) ==='
               for i in \$(seq 1 10); do
                 if curl -sf --max-time 5 http://localhost/healthz > /dev/null 2>&1; then
                   echo \"Health check passed on attempt \$i\"
@@ -210,7 +422,7 @@ jobs:
                 sleep 6
               done
 
-              echo 'ERROR: Health check failed after 10 attempts (60s)'
+              echo 'ERROR: Health check failed after 10 attempts'
               echo '=== Recent API logs ==='
               docker compose \
                 -f ${{ env.COMPOSE_FILE }} \
@@ -225,25 +437,17 @@ jobs:
           ssh -i ~/.ssh/oci_key \
               -o StrictHostKeyChecking=no \
               ${{ env.OCI_USER }}@${{ env.OCI_HOST }} \
-              "echo '=== Deployed images ==='
-              docker images ghcr.io/${{ env.REGISTRY_OWNER }}/fc-api --format '{{.Repository}}:{{.Tag}}\t{{.CreatedAt}}'
-              docker images ghcr.io/${{ env.REGISTRY_OWNER }}/fc-portal --format '{{.Repository}}:{{.Tag}}\t{{.CreatedAt}}'
-              echo ''
-              echo '=== Running containers ==='
+              "echo '=== Running containers ==='
               docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Image}}' | grep -E 'fc-|NAMES'
               "
 
-      - name: Annotate deployment
-        if: success()
-        run: |
-          echo "### Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "### Deploy Complete" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
           echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Branch | \`${{ github.event.inputs.branch }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| Commit | \`${{ needs.build-push.outputs.sha_short }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| API image | \`${{ needs.build-push.outputs.api_image }}:${{ needs.build-push.outputs.sha_short }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| Portal image | \`${{ needs.build-push.outputs.portal_image }}:${{ needs.build-push.outputs.sha_short }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Deployed | \`${{ needs.detect.outputs.deploy_api == 'true' && needs.detect.outputs.deploy_portal == 'true' && 'api + portal' || needs.detect.outputs.deploy_api == 'true' && 'api only' || 'portal only' }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| API image | \`${{ needs.build-api.outputs.image }}:${{ needs.build-api.outputs.sha_short }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Portal image | \`${{ needs.build-portal.outputs.image }}:${{ needs.build-portal.outputs.sha_short }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| OCI host | \`${{ env.OCI_HOST }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| Triggered by | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Reason | ${{ github.event.inputs.reason || '(none given)' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Reason | ${{ github.event.inputs.reason || 'push to phase1-dev' }} |" >> $GITHUB_STEP_SUMMARY
