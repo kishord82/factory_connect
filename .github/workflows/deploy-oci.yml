@@ -406,6 +406,9 @@ jobs:
               "
 
       - name: Health check
+        env:
+          DEPLOY_API: ${{ needs.detect.outputs.deploy_api }}
+          DEPLOY_PORTAL: ${{ needs.detect.outputs.deploy_portal }}
         run: |
           ssh -i ~/.ssh/oci_key \
               -o StrictHostKeyChecking=no \
@@ -413,23 +416,26 @@ jobs:
               ${{ env.OCI_USER }}@${{ env.OCI_HOST }} \
               "set -euo pipefail
 
-              echo '=== Health check (up to 10 attempts, 60s window) ==='
-              for i in \$(seq 1 10); do
-                if curl -sf --max-time 5 http://localhost/healthz > /dev/null 2>&1; then
-                  echo \"Health check passed on attempt \$i\"
-                  exit 0
-                fi
-                echo \"Attempt \$i/10 — not ready yet, waiting 6s...\"
-                sleep 6
-              done
+              check_container() {
+                local name=\$1
+                for i in \$(seq 1 20); do
+                  status=\$(docker inspect --format '{{.State.Health.Status}}' fc-\${name} 2>/dev/null || echo 'missing')
+                  if [[ \"\$status\" == 'healthy' ]]; then
+                    echo \"fc-\${name} is healthy (attempt \$i)\"
+                    return 0
+                  fi
+                  echo \"Attempt \$i/20 — fc-\${name} status: \$status\"
+                  sleep 6
+                done
+                echo 'ERROR: fc-\${name} did not become healthy'
+                docker logs fc-\${name} --tail=30 2>&1 || true
+                return 1
+              }
 
-              echo 'ERROR: Health check failed after 10 attempts'
-              echo '=== Recent API logs ==='
-              docker compose \
-                -f ${{ env.COMPOSE_FILE }} \
-                --env-file ${{ env.ENV_FILE }} \
-                logs --tail=50 api
-              exit 1
+              [[ '${DEPLOY_API}' == 'true' ]]    && check_container api
+              [[ '${DEPLOY_PORTAL}' == 'true' ]] && check_container portal
+
+              echo '=== All deployed containers healthy ==='
               "
 
       - name: Post-deploy summary
