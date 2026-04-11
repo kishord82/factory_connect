@@ -343,16 +343,8 @@ jobs:
           chmod 600 ~/.ssh/oci_key
           ssh-keyscan -H ${{ env.OCI_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
           # SSH config: keepalive to prevent broken pipe during long docker pulls
-          cat >> ~/.ssh/config <<'SSHCFG'
-Host oci
-  HostName ${{ env.OCI_HOST }}
-  User ${{ env.OCI_USER }}
-  IdentityFile ~/.ssh/oci_key
-  StrictHostKeyChecking no
-  ServerAliveInterval 30
-  ServerAliveCountMax 20
-  ConnectTimeout 30
-SSHCFG
+          printf 'Host oci\n  HostName %s\n  User %s\n  IdentityFile ~/.ssh/oci_key\n  StrictHostKeyChecking no\n  ServerAliveInterval 30\n  ServerAliveCountMax 20\n  ConnectTimeout 30\n' \
+            "${{ env.OCI_HOST }}" "${{ env.OCI_USER }}" >> ~/.ssh/config
           chmod 600 ~/.ssh/config
 
       - name: Pull & restart on OCI
