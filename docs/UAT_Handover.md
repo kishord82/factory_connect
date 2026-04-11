@@ -7,6 +7,8 @@
 **Branch:** phase1-dev  
 **Build commit:** `60275dd` (CI run [#24287314319](https://github.com/kishord82/factory_connect/actions/runs/24287314319) — GREEN ✅)
 
+> **Tested against production deployment** — all 16 pages verified via Chrome browser against the live public URL `http://92.4.94.2/` (no SSH tunnel). Final pass completed 2026-04-11.
+
 ---
 
 ## CI/CD Pipeline Status
@@ -20,13 +22,13 @@
 | Health check | ✅ Checks docker container health status (not Caddy /healthz) |
 | fc-api status | Up (healthy) |
 | fc-portal status | Up (healthy) |
-| Login page rendering | ✅ Verified via Chrome MCP (http://localhost:8888/login via SSH tunnel) |
+| Login page rendering | ✅ Verified via Chrome MCP against http://92.4.94.2/login (public URL, no tunnel) |
 
 ---
 
 ## Summary
 
-All 16 portal pages/routes tested and passing. Zero unresolved failures.
+All 16 portal pages/routes tested and passing. Zero unresolved failures. Zero console errors.
 
 | Category | Result |
 |----------|--------|
@@ -34,6 +36,7 @@ All 16 portal pages/routes tested and passing. Zero unresolved failures.
 | Pages passing | 16 |
 | Critical bugs fixed | 8 |
 | API endpoints verified | 11 |
+| Console errors | 0 |
 
 ---
 
@@ -54,6 +57,8 @@ All 16 portal pages/routes tested and passing. Zero unresolved failures.
 
 ## Page-by-Page Results
 
+> All tests performed against **http://92.4.94.2/** using `admin@factoryconnect.io` / `fcadmin123` (Platform Admin role). Final production pass: **2026-04-11**.
+
 ### 1. Login (`/login`)
 **Status:** PASS  
 - Renders login form with email + password fields
@@ -71,13 +76,13 @@ All 16 portal pages/routes tested and passing. Zero unresolved failures.
 **Status:** PASS  
 - Paginated table with sort controls (PO Number, Status, Amount, Date)
 - "+ New Order" button present and links to /orders/new
-- Data shows 7 orders across all statuses (DRAFT, CONFIRMED, CANCELLED, etc.)
+- Data shows 7 orders across all statuses (DRAFT, CONFIRMED, CANCELLED, PROCESSING, SHIPPED, INVOICED, COMPLETED)
 - Pagination controls functional (page 1 of 1 for seed data)
 
 ### 4. New Order (`/orders/new`)
 **Status:** PASS  
 - Form renders with: Connection dropdown, PO Number, Order Date, Currency
-- Line items table with Add/Remove
+- Line items table with Add Item button
 - GST 18% auto-calculated
 - Subtotal / GST / Total summary
 - Submit calls POST /api/v1/orders
@@ -85,7 +90,7 @@ All 16 portal pages/routes tested and passing. Zero unresolved failures.
 ### 5. Order Detail (`/orders/:id`)
 **Status:** PASS  
 - Displays PO Number, Factory Order #, Total Amount, Created Date, Status
-- Tested with order `aa000000-0000-0000-0000-000000000003` (WMT-PO-2026-0003, CANCELLED)
+- Tested with order `aa000000-0000-0000-0000-000000000003` (WMT-PO-2026-0003, CANCELLED, INR 1,13,280)
 - Correct API response unwrapping (`data.data.order` + `data.data.line_items`)
 
 ### 6. Order Explorer (`/orders/explorer`)
@@ -98,40 +103,39 @@ All 16 portal pages/routes tested and passing. Zero unresolved failures.
 ### 7. Mapping Studio (`/mapping-studio`)
 **Status:** PASS  
 - Page renders with Gallery and Field Editor tabs
-- "Loading mapping configs..." state shown (no configs seeded; expected)
+- Empty state "No mapping configurations found" shown (no configs seeded; expected)
 - "+ New Mapping" button present
 
 ### 8. EDI Monitor (`/edi-monitor`)
 **Status:** PASS  
-- Message type filters: Invoice (810), Purchase Order (850), PO Acknowledgment (855), ASN (856)
-- Status filters: PENDING, SENT, DELIVERED, FAILED, ACKNOWLEDGED
+- Message type filter, status filter, partner ID filter, search bar all render
 - Empty state shown (no EDI messages seeded; expected)
 
 ### 9. Bridge Status (`/bridge-status`)
 **Status:** PASS  
-- "Bridge Agents — Live Status" heading renders
-- "Loading bridge agents..." state shown (no bridge agents connected; expected)
+- "Bridge Agents" heading renders with "Live Status" button and search bar
+- Empty state "No bridge agents found" shown (no bridge agents connected; expected)
 
 ### 10. Shipments (`/shipments`)
 **Status:** PASS  
-- 3 shipments shown: Blue Dart (DELIVERED 125.5kg), DTDC (IN_TRANSIT 45kg), Delhivery (DELIVERED 38.2kg)
+- 3 shipments shown: Blue Dart Express (DELIVERED 125.5kg), DTDC Logistics (IN_TRANSIT 45kg), Delhivery (DELIVERED 38.2kg)
 - Sortable by shipment date, status, weight
 - Carrier and tracking number columns populated
 
 ### 11. Invoices (`/invoices`)
 **Status:** PASS  
-- 2 invoices: RT/INV/2026/001 (PAID, INR 2,65,500), GP/INV/2026/502 (SENT, INR 30,856)
+- 2 invoices: RT/INV/2026/001 (PAID, INR 2,65,500, due 22/04/2026), GP/INV/2026/502 (SENT, INR 30,856, due 02/04/2026)
 - Sortable by Invoice #, Status, Amount, Issued Date, Due Date
 
 ### 12. Connections (`/connections`)
 **Status:** PASS (after fix)  
-- 1 connection shown: Tally / UAT mode / active / circuit breaker CLOSED
+- 1 connection shown: tally / uat / active / circuit breaker CLOSED
 - Previously returned 500 due to non-existent `protocol` and `buyer_endpoint` columns in SQL
 - "+ New Connection" button present
 
 ### 13. Calendar (`/calendar`)
 **Status:** PASS  
-- 6 entries: Walmart Q2 Cutoff (deadline, buyer_sync), Good Friday (holiday, manual), Gudi Padwa (holiday, manual)
+- 6 entries: Walmart Q2 Cutoff (deadline, buyer_sync), Good Friday (holiday, manual), Gudi Padwa (holiday, manual) — each appears twice due to multi-tenant seed data
 - Sortable by Title, Type, Date, Source
 - Date formatting correct (DD/MM/YYYY)
 
@@ -139,20 +143,23 @@ All 16 portal pages/routes tested and passing. Zero unresolved failures.
 **Status:** PASS  
 - Orders by Status: DRAFT 1, COMPLETED 1, SHIPPED 1, CANCELLED 1, CONFIRMED 1, PROCESSING 1, INVOICED 1
 - Shipments by Status: DELIVERED 2, IN_TRANSIT 1
-- Top Buyers: Walmart Inc. (3 orders), J&J Procurement (2 orders), BMW Group (shown)
+- Top Buyers: Walmart Inc. (3 orders), Johnson & Johnson Procurement (2 orders), BMW Group Procurement (2 orders)
+- Revenue by Month: 2026-04 → INR 7,53,680
 
 ### 15. Settings (`/settings`)
 **Status:** PASS  
-- Users tab: 4 team members listed (Rajesh Admin, Operator, Viewer, FC Platform Admin)
-- Notifications tab: present
-- Configuration tab: present
+- Users tab: 7 team members listed across all tenants (Rajesh Admin/Operator/Viewer, Sunrise Admin/Operator, Gujarat Pharma Admin, FC Platform Admin)
+- Notifications tab: renders "Notification Preferences" heading
+- Configuration tab: renders
+- Feature Flags tab: renders with search, empty state
+- Audit Log tab: renders
 
 ### 16. Admin (`/admin`)
 **Status:** PASS  
 - Access control enforced: factory_admin users see "Access Denied"
 - fc_admin login shows full admin panel
-- Factories tab: 3 factories listed (Rajesh Textiles, Sunrise Auto, Gujarat Pharma)
-- Feature Flags tab: searchable list
+- Factories tab: 3 factories listed (Rajesh Textiles Pvt Ltd / Tally Prime, Sunrise Auto Components / Zoho Books, Gujarat Pharma Works / SAP Business One)
+- Feature Flags tab: search bar, empty state (no flags seeded)
 
 ---
 
@@ -183,6 +190,21 @@ All 16 portal pages/routes tested and passing. Zero unresolved failures.
 **Fix:** Added `import { NewOrder }` and mapped `orders/new` route to `<NewOrder />`  
 **File:** `apps/portal/src/App.tsx`
 
+### BUG-006: CI built linux/arm64 images on x86_64 OCI host (crash loop)
+**Root cause:** `deploy-oci.yml` had `linux/arm64` platform; OCI host is x86_64 → `exec format error`  
+**Fix:** Changed all `linux/arm64` → `linux/amd64` in workflow  
+**File:** `.github/workflows/deploy-oci.yml`
+
+### BUG-007: SSH Broken pipe on large image pulls
+**Root cause:** Long-running `docker pull` (425MB) disconnected SSH session after ~5 min idle  
+**Fix:** Added `ServerAliveInterval=30, ServerAliveCountMax=20` to SSH config in workflow  
+**File:** `.github/workflows/deploy-oci.yml`
+
+### BUG-008: Health check false positive (hit Caddy, not containers)
+**Root cause:** Previous health check hit `http://localhost/healthz` via Caddy — always passed even when api/portal containers were crash-looping  
+**Fix:** Rewrote to use `docker inspect --format '{{.State.Health.Status}}' fc-${name}`  
+**File:** `.github/workflows/deploy-oci.yml`
+
 ---
 
 ## Infrastructure State
@@ -202,8 +224,8 @@ All 16 portal pages/routes tested and passing. Zero unresolved failures.
 - `ghcr.io/kishord82/fc-api:latest` (AMD64, built 2026-04-10)
 - `ghcr.io/kishord82/fc-portal:latest` (AMD64, built 2026-04-10)
 
-**Deployment method:** Manual `docker pull` + `docker compose up --force-recreate` via SSH  
-**CI/CD pipeline:** GitHub Actions `deploy-oci.yml` triggers on push to `phase1-dev`; requires `GHCR_TOKEN` + `OCI_SSH_KEY` secrets
+**Deployment method:** GitHub Actions `deploy-oci.yml` (auto-trigger on push to phase1-dev)  
+**CI/CD pipeline:** Requires `GHCR_TOKEN` + `OCI_SSH_KEY` secrets in GitHub repo settings
 
 ---
 
@@ -211,10 +233,11 @@ All 16 portal pages/routes tested and passing. Zero unresolved failures.
 
 | Page | Limitation |
 |------|-----------|
-| Mapping Studio | No mapping configs seeded; shows "loading" indefinitely (404 from API) |
+| Mapping Studio | No mapping configs seeded; shows empty state |
 | EDI Monitor | No EDI messages seeded; shows empty state |
-| Bridge Status | No bridge agents connected; shows loading state |
-| Admin | Only accessible to `fc_admin` role; other roles see Access Denied |
+| Bridge Status | No bridge agents connected; shows empty state |
+| Admin Feature Flags | No feature flags seeded; shows empty state |
+| Settings Feature Flags | No feature flags seeded; shows empty state |
 | HTTPS | Disabled (HTTP only); needs domain + Cloudflare/Let's Encrypt for production |
 | Keycloak SSO | Disabled; using dev JWT endpoint (`/api/v1/auth/login`) |
 
@@ -236,7 +259,7 @@ All endpoints tested (HTTP 200 or expected status):
 | /api/v1/connections | GET | 200 |
 | /api/v1/connections/:id | GET | 200 |
 | /api/v1/calendar | GET | 200 |
-| /api/v1/analytics/orders | GET | 404 (route not yet implemented) |
+| /api/v1/analytics/orders | GET | 200 |
 | /healthz | GET | 200 |
 
 ---
@@ -257,6 +280,8 @@ All endpoints tested (HTTP 200 or expected status):
 - [x] Auto-trigger on push to phase1-dev confirmed working
 - [x] Health check validates real container health (docker inspect), not Caddy
 - [x] SSH keepalive prevents broken pipe on large image pulls
+- [x] **Full E2E browser UAT completed against public URL http://92.4.94.2/ (no tunnel)**
+- [x] **Zero console errors across all 16 pages**
 - [ ] HTTPS with real domain (post-Phase 1)
 - [ ] Keycloak SSO activation (post-Phase 1)
 - [ ] Mapping Studio backend route (`/api/v1/mapping-configs`)
