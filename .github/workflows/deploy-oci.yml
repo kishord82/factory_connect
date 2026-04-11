@@ -342,6 +342,18 @@ jobs:
           echo "${{ secrets.OCI_SSH_KEY }}" > ~/.ssh/oci_key
           chmod 600 ~/.ssh/oci_key
           ssh-keyscan -H ${{ env.OCI_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+          # SSH config: keepalive to prevent broken pipe during long docker pulls
+          cat >> ~/.ssh/config <<'SSHCFG'
+Host oci
+  HostName ${{ env.OCI_HOST }}
+  User ${{ env.OCI_USER }}
+  IdentityFile ~/.ssh/oci_key
+  StrictHostKeyChecking no
+  ServerAliveInterval 30
+  ServerAliveCountMax 20
+  ConnectTimeout 30
+SSHCFG
+          chmod 600 ~/.ssh/config
 
       - name: Pull & restart on OCI
         env:
@@ -363,10 +375,7 @@ jobs:
           [[ "$DEPLOY_PORTAL" == "true" ]] && SERVICES="$SERVICES portal"
           SERVICES="${SERVICES# }"  # trim leading space
 
-          ssh -i ~/.ssh/oci_key \
-              -o StrictHostKeyChecking=no \
-              -o ConnectTimeout=30 \
-              ${{ env.OCI_USER }}@${{ env.OCI_HOST }} \
+          ssh oci \
               "set -euo pipefail
 
               echo '=== Logging in to GHCR ==='
@@ -410,10 +419,7 @@ jobs:
           DEPLOY_API: ${{ needs.detect.outputs.deploy_api }}
           DEPLOY_PORTAL: ${{ needs.detect.outputs.deploy_portal }}
         run: |
-          ssh -i ~/.ssh/oci_key \
-              -o StrictHostKeyChecking=no \
-              -o ConnectTimeout=30 \
-              ${{ env.OCI_USER }}@${{ env.OCI_HOST }} \
+          ssh oci \
               "set -euo pipefail
 
               check_container() {
@@ -441,9 +447,7 @@ jobs:
       - name: Post-deploy summary
         if: success()
         run: |
-          ssh -i ~/.ssh/oci_key \
-              -o StrictHostKeyChecking=no \
-              ${{ env.OCI_USER }}@${{ env.OCI_HOST }} \
+          ssh oci \
               "echo '=== Running containers ==='
               docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Image}}' | grep -E 'fc-|NAMES'
               "
