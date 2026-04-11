@@ -1,11 +1,26 @@
 # FactoryConnect — UAT Handover Report
 
-**Date:** 2026-04-10  
+**Date:** 2026-04-11 (updated; initial pass 2026-04-10)  
 **Tester:** Claude (automated browser UAT via Chrome MCP)  
-**Environment:** OCI Production — 92.4.94.2 (x86_64 Ampere Free Tier)  
+**Environment:** OCI Production — 92.4.94.2 (x86_64)  
 **Access URL:** http://92.4.94.2/ (HTTP; HTTPS disabled pending domain + cert setup)  
 **Branch:** phase1-dev  
-**Build commit:** `1c4ee0b`
+**Build commit:** `60275dd` (CI run [#24287314319](https://github.com/kishord82/factory_connect/actions/runs/24287314319) — GREEN ✅)
+
+---
+
+## CI/CD Pipeline Status
+
+| Check | Result |
+|-------|--------|
+| GitHub Actions deploy workflow | ✅ GREEN (run #24287314319) |
+| Trigger on push to phase1-dev | ✅ Auto-triggered on every commit |
+| Build platform | linux/amd64 (matches OCI x86_64 host) |
+| SSH keepalive | ✅ ServerAliveInterval=30 (no Broken pipe on large pulls) |
+| Health check | ✅ Checks docker container health status (not Caddy /healthz) |
+| fc-api status | Up (healthy) |
+| fc-portal status | Up (healthy) |
+| Login page rendering | ✅ Verified via Chrome MCP (http://localhost:8888/login via SSH tunnel) |
 
 ---
 
@@ -17,7 +32,7 @@ All 16 portal pages/routes tested and passing. Zero unresolved failures.
 |----------|--------|
 | Pages tested | 16 |
 | Pages passing | 16 |
-| Critical bugs fixed | 5 |
+| Critical bugs fixed | 8 |
 | API endpoints verified | 11 |
 
 ---
@@ -238,8 +253,11 @@ All endpoints tested (HTTP 200 or expected status):
 - [x] NewOrder page wired in routing
 - [x] Docker images built for correct architecture (linux/amd64)
 - [x] SSH access stable (`ssh -i ~/.ssh/oci_key opc@92.4.94.2`)
+- [x] GitHub Actions deploy pipeline GREEN end-to-end (build → SSH → health check)
+- [x] Auto-trigger on push to phase1-dev confirmed working
+- [x] Health check validates real container health (docker inspect), not Caddy
+- [x] SSH keepalive prevents broken pipe on large image pulls
 - [ ] HTTPS with real domain (post-Phase 1)
 - [ ] Keycloak SSO activation (post-Phase 1)
-- [ ] GitHub Actions deploy pipeline end-to-end test (needs `OCI_SSH_KEY` secret update)
 - [ ] Mapping Studio backend route (`/api/v1/mapping-configs`)
 - [ ] Bridge Status backend route (`/api/v1/bridge/status`)
