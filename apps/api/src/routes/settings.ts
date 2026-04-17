@@ -5,7 +5,6 @@
 
 import type { PoolClient } from '@fc/database';
 import { withTenantClient, withTenantTransaction, findMany, paginatedQuery, insertOne } from '@fc/database';
-import { FcError } from '@fc/shared';
 import { Router } from 'express';
 import { z } from 'zod';
 

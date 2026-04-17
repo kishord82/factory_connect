@@ -78,6 +78,112 @@ interface ReconciliationSummary {
   matchRate: number;
 }
 
+const TDS_RECON_ITEMS_TABLE = 'reconciliation_items';
+const SQL_FIND_CA_CLIENT = 'SELECT id FROM ca_clients WHERE id = $1';
+
+interface MatchResult {
+  matchedCount: number;
+  unmatchedSource: number;
+  totalVariance: number;
+  processedTracesIds: Set<string>;
+}
+
+interface EntryMatchResult {
+  isMatched: boolean;
+  variance: number;
+}
+
+async function processTdsMatch(
+  client: PoolClient,
+  sessionId: string,
+  tallyEntry: TdsEntry,
+  tracesMatch: TdsEntry,
+): Promise<EntryMatchResult> {
+  const variance = Math.abs(tallyEntry.tax_deducted - tracesMatch.tax_deducted);
+  const matchStatus = variance < 100 ? 'matched' : 'variance';
+
+  await insertOne<ReconciliationItemRow>(
+    client,
+    `INSERT INTO ${TDS_RECON_ITEMS_TABLE} (
+      session_id, source_record, target_record, match_status,
+      variance_amount, variance_reason
+    ) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
+    [
+      sessionId,
+      JSON.stringify(tallyEntry),
+      JSON.stringify(tracesMatch),
+      matchStatus,
+      variance > 0 ? variance : null,
+      variance > 0 ? `Amount difference: ${variance}` : null,
+    ],
+  );
+
+  return { isMatched: variance < 100, variance };
+}
+
+async function matchTdsEntries(
+  client: PoolClient,
+  sessionId: string,
+  tallyTdsEntries: TdsEntry[],
+  tracesData: TdsEntry[],
+): Promise<MatchResult> {
+  let matchedCount = 0;
+  let unmatchedSource = 0;
+  let totalVariance = 0;
+  const processedTracesIds = new Set<string>();
+
+  for (const tallyEntry of tallyTdsEntries) {
+    const tracesMatch = tracesData.find((t: TdsEntry) => t.deductee_pan === tallyEntry.deductee_pan);
+
+    if (tracesMatch) {
+      processedTracesIds.add(tracesMatch.id);
+      const { isMatched, variance } = await processTdsMatch(client, sessionId, tallyEntry, tracesMatch);
+      if (isMatched) matchedCount++;
+      totalVariance += variance;
+    } else {
+      unmatchedSource++;
+      await buildUnmatchedSourceItem(client, sessionId, tallyEntry);
+    }
+  }
+
+  return { matchedCount, unmatchedSource, totalVariance, processedTracesIds };
+}
+
+async function buildUnmatchedSourceItem(
+  client: PoolClient,
+  sessionId: string,
+  tallyEntry: TdsEntry,
+): Promise<void> {
+  await insertOne<ReconciliationItemRow>(
+    client,
+    `INSERT INTO ${TDS_RECON_ITEMS_TABLE} (
+      session_id, source_record, match_status
+    ) VALUES ($1,$2,$3) RETURNING *`,
+    [sessionId, JSON.stringify(tallyEntry), 'unmatched_source'],
+  );
+}
+
+async function insertUnmatched(
+  client: PoolClient,
+  sessionId: string,
+  tracesData: TdsEntry[],
+  processedTracesIds: Set<string>,
+): Promise<number> {
+  let unmatchedTarget = 0;
+  for (const tracesEntry of tracesData) {
+    if (!processedTracesIds.has(tracesEntry.id)) {
+      unmatchedTarget++;
+      await insertOne<ReconciliationItemRow>(
+        client,
+        `INSERT INTO ${TDS_RECON_ITEMS_TABLE} (
+          session_id, target_record, match_status
+        ) VALUES ($1,$2,$3) RETURNING *`,
+        [sessionId, JSON.stringify(tracesEntry), 'unmatched_target'],
+      );
+    }
+  }
+  return unmatchedTarget;
+}
 
 /**
  * Reconcile TDS entries from Tally with TRACES data
@@ -91,7 +197,7 @@ export async function reconcileTds(
 ): Promise<ReconciliationSessionRow> {
   return withTenantTransaction(ctx, async (client: PoolClient) => {
     // Validate client exists
-    const caClient = await findOne(client, 'SELECT id FROM ca_clients WHERE id = $1', [clientId]);
+    const caClient = await findOne(client, SQL_FIND_CA_CLIENT, [clientId]);
     if (!caClient) {
       throw new FcError('FC_ERR_COMPLIANCE_CLIENT_NOT_FOUND', `Client ${clientId} not found`, {}, 404);
     }
@@ -133,73 +239,11 @@ export async function reconcileTds(
     );
 
     // Match entries and create reconciliation items
-    let matchedCount = 0;
-    let unmatchedSource = 0;
-    let unmatchedTarget = 0;
-    let totalVariance = 0;
-    const processedTracesIds = new Set<string>();
+    const { matchedCount, unmatchedSource, totalVariance, processedTracesIds } =
+      await matchTdsEntries(client, session.id, tallyTdsEntries, tracesData);
 
-    for (const tallyEntry of tallyTdsEntries) {
-      // Find matching TRACES entry
-      const tracesMatch = tracesData.find((t: TdsEntry) => t.deductee_pan === tallyEntry.deductee_pan);
-
-      if (tracesMatch) {
-        processedTracesIds.add(tracesMatch.id);
-        const variance = Math.abs(tallyEntry.tax_deducted - tracesMatch.tax_deducted);
-
-        const matchStatus = variance < 100 ? 'matched' : 'variance'; // Tolerance: 100
-        if (variance < 100) matchedCount++;
-        totalVariance += variance;
-
-        await insertOne<ReconciliationItemRow>(
-          client,
-          `INSERT INTO reconciliation_items (
-            session_id, source_record, target_record, match_status,
-            variance_amount, variance_reason
-          ) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
-          [
-            session.id,
-            JSON.stringify(tallyEntry),
-            JSON.stringify(tracesMatch),
-            matchStatus,
-            variance > 0 ? variance : null,
-            variance > 0 ? `Amount difference: ${variance}` : null,
-          ],
-        );
-      } else {
-        // Unmatched in source (Tally)
-        unmatchedSource++;
-        await insertOne<ReconciliationItemRow>(
-          client,
-          `INSERT INTO reconciliation_items (
-            session_id, source_record, match_status
-          ) VALUES ($1,$2,$3) RETURNING *`,
-          [
-            session.id,
-            JSON.stringify(tallyEntry),
-            'unmatched_source',
-          ],
-        );
-      }
-    }
-
-    // Find TRACES entries not matched in Tally
-    for (const tracesEntry of tracesData) {
-      if (!processedTracesIds.has(tracesEntry.id)) {
-        unmatchedTarget++;
-        await insertOne<ReconciliationItemRow>(
-          client,
-          `INSERT INTO reconciliation_items (
-            session_id, target_record, match_status
-          ) VALUES ($1,$2,$3) RETURNING *`,
-          [
-            session.id,
-            JSON.stringify(tracesEntry),
-            'unmatched_target',
-          ],
-        );
-      }
-    }
+    // Insert unmatched TRACES entries
+    const unmatchedTarget = await insertUnmatched(client, session.id, tracesData, processedTracesIds);
 
     // Update session with counts
     const matchRate = tallyTdsEntries.length > 0 ? (matchedCount / tallyTdsEntries.length) * 100 : 0;
@@ -245,7 +289,7 @@ export async function prepare24Q(
 ): Promise<ComplianceFilingRow> {
   return withTenantTransaction(ctx, async (client: PoolClient) => {
     // Validate client exists
-    const caClient = await findOne(client, 'SELECT id FROM ca_clients WHERE id = $1', [clientId]);
+    const caClient = await findOne(client, SQL_FIND_CA_CLIENT, [clientId]);
     if (!caClient) {
       throw new FcError('FC_ERR_COMPLIANCE_CLIENT_NOT_FOUND', `Client ${clientId} not found`, {}, 404);
     }
@@ -312,7 +356,7 @@ export async function prepare26Q(
 ): Promise<ComplianceFilingRow> {
   return withTenantTransaction(ctx, async (client: PoolClient) => {
     // Validate client exists
-    const caClient = await findOne(client, 'SELECT id FROM ca_clients WHERE id = $1', [clientId]);
+    const caClient = await findOne(client, SQL_FIND_CA_CLIENT, [clientId]);
     if (!caClient) {
       throw new FcError('FC_ERR_COMPLIANCE_CLIENT_NOT_FOUND', `Client ${clientId} not found`, {}, 404);
     }

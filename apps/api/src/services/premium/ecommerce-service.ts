@@ -67,7 +67,7 @@ export async function reconcileMarketplace(
   },
 ): Promise<ReconciliationSessionRow> {
   return withTenantTransaction(
-    { tenantId: ctx.caFirmId, userId: ctx.userId, correlationId: ctx.correlationId } as any,
+    ctx,
     async (client: PoolClient) => {
       // Validate period format
       if (!/^\d{4}-\d{2}$/.test(periodData.period)) {
@@ -170,7 +170,7 @@ export async function calculateTcs(
   period: string, // YYYY-MM
 ): Promise<TcsCalculationRow> {
   return withTenantClient(
-    { tenantId: ctx.caFirmId, userId: ctx.userId, correlationId: ctx.correlationId } as any,
+    ctx,
     async (client: PoolClient) => {
       // Validate period
       if (!/^\d{4}-\d{2}$/.test(period)) {
@@ -239,7 +239,7 @@ export async function reconcileTcsCredits(
   mismatch: number;
 }> {
   return withTenantClient(
-    { tenantId: ctx.caFirmId, userId: ctx.userId, correlationId: ctx.correlationId } as any,
+    ctx,
     async (client: PoolClient) => {
       // Validate period
       if (!/^\d{4}-\d{2}$/.test(period)) {
@@ -294,7 +294,7 @@ export async function generateMarketplaceReport(
   period: string, // YYYY-MM
 ): Promise<MarketplaceReportRow[]> {
   return withTenantClient(
-    { tenantId: ctx.caFirmId, userId: ctx.userId, correlationId: ctx.correlationId } as any,
+    ctx,
     async (client: PoolClient) => {
       // Validate period
       if (!/^\d{4}-\d{2}$/.test(period)) {
@@ -343,7 +343,7 @@ export async function ecommerceDashboard(
   reconPending: number;
 }> {
   return withTenantClient(
-    { tenantId: ctx.caFirmId, userId: ctx.userId, correlationId: ctx.correlationId } as any,
+    ctx,
     async (client: PoolClient) => {
       const [sellersResult, gmvResult, tcsResult, reconResult] = await Promise.all([
         client.query<{ count: string }>(

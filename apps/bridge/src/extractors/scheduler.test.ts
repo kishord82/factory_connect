@@ -10,6 +10,7 @@ import {
   DEFAULT_SCHEDULES,
   type ClientScheduleConfig,
   type TallyConfig,
+  type ExtractionType,
 } from './scheduler.js';
 
 describe('ExtractionScheduler', () => {
@@ -126,7 +127,7 @@ describe('ExtractionScheduler', () => {
       });
       global.fetch = mockFetch;
 
-      await expect(scheduler.executeExtraction('UNKNOWN' as any)).rejects.toBeInstanceOf(FcError);
+      await expect(scheduler.executeExtraction('UNKNOWN' as unknown as ExtractionType)).rejects.toBeInstanceOf(FcError);
     });
 
     it('should track job status across all extraction types', async () => {
@@ -285,7 +286,7 @@ describe('ExtractionScheduler', () => {
 
     it('should throw on updating non-existent schedule', () => {
       expect(() => {
-        scheduler.updateSchedule('INVALID' as any, { enabled: false });
+        scheduler.updateSchedule('INVALID' as unknown as ExtractionType, { enabled: false });
       }).toThrow('FC_ERR_BRIDGE_SCHEDULE_NOT_FOUND');
     });
   });

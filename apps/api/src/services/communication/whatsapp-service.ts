@@ -524,10 +524,8 @@ function normalizePhoneNumber(phone: string): string {
   // Remove all non-digits
   const digits = phone.replace(/\D/g, '');
   // Ensure it starts with country code (91 for India)
-  if (!digits.startsWith('91')) {
-    if (digits.length === 10) {
-      return `91${digits}`;
-    }
+  if (!digits.startsWith('91') && digits.length === 10) {
+    return `91${digits}`;
   }
   return digits;
 }

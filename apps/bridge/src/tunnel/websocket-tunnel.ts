@@ -143,7 +143,8 @@ export class WebSocketTunnel {
       this.pendingMessages.set(correlationId, { resolve, reject, timeout });
 
       try {
-        this.ws!.send(JSON.stringify(message));
+        if (!this.ws) throw new Error('WebSocket not connected');
+        this.ws.send(JSON.stringify(message));
       } catch (err) {
         this.pendingMessages.delete(correlationId);
         clearTimeout(timeout);
@@ -201,7 +202,7 @@ export class WebSocketTunnel {
     this.heartbeatTimer = setInterval(() => {
       if (this.isConnected()) {
         try {
-          this.ws!.ping();
+          if (this.ws) this.ws.ping();
         } catch (err) {
           logger.error({ err }, 'Heartbeat error');
         }

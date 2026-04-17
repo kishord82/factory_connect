@@ -303,7 +303,7 @@ export async function batchCalculateHealthScores(
       try {
         await calculateHealthScore(ctx, c.id);
         calculated++;
-      } catch (err) {
+      } catch {
         errors++;
       }
     }

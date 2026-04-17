@@ -35,10 +35,6 @@ export interface StockExtractionData {
 }
 
 export class StockExtractor extends BaseExtractor<StockExtractionData> {
-  constructor(config: TallyConfig) {
-    super(config);
-  }
-
   async extract(): Promise<ExtractionResult<StockExtractionData>> {
     const startTime = Date.now();
     const errors: string[] = [];

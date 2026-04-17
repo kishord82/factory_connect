@@ -6,11 +6,10 @@ import type { PoolClient } from '@fc/database';
 import { withTenantClient, paginatedQuery } from '@fc/database';
 import { PaginationSchema } from '@fc/shared';
 import { Router } from 'express';
-import { z } from 'zod';
 
 import { authenticate } from '../middleware/auth.js';
 import { tenantContext, getRequestContext } from '../middleware/tenant-context.js';
-import { validate, getValidatedQuery } from '../middleware/validate.js';
+import { validate } from '../middleware/validate.js';
 import { parsePagination, buildOrderBy } from '../utils/pagination.js';
 
 
@@ -18,15 +17,6 @@ export const mappingsRouter = Router();
 mappingsRouter.use(authenticate, tenantContext);
 
 const MAPPINGS_SORT_COLUMNS = ['created_at', 'mapping_type', 'status'];
-
-const MappingRow = z.object({
-  id: z.string().uuid(),
-  mapping_type: z.string(),
-  source_system: z.string(),
-  target_system: z.string(),
-  status: z.string(),
-  created_at: z.date(),
-});
 
 mappingsRouter.get('/', validate({ query: PaginationSchema }), async (req, res, next) => {
   try {

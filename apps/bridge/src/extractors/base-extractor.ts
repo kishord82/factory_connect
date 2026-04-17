@@ -50,6 +50,67 @@ export abstract class BaseExtractor<T> {
   }
 
   /**
+   * Throw a typed FcError when the connection is refused (Tally not running).
+   */
+  private throwConnectionRefused(): never {
+    throw new FcError(
+      'FC_ERR_TALLY_NOT_RUNNING',
+      `Tally is not running on ${this.config.host}:${this.config.port}`,
+      { host: this.config.host, port: this.config.port },
+    );
+  }
+
+  /**
+   * Throw a typed FcError when a request times out.
+   */
+  private throwTimeout(attempt: number): never {
+    throw new FcError(
+      'FC_ERR_TALLY_TIMEOUT',
+      `Tally request timeout after ${this.config.timeout}ms`,
+      { timeout: this.config.timeout, attempt },
+    );
+  }
+
+  /**
+   * Classify and rethrow fatal errors; return true when the error is retryable.
+   */
+  private handleCatchError(error: unknown, attempt: number): void {
+    if (!(error instanceof Error)) {
+      return;
+    }
+    const isConnectionRefused =
+      error.message.includes('ECONNREFUSED') || error.message.includes('Failed to fetch');
+    if (isConnectionRefused) {
+      this.throwConnectionRefused();
+    }
+    if (error.name === 'AbortError') {
+      this.throwTimeout(attempt);
+    }
+  }
+
+  /**
+   * Execute a single HTTP POST attempt to Tally and return the response text.
+   */
+  private async executeAttempt(xmlBody: string, attempt: number): Promise<string> {
+    const response = await fetch(`http://${this.config.host}:${this.config.port}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/xml' },
+      body: xmlBody,
+      signal: AbortSignal.timeout(this.config.timeout),
+    });
+
+    if (!response.ok) {
+      throw new FcError(
+        'FC_ERR_TALLY_HTTP_ERROR',
+        `Tally HTTP error: ${response.status} ${response.statusText}`,
+        { status: response.status, attempt },
+      );
+    }
+
+    return response.text();
+  }
+
+  /**
    * Send TDL XML request to Tally via HTTP POST.
    * Implements exponential backoff retry on transient failures.
    */
@@ -58,49 +119,11 @@ export abstract class BaseExtractor<T> {
 
     for (let attempt = 0; attempt < this.maxRetries; attempt++) {
       try {
-        const response = await fetch(`http://${this.config.host}:${this.config.port}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'text/xml',
-          },
-          body: xmlBody,
-          signal: AbortSignal.timeout(this.config.timeout),
-        });
-
-        if (!response.ok) {
-          throw new FcError(
-            'FC_ERR_TALLY_HTTP_ERROR',
-            `Tally HTTP error: ${response.status} ${response.statusText}`,
-            { status: response.status, attempt },
-          );
-        }
-
-        return await response.text();
+        return await this.executeAttempt(xmlBody, attempt);
       } catch (error) {
         lastError = error as Error;
+        this.handleCatchError(error, attempt);
 
-        // Connection refused: Tally not running
-        if (
-          error instanceof Error &&
-          (error.message.includes('ECONNREFUSED') || error.message.includes('Failed to fetch'))
-        ) {
-          throw new FcError(
-            'FC_ERR_TALLY_NOT_RUNNING',
-            `Tally is not running on ${this.config.host}:${this.config.port}`,
-            { host: this.config.host, port: this.config.port },
-          );
-        }
-
-        // Timeout
-        if (error instanceof Error && error.name === 'AbortError') {
-          throw new FcError(
-            'FC_ERR_TALLY_TIMEOUT',
-            `Tally request timeout after ${this.config.timeout}ms`,
-            { timeout: this.config.timeout, attempt },
-          );
-        }
-
-        // Retryable error, wait before next attempt
         if (attempt < this.maxRetries - 1) {
           const delayMs = this.retryDelayMs * Math.pow(2, attempt);
           await new Promise((resolve) => setTimeout(resolve, delayMs));

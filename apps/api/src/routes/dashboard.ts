@@ -45,7 +45,7 @@ dashboardRouter.get('/', async (req, res, next) => {
       );
 
       const ordersByStatus: Record<string, number> = {};
-      statusResult.rows.forEach((row: any) => {
+      statusResult.rows.forEach((row: { status: string; count: string }) => {
         ordersByStatus[row.status] = parseInt(row.count, 10);
       });
 

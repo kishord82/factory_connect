@@ -62,7 +62,8 @@ export class OTPBootstrap {
 
     if (!response.ok) {
       const errorData = (await response.json()) as { error?: string };
-      throw new Error(`OTP verification failed: ${errorData.error || `HTTP ${response.status}`}`);
+      const statusMsg = errorData.error ?? `HTTP ${response.status}`;
+      throw new Error(`OTP verification failed: ${statusMsg}`);
     }
 
     const data = (await response.json()) as { token?: string };

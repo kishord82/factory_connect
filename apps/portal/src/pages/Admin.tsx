@@ -1,10 +1,11 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '../lib/api.js';
-import { useAuth, isAdmin } from '../lib/auth.js';
 import { useState } from 'react';
-import { formatDate } from '../utils/date.js';
+
 import { DataTable } from '../components/common/DataTable.js';
 import type { Column } from '../components/common/DataTable.js';
+import { api } from '../lib/api.js';
+import { useAuth, isAdmin } from '../lib/auth.js';
+import { formatDate } from '../utils/date.js';
 
 interface Factory {
   id: string;

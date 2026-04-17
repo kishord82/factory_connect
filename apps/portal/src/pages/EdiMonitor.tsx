@@ -1,9 +1,10 @@
-import { useState } from 'react';
-import { api } from '../lib/api.js';
-import { formatDate } from '../utils/date.js';
 import { ChevronDown, Copy } from 'lucide-react';
+import { useState } from 'react';
+
 import { DataTable } from '../components/common/DataTable.js';
 import type { Column } from '../components/common/DataTable.js';
+import { api } from '../lib/api.js';
+import { formatDate } from '../utils/date.js';
 
 interface EdiMessage {
   id: string;

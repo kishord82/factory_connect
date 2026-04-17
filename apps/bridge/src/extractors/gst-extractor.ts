@@ -7,6 +7,8 @@ import { FcError } from '@fc/shared';
 
 import { BaseExtractor, type TallyConfig, type ExtractionResult } from './base-extractor.js';
 
+const DATE_FORMAT = 'DD-MMM-YYYY';
+
 export interface GstSalesLine {
   voucherDate: string;
   voucherNumber: string;
@@ -70,10 +72,6 @@ export interface GstExtractionData {
 }
 
 export class GstExtractor extends BaseExtractor<GstExtractionData> {
-  constructor(config: TallyConfig) {
-    super(config);
-  }
-
   async extract(): Promise<ExtractionResult<GstExtractionData>> {
     const startTime = Date.now();
     const errors: string[] = [];
@@ -221,14 +219,21 @@ export class GstExtractor extends BaseExtractor<GstExtractionData> {
     };
   }
 
-  private parseSalesLine(line: Record<string, unknown>): GstSalesLine {
+  /**
+   * Parse the tax-amount fields shared by both sales and purchase lines.
+   */
+  private parseGstTaxFields(line: Record<string, unknown>): {
+    taxableAmount: number;
+    cgstRate: number;
+    cgstAmount: number;
+    sgstRate: number;
+    sgstAmount: number;
+    igstRate: number;
+    igstAmount: number;
+    cessAmount: number;
+    totalAmount: number;
+  } {
     return {
-      voucherDate: String(line.VOUCHERDATE || ''),
-      voucherNumber: String(line.VOUCHERNUMBER || ''),
-      partyName: String(line.PARTYNAME || ''),
-      partyGstin: String(line.PARTYGSTIN || ''),
-      invoiceNumber: String(line.INVOICENUMBER || ''),
-      hsnCode: String(line.HSNCODE || ''),
       taxableAmount: Number(line.TAXABLEAMOUNT || 0),
       cgstRate: Number(line.CGSTRATE || 0),
       cgstAmount: Number(line.CGSTAMOUNT || 0),
@@ -238,30 +243,45 @@ export class GstExtractor extends BaseExtractor<GstExtractionData> {
       igstAmount: Number(line.IGSTAMOUNT || 0),
       cessAmount: Number(line.CESSAMOUNT || 0),
       totalAmount: Number(line.TOTALAMOUNT || 0),
+    };
+  }
+
+  /**
+   * Parse the header and party fields shared by both sales and purchase lines.
+   */
+  private parseGstLineBase(line: Record<string, unknown>): {
+    voucherDate: string;
+    voucherNumber: string;
+    partyName: string;
+    partyGstin: string;
+    invoiceNumber: string;
+    hsnCode: string;
+    placeOfSupply: string;
+    reverseCharge: boolean;
+  } {
+    return {
+      voucherDate: String(line.VOUCHERDATE || ''),
+      voucherNumber: String(line.VOUCHERNUMBER || ''),
+      partyName: String(line.PARTYNAME || ''),
+      partyGstin: String(line.PARTYGSTIN || ''),
+      invoiceNumber: String(line.INVOICENUMBER || ''),
+      hsnCode: String(line.HSNCODE || ''),
       placeOfSupply: String(line.PLACEOFSUPPLY || ''),
       reverseCharge: String(line.REVERSECHARGE || '').toLowerCase() === 'yes',
     };
   }
 
+  private parseSalesLine(line: Record<string, unknown>): GstSalesLine {
+    return {
+      ...this.parseGstLineBase(line),
+      ...this.parseGstTaxFields(line),
+    };
+  }
+
   private parsePurchaseLine(line: Record<string, unknown>): GstPurchaseLine {
     return {
-      voucherDate: String(line.VOUCHERDATE || ''),
-      voucherNumber: String(line.VOUCHERNUMBER || ''),
-      partyName: String(line.PARTYNAME || ''),
-      partyGstin: String(line.PARTYGSTIN || ''),
-      invoiceNumber: String(line.INVOICENUMBER || ''),
-      hsnCode: String(line.HSNCODE || ''),
-      taxableAmount: Number(line.TAXABLEAMOUNT || 0),
-      cgstRate: Number(line.CGSTRATE || 0),
-      cgstAmount: Number(line.CGSTAMOUNT || 0),
-      sgstRate: Number(line.SGSTRATE || 0),
-      sgstAmount: Number(line.SGSTAMOUNT || 0),
-      igstRate: Number(line.IGSTRATE || 0),
-      igstAmount: Number(line.IGSTAMOUNT || 0),
-      cessAmount: Number(line.CESSAMOUNT || 0),
-      totalAmount: Number(line.TOTALAMOUNT || 0),
-      placeOfSupply: String(line.PLACEOFSUPPLY || ''),
-      reverseCharge: String(line.REVERSECHARGE || '').toLowerCase() === 'yes',
+      ...this.parseGstLineBase(line),
+      ...this.parseGstTaxFields(line),
     };
   }
 
@@ -278,7 +298,7 @@ export class GstExtractor extends BaseExtractor<GstExtractionData> {
   private buildSalesRegisterTdl(): string {
     return this.buildTdlRequest('GST Sales Register', {
       REPORTTYPE: 'Sales',
-      DATEFORMAT: 'DD-MMM-YYYY',
+      DATEFORMAT: DATE_FORMAT,
       SHOWALLLEDGERS: 'No',
     });
   }
@@ -286,20 +306,20 @@ export class GstExtractor extends BaseExtractor<GstExtractionData> {
   private buildPurchaseRegisterTdl(): string {
     return this.buildTdlRequest('GST Purchase Register', {
       REPORTTYPE: 'Purchase',
-      DATEFORMAT: 'DD-MMM-YYYY',
+      DATEFORMAT: DATE_FORMAT,
       SHOWALLLEDGERS: 'No',
     });
   }
 
   private buildHsnSummaryTdl(): string {
     return this.buildTdlRequest('GST HSN Summary', {
-      DATEFORMAT: 'DD-MMM-YYYY',
+      DATEFORMAT: DATE_FORMAT,
     });
   }
 
   private buildB2bSummaryTdl(): string {
     return this.buildTdlRequest('GST B2B Summary', {
-      DATEFORMAT: 'DD-MMM-YYYY',
+      DATEFORMAT: DATE_FORMAT,
     });
   }
 

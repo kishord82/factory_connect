@@ -26,35 +26,69 @@ interface TdsReconJob {
 const QUEUE_NAME = 'ca:tds-recon';
 const CONCURRENCY = 5;
 
+function buildJobContext(data: TdsReconJob): CaRequestContext {
+  return {
+    caFirmId: data.caFirmId,
+    tenantId: data.caFirmId,
+    userId: data.userId,
+    correlationId: data.correlationId,
+    role: 'system',
+    subscriptionTier: 'professional',
+  };
+}
+
+function logReconMismatch(
+  sessionId: string,
+  matched: number,
+  unmatchedSource: number,
+  unmatchedTarget: number,
+): void {
+  const matchRate = matched > 0
+    ? (matched / (matched + unmatchedSource + unmatchedTarget)) * 100
+    : 0;
+
+  logger.info(
+    { sessionId, matchRate: matchRate.toFixed(2) },
+    `TDS reconciliation complete with ${unmatchedSource} unmatched source and ${unmatchedTarget} unmatched target entries`,
+  );
+}
+
+async function handleReconFailure(
+  ctx: CaRequestContext,
+  data: TdsReconJob,
+  err: unknown,
+): Promise<void> {
+  try {
+    await createException(ctx, {
+      filing_id: '',
+      client_id: data.clientId,
+      exception_type: 'TDS_RECON_FAILURE',
+      severity: 'high',
+      description: `TDS reconciliation failed for Q${data.quarter}: ${err instanceof Error ? err.message : String(err)}`,
+      source_data: { period: data.period, quarter: data.quarter },
+      suggested_fix: 'Review Tally and TRACES data; retry reconciliation',
+    });
+  } catch (exErr) {
+    logger.error(
+      { error: exErr instanceof Error ? exErr.message : String(exErr) },
+      'Failed to create exception for TDS recon failure',
+    );
+  }
+}
+
 /**
  * Process TDS reconciliation job
  */
 async function processTdsReconJob(job: Job<TdsReconJob>): Promise<void> {
-  const { caFirmId, clientId, period, quarter, userId, correlationId } = job.data;
+  const { caFirmId, clientId, period, quarter, correlationId } = job.data;
 
   logger.info(
-    {
-      jobId: job.id,
-      caFirmId,
-      clientId,
-      period,
-      quarter,
-      correlationId,
-    },
+    { jobId: job.id, caFirmId, clientId, period, quarter, correlationId },
     'Processing TDS reconciliation job',
   );
 
   try {
-    const ctx: CaRequestContext = {
-      caFirmId,
-      tenantId: caFirmId,
-      userId,
-      correlationId,
-      role: 'system',
-      subscriptionTier: 'professional',
-    };
-
-    // Run reconciliation
+    const ctx = buildJobContext(job.data);
     const session = await reconcileTds(ctx, clientId, period, quarter);
 
     logger.info(
@@ -69,26 +103,15 @@ async function processTdsReconJob(job: Job<TdsReconJob>): Promise<void> {
       'TDS reconciliation completed',
     );
 
-    // Update job progress
     job.updateProgress(100);
 
-    // If there are mismatches or variance, create an exception
     if (session.unmatched_source > 0 || session.unmatched_target > 0) {
-      try {
-        const matchRate = session.matched_count > 0
-          ? (session.matched_count / (session.matched_count + session.unmatched_source + session.unmatched_target)) * 100
-          : 0;
-
-        logger.info(
-          {
-            sessionId: session.id,
-            matchRate: matchRate.toFixed(2),
-          },
-          `TDS reconciliation complete with ${session.unmatched_source} unmatched source and ${session.unmatched_target} unmatched target entries`,
-        );
-      } catch (logErr) {
-        logger.error({ error: logErr instanceof Error ? logErr.message : String(logErr) }, 'Error logging reconciliation metrics');
-      }
+      logReconMismatch(
+        session.id,
+        session.matched_count,
+        session.unmatched_source,
+        session.unmatched_target,
+      );
     }
   } catch (err) {
     logger.error(
@@ -102,37 +125,8 @@ async function processTdsReconJob(job: Job<TdsReconJob>): Promise<void> {
       'TDS reconciliation job failed',
     );
 
-    // Create compliance exception for failure
-    try {
-      const ctx: CaRequestContext = {
-        caFirmId,
-        tenantId: caFirmId,
-        userId,
-        correlationId,
-        role: 'system',
-        subscriptionTier: 'professional',
-      };
-
-      await createException(ctx, {
-        filing_id: '', // No filing for reconciliation
-        client_id: clientId,
-        exception_type: 'TDS_RECON_FAILURE',
-        severity: 'high',
-        description: `TDS reconciliation failed for Q${quarter}: ${err instanceof Error ? err.message : String(err)}`,
-        source_data: {
-          period,
-          quarter,
-        },
-        suggested_fix: 'Review Tally and TRACES data; retry reconciliation',
-      });
-    } catch (exErr) {
-      logger.error(
-        { error: exErr instanceof Error ? exErr.message : String(exErr) },
-        'Failed to create exception for TDS recon failure',
-      );
-    }
-
-    // Rethrow to trigger retry
+    const ctx = buildJobContext(job.data);
+    await handleReconFailure(ctx, job.data, err);
     throw err;
   }
 }

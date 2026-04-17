@@ -36,10 +36,6 @@ export interface BankExtractionData {
 }
 
 export class BankExtractor extends BaseExtractor<BankExtractionData> {
-  constructor(config: TallyConfig) {
-    super(config);
-  }
-
   async extract(): Promise<ExtractionResult<BankExtractionData>> {
     const startTime = Date.now();
     const errors: string[] = [];

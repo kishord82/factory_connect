@@ -54,7 +54,7 @@ adminRouter.post('/impersonate', validate({ body: z.object({
       return insertOne(client,
         `INSERT INTO audit.impersonation_sessions (fc_operator_id, factory_id, reason)
          VALUES ($1, $2, $3) RETURNING id, fc_operator_id, factory_id, reason, created_at`,
-        [req.auth!.sub, req.body.factory_id, req.body.reason]);
+        [req.auth?.sub ?? '', req.body.factory_id, req.body.reason]);
     });
     res.status(201).json({ data: session });
   } catch (err) { next(err); }

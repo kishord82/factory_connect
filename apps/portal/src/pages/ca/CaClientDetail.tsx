@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { useParams } from 'react-router-dom';
-import { api } from '../../lib/api.js';
 import { AlertCircle, TrendingUp, Clock, CheckCircle } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+
+import { api } from '../../lib/api.js';
 
 interface ClientDetail {
   id: string;

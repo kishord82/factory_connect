@@ -1,9 +1,4 @@
-import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '../lib/api.js';
-import { useAuth, canWrite } from '../lib/auth.js';
-import { formatDate } from '../utils/date.js';
-import { TableLoading, TableEmpty, TableError } from '../components/common/TableStates.js';
 import {
   ChevronDown,
   Copy,
@@ -11,6 +6,13 @@ import {
   Save,
   Play,
 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+
+import { TableLoading, TableEmpty, TableError } from '../components/common/TableStates.js';
+import { api } from '../lib/api.js';
+import { useAuth, canWrite } from '../lib/auth.js';
+import { formatDate } from '../utils/date.js';
+
 
 interface MappingField {
   name: string;

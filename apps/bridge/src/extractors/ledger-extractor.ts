@@ -34,10 +34,6 @@ export interface LedgerExtractionData {
 }
 
 export class LedgerExtractor extends BaseExtractor<LedgerExtractionData> {
-  constructor(config: TallyConfig) {
-    super(config);
-  }
-
   async extract(): Promise<ExtractionResult<LedgerExtractionData>> {
     const startTime = Date.now();
     const errors: string[] = [];

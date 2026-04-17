@@ -1,10 +1,11 @@
 import { useMutation } from '@tanstack/react-query';
-import { api } from '../../lib/api.js';
+import { Plus, Wifi, WifiOff, AlertCircle } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Wifi, WifiOff, AlertCircle } from 'lucide-react';
+
 import { DataTable } from '../../components/common/DataTable.js';
 import type { Column } from '../../components/common/DataTable.js';
+import { api } from '../../lib/api.js';
 
 interface Client {
   id: string;

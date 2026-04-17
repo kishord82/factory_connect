@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth, parseJwt, isCaUser } from '../lib/auth.js';
+
 import { api } from '../lib/api.js';
+import { useAuth, parseJwt, isCaUser } from '../lib/auth.js';
 
 export function Login() {
   const [email, setEmail] = useState('');

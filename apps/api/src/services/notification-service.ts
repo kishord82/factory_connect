@@ -1,15 +1,15 @@
 /**
  * B19-B20: Notification service — in-memory event bus + notification creation.
  */
-import type { RequestContext } from '@fc/shared';
 import { withTenantTransaction, withTenantClient, insertOne, paginatedQuery } from '@fc/database';
-import type { PoolClient , PaginatedResult } from '@fc/database';
+import type { PoolClient, PaginatedResult } from '@fc/database';
+import { createLogger } from '@fc/observability';
+import type { RequestContext } from '@fc/shared';
 
 import { buildSearchWhere, buildOrderBy } from '../utils/pagination.js';
 
 const NOTIFICATION_SORT_COLUMNS = ['created_at', 'severity', 'channel'];
 const NOTIFICATION_SEARCH_COLUMNS = ['n.title', 'n.body', 'n.channel'];
-import { createLogger } from '@fc/observability';
 
 const logger = createLogger('notifications');
 
@@ -35,7 +35,7 @@ export function subscribe(tenantId: string, listener: NotificationListener): () 
   if (!listeners.has(tenantId)) {
     listeners.set(tenantId, new Set());
   }
-  listeners.get(tenantId)!.add(listener);
+  listeners.get(tenantId)?.add(listener);
   return () => {
     listeners.get(tenantId)?.delete(listener);
   };

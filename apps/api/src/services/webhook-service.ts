@@ -395,7 +395,7 @@ export async function processWebhookDeliveries(): Promise<{ delivered: number; f
           );
         } else {
           // Retry with backoff
-          const backoffMs = RETRY_BACKOFF_MS[Math.min(delivery.attempts, RETRY_BACKOFF_MS.length - 1)]!;
+          const backoffMs = RETRY_BACKOFF_MS[Math.min(delivery.attempts, RETRY_BACKOFF_MS.length - 1)] ?? 60_000;
           const nextAttemptAt = new Date(Date.now() + backoffMs);
 
           await client.query(

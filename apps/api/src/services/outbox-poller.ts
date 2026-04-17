@@ -20,7 +20,7 @@ const logger = createLogger('outbox-poller');
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 const BATCH_SIZE = 50;
 const LOCK_ID = 'outbox-poller-lock';
-const LOCK_DURATION_MS = 30_000; // 5 seconds lock; re-acquired per poll
+// Lock duration managed externally via pg advisory lock TTL
 
 interface OutboxEventRow {
   id: string;
@@ -106,9 +106,9 @@ async function routeEvent(event: OutboxEventRow, payload: Record<string, unknown
  */
 function getBackoffMs(retryCount: number): number {
   if (retryCount >= RETRY_BACKOFF_MS.length) {
-    return RETRY_BACKOFF_MS[RETRY_BACKOFF_MS.length - 1]!;
+    return RETRY_BACKOFF_MS[RETRY_BACKOFF_MS.length - 1] ?? 60_000;
   }
-  return RETRY_BACKOFF_MS[retryCount]!;
+  return RETRY_BACKOFF_MS[retryCount] ?? 60_000;
 }
 
 /**

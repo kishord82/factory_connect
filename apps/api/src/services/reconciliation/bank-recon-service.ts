@@ -210,6 +210,67 @@ function calculateMatchConfidence(
   return { confidence: 0.0, type: 'low' };
 }
 
+interface MatchCounts {
+  matchedCount: number;
+  reviewCount: number;
+}
+
+async function matchBankItemsToTally(
+  client: PoolClient,
+  bankItems: ReconciliationItem[],
+  tallyItems: ReconciliationItem[],
+): Promise<MatchCounts> {
+  let matchedCount = 0;
+  let reviewCount = 0;
+  const matched = new Set<string>();
+
+  for (const bankItem of bankItems) {
+    const { bestMatch, bestConfidence } = findBestTallyMatch(bankItem, tallyItems, matched);
+
+    if (bestMatch && bestConfidence >= 0.65) {
+      const status = bestConfidence >= 0.85 ? 'matched' : 'review';
+      await client.query(
+        `UPDATE ca_recon_items SET match_status = $1, matched_with = $2, match_confidence = $3
+         WHERE id = $4`,
+        [status, bestMatch.id, bestConfidence, bankItem.id],
+      );
+      await client.query(
+        `UPDATE ca_recon_items SET match_status = $1, matched_with = $2, match_confidence = $3
+         WHERE id = $4`,
+        [status, bankItem.id, bestConfidence, bestMatch.id],
+      );
+      matched.add(bestMatch.id);
+      if (status === 'matched') {
+        matchedCount++;
+      } else {
+        reviewCount++;
+      }
+    }
+  }
+
+  return { matchedCount, reviewCount };
+}
+
+function findBestTallyMatch(
+  bankItem: ReconciliationItem,
+  tallyItems: ReconciliationItem[],
+  matched: Set<string>,
+): { bestMatch: ReconciliationItem | null; bestConfidence: number } {
+  let bestMatch: ReconciliationItem | null = null;
+  let bestConfidence = 0;
+
+  for (const tallyItem of tallyItems) {
+    if (matched.has(tallyItem.id)) continue;
+    const { confidence } = calculateMatchConfidence(bankItem, tallyItem);
+    if (confidence > bestConfidence) {
+      bestConfidence = confidence;
+      bestMatch = tallyItem;
+    }
+  }
+
+  return { bestMatch, bestConfidence };
+}
+
 export async function autoMatch(
   ctx: CaRequestContext,
   sessionId: string,
@@ -229,46 +290,7 @@ export async function autoMatch(
     const bankItems = items.filter((i: ReconciliationItem) => i.source_type === 'bank');
     const tallyItems = items.filter((i: ReconciliationItem) => i.source_type === 'tally');
 
-    let matchedCount = 0;
-    let reviewCount = 0;
-    const matched = new Set<string>();
-
-    // Try to match each bank item
-    for (const bankItem of bankItems) {
-      let bestMatch: ReconciliationItem | null = null;
-      let bestConfidence = 0;
-
-      for (const tallyItem of tallyItems) {
-        if (matched.has(tallyItem.id)) continue;
-
-        const { confidence } = calculateMatchConfidence(bankItem, tallyItem);
-        if (confidence > bestConfidence) {
-          bestConfidence = confidence;
-          bestMatch = tallyItem;
-        }
-      }
-
-      if (bestMatch && bestConfidence >= 0.65) {
-        const status = bestConfidence >= 0.85 ? 'matched' : 'review';
-        await client.query(
-          `UPDATE ca_recon_items SET match_status = $1, matched_with = $2, match_confidence = $3
-           WHERE id = $4`,
-          [status, bestMatch.id, bestConfidence, bankItem.id],
-        );
-        await client.query(
-          `UPDATE ca_recon_items SET match_status = $1, matched_with = $2, match_confidence = $3
-           WHERE id = $4`,
-          [status, bankItem.id, bestConfidence, bestMatch.id],
-        );
-
-        matched.add(bestMatch.id);
-        if (status === 'matched') {
-          matchedCount++;
-        } else {
-          reviewCount++;
-        }
-      }
-    }
+    const { matchedCount, reviewCount } = await matchBankItemsToTally(client, bankItems, tallyItems);
 
     // Update session
     const unmatchedCount = bankItems.length - matchedCount - reviewCount;

@@ -40,9 +40,7 @@ orderRouter.get(
   '/explorer',
   async (req, res, next) => {
     try {
-      const ctx = getRequestContext(req);
       // Explorer returns advanced filtering/search interface
-      // For now, return empty data structure
       res.json({
         data: {
           filters: {

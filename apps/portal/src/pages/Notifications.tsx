@@ -1,7 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Bell, CheckCircle } from 'lucide-react';
+
 import { api } from '../lib/api.js';
 import { formatDate } from '../utils/date.js';
-import { Bell, CheckCircle } from 'lucide-react';
 
 interface Notification {
   id: string;

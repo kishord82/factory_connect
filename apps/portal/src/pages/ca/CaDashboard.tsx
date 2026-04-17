@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
-import { api } from '../../lib/api.js';
 import { AlertCircle, TrendingUp, Users, FileText, CheckCircle } from 'lucide-react';
+
+import { api } from '../../lib/api.js';
 
 interface DashboardData {
   total_clients: number;

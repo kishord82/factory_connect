@@ -1,4 +1,3 @@
-import { Outlet, Link, useLocation } from 'react-router-dom';
 import {
   BarChart3,
   Users,
@@ -10,6 +9,7 @@ import {
   Settings,
   Home,
 } from 'lucide-react';
+import { Outlet, Link, useLocation } from 'react-router-dom';
 
 export function CaLayout() {
   const location = useLocation();

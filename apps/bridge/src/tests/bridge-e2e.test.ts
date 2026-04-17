@@ -28,9 +28,6 @@ interface HealthProbe {
 
 // Mock ERP Adapter
 class MockErpAdapter {
-  constructor(_erp_type: string) {
-    // ERP type could be used for logging or routing, but not needed for test mocks
-  }
 
   async extractPurchaseOrders(_date_from: Date, _date_to: Date): Promise<unknown[]> {
     // Simulate data extraction
@@ -644,7 +641,7 @@ describe('E2E: Bridge Agent Lifecycle', () => {
         try {
           await cloudSync.send(item);
           await localQueue.markProcessed(item.id);
-        } catch (err) {
+        } catch {
           // Requeue on failure
           await localQueue.incrementRetry(item.id);
           await localQueue.enqueue(item);

@@ -102,6 +102,100 @@ export async function validateHsn(hsnCode: string): Promise<HsnValidationResult>
   };
 }
 
+type ExceptionRecord = {
+  filing_id: string;
+  client_id: string;
+  ca_firm_id: string;
+  exception_type: string;
+  severity: string;
+  description: string;
+  source_data: Record<string, unknown>;
+  suggested_fix: string;
+  status: string;
+};
+
+function detectDuplicateInvoices(
+  allInvoices: TallyInvoice[],
+  filingId: string,
+  clientId: string,
+  caFirmId: string,
+): ExceptionRecord[] {
+  const exceptions: ExceptionRecord[] = [];
+  const invoiceNumbers = new Set<string>();
+  for (const inv of allInvoices) {
+    if (invoiceNumbers.has(inv.invoice_number)) {
+      exceptions.push({
+        filing_id: filingId,
+        client_id: clientId,
+        ca_firm_id: caFirmId,
+        exception_type: 'DUPLICATE_INVOICE',
+        severity: 'high',
+        description: `Duplicate invoice number detected: ${inv.invoice_number}`,
+        source_data: { invoice_number: inv.invoice_number },
+        suggested_fix: 'Review and remove duplicate entries',
+        status: 'open',
+      });
+    }
+    invoiceNumbers.add(inv.invoice_number);
+  }
+  return exceptions;
+}
+
+async function validateInvoice(
+  inv: TallyInvoice,
+  filingId: string,
+  clientId: string,
+  caFirmId: string,
+): Promise<ExceptionRecord[]> {
+  const exceptions: ExceptionRecord[] = [];
+
+  const hsnResult = await validateHsn(inv.hsn_code);
+  if (!hsnResult.valid) {
+    exceptions.push({
+      filing_id: filingId,
+      client_id: clientId,
+      ca_firm_id: caFirmId,
+      exception_type: 'INVALID_HSN',
+      severity: 'high',
+      description: `Invalid HSN code: ${inv.hsn_code}`,
+      source_data: { hsn_code: inv.hsn_code, invoice_number: inv.invoice_number },
+      suggested_fix: 'Correct HSN code or remove invoice',
+      status: 'open',
+    });
+  }
+
+  const GSTIN_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+  if (inv.gstin && (inv.gstin.length !== 15 || !GSTIN_REGEX.test(inv.gstin))) {
+    exceptions.push({
+      filing_id: filingId,
+      client_id: clientId,
+      ca_firm_id: caFirmId,
+      exception_type: 'GSTIN_FORMAT_ERROR',
+      severity: 'high',
+      description: `Invalid GSTIN format: ${inv.gstin}`,
+      source_data: { gstin: inv.gstin, invoice_number: inv.invoice_number },
+      suggested_fix: 'Verify and correct GSTIN',
+      status: 'open',
+    });
+  }
+
+  if (inv.amount > 10000000) {
+    exceptions.push({
+      filing_id: filingId,
+      client_id: clientId,
+      ca_firm_id: caFirmId,
+      exception_type: 'AMOUNT_THRESHOLD_EXCEEDED',
+      severity: 'medium',
+      description: `Invoice amount exceeds 1 crore: ${inv.amount}`,
+      source_data: { amount: inv.amount, invoice_number: inv.invoice_number },
+      suggested_fix: 'Review for accuracy',
+      status: 'open',
+    });
+  }
+
+  return exceptions;
+}
+
 /**
  * Detect exceptions in filing data
  * Checks for HSN mismatches, GSTIN format, amount thresholds, duplicates
@@ -112,17 +206,7 @@ export async function detectExceptions(
   filingId: string,
   filingData: FilingData,
 ): Promise<ComplianceExceptionRow[]> {
-  const exceptions: Array<{
-    filing_id: string;
-    client_id: string;
-    ca_firm_id: string;
-    exception_type: string;
-    severity: string;
-    description: string;
-    source_data: Record<string, unknown>;
-    suggested_fix: string;
-    status: string;
-  }> = [];
+  const exceptions: ExceptionRecord[] = [];
 
   // Get filing details
   const filing = await findOne<{ client_id: string }>(
@@ -135,75 +219,15 @@ export async function detectExceptions(
     throw new FcError('FC_ERR_COMPLIANCE_FILING_NOT_FOUND', `Filing ${filingId} not found`, {}, 404);
   }
 
-  // Check for duplicate invoice numbers
-  const invoiceNumbers = new Set<string>();
   const allInvoices = [...(filingData.b2b || []), ...(filingData.b2c || []), ...(filingData.cdnr || [])];
 
+  // Check for duplicate invoice numbers
+  exceptions.push(...detectDuplicateInvoices(allInvoices, filingId, filing.client_id, ctx.caFirmId));
+
+  // Validate HSN codes, GSTIN format, and amount thresholds
   for (const inv of allInvoices) {
-    if (invoiceNumbers.has(inv.invoice_number)) {
-      exceptions.push({
-        filing_id: filingId,
-        client_id: filing.client_id,
-        ca_firm_id: ctx.caFirmId,
-        exception_type: 'DUPLICATE_INVOICE',
-        severity: 'high',
-        description: `Duplicate invoice number detected: ${inv.invoice_number}`,
-        source_data: { invoice_number: inv.invoice_number },
-        suggested_fix: 'Review and remove duplicate entries',
-        status: 'open',
-      });
-    }
-    invoiceNumbers.add(inv.invoice_number);
-  }
-
-  // Validate HSN codes and GSTIN format
-  for (const inv of allInvoices) {
-    // Validate HSN
-    const hsnResult = await validateHsn(inv.hsn_code);
-    if (!hsnResult.valid) {
-      exceptions.push({
-        filing_id: filingId,
-        client_id: filing.client_id,
-        ca_firm_id: ctx.caFirmId,
-        exception_type: 'INVALID_HSN',
-        severity: 'high',
-        description: `Invalid HSN code: ${inv.hsn_code}`,
-        source_data: { hsn_code: inv.hsn_code, invoice_number: inv.invoice_number },
-        suggested_fix: 'Correct HSN code or remove invoice',
-        status: 'open',
-      });
-    }
-
-    // Validate GSTIN format (should be 15 chars)
-    if (inv.gstin && (inv.gstin.length !== 15 || !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(inv.gstin))) {
-      exceptions.push({
-        filing_id: filingId,
-        client_id: filing.client_id,
-        ca_firm_id: ctx.caFirmId,
-        exception_type: 'GSTIN_FORMAT_ERROR',
-        severity: 'high',
-        description: `Invalid GSTIN format: ${inv.gstin}`,
-        source_data: { gstin: inv.gstin, invoice_number: inv.invoice_number },
-        suggested_fix: 'Verify and correct GSTIN',
-        status: 'open',
-      });
-    }
-
-    // Check amount thresholds
-    if (inv.amount > 10000000) {
-      // > 1 crore
-      exceptions.push({
-        filing_id: filingId,
-        client_id: filing.client_id,
-        ca_firm_id: ctx.caFirmId,
-        exception_type: 'AMOUNT_THRESHOLD_EXCEEDED',
-        severity: 'medium',
-        description: `Invoice amount exceeds 1 crore: ${inv.amount}`,
-        source_data: { amount: inv.amount, invoice_number: inv.invoice_number },
-        suggested_fix: 'Review for accuracy',
-        status: 'open',
-      });
-    }
+    const invExceptions = await validateInvoice(inv, filingId, filing.client_id, ctx.caFirmId);
+    exceptions.push(...invExceptions);
   }
 
   // Insert exceptions into database

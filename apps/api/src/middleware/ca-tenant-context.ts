@@ -11,13 +11,11 @@ import type { Request, Response, NextFunction } from 'express';
 
 import type { AuthPayload } from './auth.js';
 
-declare global {
-  namespace Express {
-    interface Request {
-      auth?: AuthPayload;
-      correlationId?: string;
-      caCtx?: CaRequestContext;
-    }
+declare module 'express-serve-static-core' {
+  interface Request {
+    auth?: AuthPayload;
+    correlationId?: string;
+    caCtx?: CaRequestContext;
   }
 }
 

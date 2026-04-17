@@ -60,7 +60,7 @@ export async function listEligibleInvoices(
   maxAgeDays: number = 90,
 ): Promise<EligibleInvoiceRow[]> {
   return withTenantClient(
-    { tenantId: ctx.caFirmId, userId: ctx.userId, correlationId: ctx.correlationId } as any,
+    ctx,
     async (client: PoolClient) => {
       const minNum = parseFloat(minAmount);
 
@@ -108,7 +108,7 @@ export async function submitToTreds(
   platform: 'rxil' | 'invoicemart' | 'm1xchange',
 ): Promise<TredsSubmissionRow> {
   return withTenantTransaction(
-    { tenantId: ctx.caFirmId, userId: ctx.userId, correlationId: ctx.correlationId } as any,
+    ctx,
     async (client: PoolClient) => {
       if (invoiceIds.length === 0) {
         throw new FcError(
@@ -193,7 +193,7 @@ export async function trackDiscounting(
   clientId: string,
 ): Promise<DiscountTrackingRow[]> {
   return withTenantClient(
-    { tenantId: ctx.caFirmId, userId: ctx.userId, correlationId: ctx.correlationId } as any,
+    ctx,
     async (client: PoolClient) => {
       const result = await client.query<DiscountTrackingRow>(
         `SELECT
@@ -283,7 +283,7 @@ export async function tradeFinanceDashboard(
   pendingSubmissions: number;
 }> {
   return withTenantClient(
-    { tenantId: ctx.caFirmId, userId: ctx.userId, correlationId: ctx.correlationId } as any,
+    ctx,
     async (client: PoolClient) => {
       const [discountedResult, pendingResult] = await Promise.all([
         client.query<{ total_discounted: string; total_saved: string; avg_rate: string }>(

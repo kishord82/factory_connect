@@ -42,10 +42,6 @@ export interface TdsExtractionData {
 }
 
 export class TdsExtractor extends BaseExtractor<TdsExtractionData> {
-  constructor(config: TallyConfig) {
-    super(config);
-  }
-
   async extract(): Promise<ExtractionResult<TdsExtractionData>> {
     const startTime = Date.now();
     const errors: string[] = [];

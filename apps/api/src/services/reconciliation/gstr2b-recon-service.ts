@@ -71,6 +71,81 @@ export interface Gstr2bMismatch {
   status: string;
 }
 
+interface Gstr2bMatchCounts {
+  matchedCount: number;
+  excessIn2b: number;
+  amountMismatchCount: number;
+}
+
+async function matchGstr2bItems(
+  client: PoolClient,
+  gstr2bItems: Gstr2bItem[],
+  tallyItems: Gstr2bItem[],
+): Promise<Gstr2bMatchCounts> {
+  let matchedCount = 0;
+  let excessIn2b = 0;
+  let amountMismatchCount = 0;
+  const matchedTallyIds = new Set<string>();
+
+  for (const gstr2bItem of gstr2bItems) {
+    const result = await matchSingleGstr2bItem(client, gstr2bItem, tallyItems, matchedTallyIds);
+    if (result === 'matched') matchedCount++;
+    else if (result === 'variance') amountMismatchCount++;
+    else excessIn2b++;
+  }
+
+  return { matchedCount, excessIn2b, amountMismatchCount };
+}
+
+async function matchSingleGstr2bItem(
+  client: PoolClient,
+  gstr2bItem: Gstr2bItem,
+  tallyItems: Gstr2bItem[],
+  matchedTallyIds: Set<string>,
+): Promise<'matched' | 'variance' | 'unmatched'> {
+  for (const tallyItem of tallyItems) {
+    if (matchedTallyIds.has(tallyItem.id)) continue;
+
+    const sameGstinAndInvoice =
+      gstr2bItem.supplier_gstin === tallyItem.supplier_gstin &&
+      gstr2bItem.invoice_number === tallyItem.invoice_number;
+
+    if (!sameGstinAndInvoice) continue;
+
+    if (gstr2bItem.total_amount === tallyItem.total_amount) {
+      await client.query(
+        `UPDATE ca_gstr2b_items SET match_status = $1, matched_with = $2 WHERE id = $3`,
+        ['matched', tallyItem.id, gstr2bItem.id],
+      );
+      await client.query(
+        `UPDATE ca_gstr2b_items SET match_status = $1, matched_with = $2 WHERE id = $3`,
+        ['matched', gstr2bItem.id, tallyItem.id],
+      );
+      matchedTallyIds.add(tallyItem.id);
+      return 'matched';
+    }
+
+    // Amount mismatch: same GSTIN + invoice_number, different amount
+    const variance = `${parseFloat(gstr2bItem.total_amount) - parseFloat(tallyItem.total_amount)}`;
+    await client.query(
+      `UPDATE ca_gstr2b_items SET match_status = $1, matched_with = $2, variance_amount = $3 WHERE id = $4`,
+      ['variance', tallyItem.id, variance, gstr2bItem.id],
+    );
+    await client.query(
+      `UPDATE ca_gstr2b_items SET match_status = $1, matched_with = $2, variance_amount = $3 WHERE id = $4`,
+      ['variance', gstr2bItem.id, variance, tallyItem.id],
+    );
+    matchedTallyIds.add(tallyItem.id);
+    return 'variance';
+  }
+
+  await client.query(`UPDATE ca_gstr2b_items SET match_status = $1 WHERE id = $2`, [
+    'unmatched_source',
+    gstr2bItem.id,
+  ]);
+  return 'unmatched';
+}
+
 // ═══════════════════════════════════════════════════════════════════
 // RECONCILE GSTR-2B WITH PURCHASE REGISTER
 // ═══════════════════════════════════════════════════════════════════
@@ -194,69 +269,10 @@ export async function reconcileGstr2b(
     const gstr2bItems = allItems.filter((i: Gstr2bItem) => i.source === 'gstr2b');
     const tallyItems = allItems.filter((i: Gstr2bItem) => i.source === 'tally');
 
-    let matchedCount = 0;
-    let excessIn2b = 0;
-    let missingFrom2b = 0;
-    let amountMismatchCount = 0;
-    const matchedTallyIds = new Set<string>();
+    const { matchedCount, excessIn2b, amountMismatchCount } =
+      await matchGstr2bItems(client, gstr2bItems, tallyItems);
 
-    for (const gstr2bItem of gstr2bItems) {
-      let found = false;
-
-      for (const tallyItem of tallyItems) {
-        if (matchedTallyIds.has(tallyItem.id)) continue;
-
-        // Exact match: GSTIN + invoice_number + amount
-        if (
-          gstr2bItem.supplier_gstin === tallyItem.supplier_gstin &&
-          gstr2bItem.invoice_number === tallyItem.invoice_number &&
-          gstr2bItem.total_amount === tallyItem.total_amount
-        ) {
-          await client.query(
-            `UPDATE ca_gstr2b_items SET match_status = $1, matched_with = $2 WHERE id = $3`,
-            ['matched', tallyItem.id, gstr2bItem.id],
-          );
-          await client.query(
-            `UPDATE ca_gstr2b_items SET match_status = $1, matched_with = $2 WHERE id = $3`,
-            ['matched', gstr2bItem.id, tallyItem.id],
-          );
-          matchedTallyIds.add(tallyItem.id);
-          matchedCount++;
-          found = true;
-          break;
-        }
-
-        // Amount mismatch: GSTIN + invoice_number + different amount
-        if (
-          gstr2bItem.supplier_gstin === tallyItem.supplier_gstin &&
-          gstr2bItem.invoice_number === tallyItem.invoice_number
-        ) {
-          const variance = `${parseFloat(gstr2bItem.total_amount) - parseFloat(tallyItem.total_amount)}`;
-          await client.query(
-            `UPDATE ca_gstr2b_items SET match_status = $1, matched_with = $2, variance_amount = $3 WHERE id = $4`,
-            ['variance', tallyItem.id, variance, gstr2bItem.id],
-          );
-          await client.query(
-            `UPDATE ca_gstr2b_items SET match_status = $1, matched_with = $2, variance_amount = $3 WHERE id = $4`,
-            ['variance', gstr2bItem.id, variance, tallyItem.id],
-          );
-          matchedTallyIds.add(tallyItem.id);
-          amountMismatchCount++;
-          found = true;
-          break;
-        }
-      }
-
-      if (!found) {
-        await client.query(`UPDATE ca_gstr2b_items SET match_status = $1 WHERE id = $2`, [
-          'unmatched_source',
-          gstr2bItem.id,
-        ]);
-        excessIn2b++;
-      }
-    }
-
-    missingFrom2b = tallyItems.length - matchedCount - amountMismatchCount;
+    const missingFrom2b = tallyItems.length - matchedCount - amountMismatchCount;
 
     // 7. Update session
     await client.query(
@@ -447,7 +463,10 @@ export async function listReconSessions(
 // GET RECONCILIATION SESSION DETAIL
 // ═══════════════════════════════════════════════════════════════════
 
-export async function getReconSessionDetail(ctx: CaRequestContext, sessionId: string) {
+export async function getReconSessionDetail(
+  ctx: CaRequestContext,
+  sessionId: string,
+): Promise<{ session: Gstr2bSession; items: Gstr2bItem[]; itcEligibility: ItcEligibility }> {
   return withTenantClient(ctx, async (client: PoolClient) => {
     const session = await findOne<Gstr2bSession>(
       client,

@@ -119,7 +119,7 @@ export class HealthProbeManager {
             message: `${freeMB.toFixed(2)} MB free (threshold: ${thresholdMB} MB)`,
             latency_ms: 5,
           };
-        } catch (err) {
+        } catch {
           return {
             status: 'degraded',
             message: 'Could not check disk space',

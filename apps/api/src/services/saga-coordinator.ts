@@ -15,7 +15,6 @@ import {
   withTenantTransaction,
   withTenantClient,
   findOne,
-  findMany,
   paginatedQuery,
   buildWhereClause,
   insertOne,

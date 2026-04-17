@@ -249,7 +249,7 @@ export async function listOrders(
       currentIndex++;
     }
 
-    const safeSort = ORDER_SORT_COLUMNS.includes(query.sort ?? '') ? query.sort! : 'created_at';
+    const safeSort = ORDER_SORT_COLUMNS.includes(query.sort ?? '') ? (query.sort ?? 'created_at') : 'created_at';
     const safeOrder = query.order === 'asc' ? 'ASC' : 'DESC';
     sql += ` ORDER BY o.${safeSort} ${safeOrder}`;
 

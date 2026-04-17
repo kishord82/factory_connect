@@ -73,8 +73,9 @@ describe('HealthProbeManager', () => {
 
     const failingResult = report.probes.find(p => p.name === 'failing_probe');
     expect(failingResult).toBeDefined();
-    expect(failingResult!.status).toBe('critical');
-    expect(failingResult!.message).toContain('Probe failed');
+    if (!failingResult) throw new Error('failingResult should be defined');
+    expect(failingResult.status).toBe('critical');
+    expect(failingResult.message).toContain('Probe failed');
   });
 
   it('should determine overall status from probes', async () => {

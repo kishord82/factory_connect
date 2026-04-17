@@ -42,10 +42,6 @@ export interface PayrollExtractionData {
 }
 
 export class PayrollExtractor extends BaseExtractor<PayrollExtractionData> {
-  constructor(config: TallyConfig) {
-    super(config);
-  }
-
   async extract(): Promise<ExtractionResult<PayrollExtractionData>> {
     const startTime = Date.now();
     const errors: string[] = [];

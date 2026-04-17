@@ -21,12 +21,10 @@ export interface AuthPayload {
   subscription_tier?: string; // CA Platform subscription tier
 }
 
-declare global {
-  namespace Express {
-    interface Request {
-      auth?: AuthPayload;
-      correlationId?: string;
-    }
+declare module 'express-serve-static-core' {
+  interface Request {
+    auth?: AuthPayload;
+    correlationId?: string;
   }
 }
 

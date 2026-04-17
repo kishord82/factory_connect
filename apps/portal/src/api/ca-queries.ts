@@ -3,6 +3,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
 import { api } from '../lib/api.js';
 
 // Firms
@@ -51,7 +52,10 @@ export function useUpdateCaFirm() {
 export function useCaClients(page = 1, search = '') {
   return useQuery({
     queryKey: ['ca-clients', page, search],
-    queryFn: () => api.get(`/ca/clients?page=${page}&pageSize=20${search ? `&search=${search}` : ''}`),
+    queryFn: () => {
+      const searchParam = search ? `&search=${search}` : '';
+      return api.get(`/ca/clients?page=${page}&pageSize=20${searchParam}`);
+    },
   });
 }
 
@@ -96,7 +100,10 @@ export function useUpdateCaClient(id: string) {
 export function useCaFilings(page = 1, type = '') {
   return useQuery({
     queryKey: ['ca-filings', page, type],
-    queryFn: () => api.get(`/ca/compliance/filings?page=${page}&pageSize=10${type ? `&type=${type}` : ''}`),
+    queryFn: () => {
+      const typeParam = type ? `&type=${type}` : '';
+      return api.get(`/ca/compliance/filings?page=${page}&pageSize=10${typeParam}`);
+    },
   });
 }
 
@@ -172,7 +179,10 @@ export function useStartGstr2bRecon() {
 export function useCaDocumentRequests(page = 1, type = '') {
   return useQuery({
     queryKey: ['ca-document-requests', page, type],
-    queryFn: () => api.get(`/ca/documents/requests?page=${page}&pageSize=10${type ? `&type=${type}` : ''}`),
+    queryFn: () => {
+      const typeParam = type ? `&type=${type}` : '';
+      return api.get(`/ca/documents/requests?page=${page}&pageSize=10${typeParam}`);
+    },
   });
 }
 

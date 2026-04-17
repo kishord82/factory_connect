@@ -6,7 +6,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
+
 import { api } from '../../lib/api.js';
+
 import { TableLoading, TableEmpty, TableError } from './TableStates.js';
 
 export interface Column<T> {
@@ -143,6 +145,101 @@ export function DataTable<T extends object>({
 
   const totalPages = data?.totalPages ?? 0;
 
+  function renderTableContent() {
+    if (isLoading) return <TableLoading message={`Loading ${entityLabel}…`} />;
+    if (isError) return <TableError message={error instanceof Error ? error.message : 'Unknown error'} onRetry={() => refetch()} />;
+    if (!data?.data?.length) return <TableEmpty entity={entityLabel} />;
+    return (
+      <>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                {columns.map(col => (
+                  <th
+                    key={col.key}
+                    className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${col.sortable ? 'cursor-pointer select-none hover:bg-gray-100' : ''}`}
+                    onClick={col.sortable ? () => handleSort(col.key) : undefined}
+                  >
+                    {col.label}
+                    {col.sortable && (
+                      <SortIcon direction={sort === col.key ? order : null} />
+                    )}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            {renderTableBody(data.data)}
+          </table>
+        </div>
+        {renderPagination()}
+      </>
+    );
+  }
+
+  function renderTableBody(rows: T[]) {
+    return (
+      <tbody className="divide-y divide-gray-200">
+        {rows.map((row, idx) => (
+          <tr
+            key={((row as Record<string, unknown>).id as string) ?? idx}
+            className={`${onRowClick ? 'cursor-pointer hover:bg-gray-50' : 'hover:bg-gray-50'} ${idx % 2 === 1 ? 'bg-gray-50/40' : ''}`}
+            onClick={onRowClick ? () => onRowClick(row) : undefined}
+          >
+            {columns.map(col => (
+              <td key={col.key} className="px-6 py-4 text-sm text-gray-700 whitespace-nowrap">
+                {col.render
+                  ? col.render(row)
+                  : String((row as Record<string, unknown>)[col.key] ?? '—')}
+              </td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    );
+  }
+
+  function renderPagination() {
+    if (!data) return null;
+    return (
+      <div className="px-6 py-3 border-t border-gray-200 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-gray-500">
+            Page {data.page} of {totalPages} ({data.total} total)
+          </span>
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-gray-400">Rows:</span>
+            {PAGE_SIZE_OPTIONS.map(n => (
+              <button
+                key={n}
+                onClick={() => handlePageSizeChange(n)}
+                className={`px-2 py-0.5 text-xs rounded border ${pageSize === n ? 'bg-indigo-600 text-white border-indigo-600' : 'border-gray-300 text-gray-600 hover:bg-gray-50'}`}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="px-3 py-1 text-sm border border-gray-300 rounded-md disabled:opacity-40 hover:bg-gray-50"
+          >
+            Previous
+          </button>
+          <button
+            onClick={() => setPage(p => p + 1)}
+            disabled={page >= totalPages}
+            className="px-3 py-1 text-sm border border-gray-300 rounded-md disabled:opacity-40 hover:bg-gray-50"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       {/* Header row: actions + search */}
@@ -167,93 +264,7 @@ export function DataTable<T extends object>({
 
       {/* Table */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        {isLoading ? (
-          <TableLoading message={`Loading ${entityLabel}…`} />
-        ) : isError ? (
-          <TableError
-            message={error instanceof Error ? error.message : 'Unknown error'}
-            onRetry={() => refetch()}
-          />
-        ) : !data?.data?.length ? (
-          <TableEmpty entity={entityLabel} />
-        ) : (
-          <>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    {columns.map(col => (
-                      <th
-                        key={col.key}
-                        className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${col.sortable ? 'cursor-pointer select-none hover:bg-gray-100' : ''}`}
-                        onClick={col.sortable ? () => handleSort(col.key) : undefined}
-                      >
-                        {col.label}
-                        {col.sortable && (
-                          <SortIcon direction={sort === col.key ? order : null} />
-                        )}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {data.data.map((row, idx) => (
-                    <tr
-                      key={((row as Record<string, unknown>).id as string) ?? idx}
-                      className={`${onRowClick ? 'cursor-pointer hover:bg-gray-50' : 'hover:bg-gray-50'} ${idx % 2 === 1 ? 'bg-gray-50/40' : ''}`}
-                      onClick={onRowClick ? () => onRowClick(row) : undefined}
-                    >
-                      {columns.map(col => (
-                        <td key={col.key} className="px-6 py-4 text-sm text-gray-700 whitespace-nowrap">
-                          {col.render
-                            ? col.render(row)
-                            : String((row as Record<string, unknown>)[col.key] ?? '—')}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination bar */}
-            <div className="px-6 py-3 border-t border-gray-200 flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-gray-500">
-                  Page {data.page} of {totalPages} ({data.total} total)
-                </span>
-                <div className="flex items-center gap-1">
-                  <span className="text-xs text-gray-400">Rows:</span>
-                  {PAGE_SIZE_OPTIONS.map(n => (
-                    <button
-                      key={n}
-                      onClick={() => handlePageSizeChange(n)}
-                      className={`px-2 py-0.5 text-xs rounded border ${pageSize === n ? 'bg-indigo-600 text-white border-indigo-600' : 'border-gray-300 text-gray-600 hover:bg-gray-50'}`}
-                    >
-                      {n}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className="px-3 py-1 text-sm border border-gray-300 rounded-md disabled:opacity-40 hover:bg-gray-50"
-                >
-                  Previous
-                </button>
-                <button
-                  onClick={() => setPage(p => p + 1)}
-                  disabled={page >= totalPages}
-                  className="px-3 py-1 text-sm border border-gray-300 rounded-md disabled:opacity-40 hover:bg-gray-50"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          </>
-        )}
+        {renderTableContent()}
       </div>
     </div>
   );

@@ -6,7 +6,7 @@
  */
 
 import { createLogger } from '@fc/observability';
-import type { RequestContext, CaRequestContext } from '@fc/shared';
+import type { CaRequestContext } from '@fc/shared';
 import { Worker, Queue, type Job, type JobsOptions } from 'bullmq';
 
 import { incrementReminder, getOverdueRequests } from '../../services/communication/doc-request-service.js';

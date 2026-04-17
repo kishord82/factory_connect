@@ -6,10 +6,6 @@ declare module 'sql.js' {
     close(): void;
   }
 
-  interface SqlJsStatic {
-    new (data?: ArrayLike<number>): Database;
-  }
-
   function initSqlJs(): Promise<{ Database: new (data?: ArrayLike<number>) => Database }>;
 
   export = initSqlJs;
