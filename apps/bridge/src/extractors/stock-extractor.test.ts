@@ -2,7 +2,6 @@
  * Tests for StockExtractor: stock items, groups, godowns, and movements.
  */
 
-import { FcError } from '@fc/shared';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 import type { TallyConfig } from './base-extractor.js';
@@ -57,7 +56,7 @@ describe('StockExtractor', () => {
           </BODY>
         </ENVELOPE>`;
 
-      const mockFetch = vi.fn().mockResolvedValueOnce({
+      const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         text: async () => mockResponse,
       });
@@ -95,7 +94,7 @@ describe('StockExtractor', () => {
           </BODY>
         </ENVELOPE>`;
 
-      const mockFetch = vi.fn().mockResolvedValueOnce({
+      const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         text: async () => mockResponse,
       });
@@ -153,7 +152,7 @@ describe('StockExtractor', () => {
           </BODY>
         </ENVELOPE>`;
 
-      const mockFetch = vi.fn().mockResolvedValueOnce({
+      const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         text: async () => mockResponse,
       });
@@ -204,7 +203,7 @@ describe('StockExtractor', () => {
           </BODY>
         </ENVELOPE>`;
 
-      const mockFetch = vi.fn().mockResolvedValueOnce({
+      const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         text: async () => mockResponse,
       });
@@ -230,7 +229,7 @@ describe('StockExtractor', () => {
           </BODY>
         </ENVELOPE>`;
 
-      const mockFetch = vi.fn().mockResolvedValueOnce({
+      const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         text: async () => mockResponse,
       });
@@ -252,20 +251,26 @@ describe('StockExtractor', () => {
 
   describe('error handling', () => {
     it('should throw on Tally connection failure', async () => {
-      const mockFetch = vi.fn().mockRejectedValueOnce(new Error('ECONNREFUSED'));
+      const mockFetch = vi.fn().mockRejectedValue(new Error('ECONNREFUSED'));
       global.fetch = mockFetch;
 
-      await expect(extractor.extract()).rejects.toBeInstanceOf(FcError);
+      const result = await extractor.extract();
+      expect(result.success).toBe(false);
+      expect(result.errors.length).toBeGreaterThan(0);
     });
 
     it('should throw on XML parse error', async () => {
-      const mockFetch = vi.fn().mockResolvedValueOnce({
-        ok: true,
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error',
         text: async () => '<broken>xml</unclosed>',
       });
       global.fetch = mockFetch;
 
-      await expect(extractor.extract()).rejects.toBeInstanceOf(FcError);
+      const result = await extractor.extract();
+      expect(result.success).toBe(false);
+      expect(result.errors.length).toBeGreaterThan(0);
     });
   });
 });

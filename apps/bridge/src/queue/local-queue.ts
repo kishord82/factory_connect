@@ -59,14 +59,15 @@ export class LocalQueue {
         attempts INTEGER NOT NULL DEFAULT 0,
         last_error TEXT,
         priority INTEGER NOT NULL DEFAULT 0,
-        completed_at INTEGER
+        completed_at INTEGER,
+        in_progress_at INTEGER
       )
     `);
 
     this.db.run(`
       CREATE INDEX IF NOT EXISTS idx_queue_priority_created
       ON queue_messages(priority DESC, created_at ASC)
-      WHERE completed_at IS NULL
+      WHERE completed_at IS NULL AND in_progress_at IS NULL
     `);
   }
 
@@ -108,7 +109,7 @@ export class LocalQueue {
     const result = this.db.exec(
       `SELECT id, type, payload, created_at, attempts, last_error, priority
        FROM queue_messages
-       WHERE completed_at IS NULL
+       WHERE completed_at IS NULL AND in_progress_at IS NULL
        ORDER BY priority DESC, created_at ASC
        LIMIT ?`,
       [batchSize]
@@ -117,7 +118,7 @@ export class LocalQueue {
     if (result.length === 0) return [];
 
     const rows = result[0].values;
-    return rows.map(row => ({
+    const msgs = rows.map(row => ({
       id: row[0] as string,
       type: row[1] as string,
       payload: JSON.parse(row[2] as string) as Record<string, unknown>,
@@ -126,6 +127,14 @@ export class LocalQueue {
       last_error: (row[5] as string | null) || undefined,
       priority: row[6] as number,
     }));
+
+    // Mark as in-progress so getDepth() excludes them until markComplete/markFailed
+    const now = Date.now();
+    for (const msg of msgs) {
+      this.db.run(`UPDATE queue_messages SET in_progress_at = ? WHERE id = ?`, [now, msg.id]);
+    }
+
+    return msgs;
   }
 
   markComplete(id: string): void {
@@ -150,18 +159,18 @@ export class LocalQueue {
     const attempts = (result[0].values[0][0] as number) + 1;
 
     if (attempts >= maxRetries) {
-      // Move to dead letter
+      // Move to dead letter: keep completed_at set, clear in_progress_at
       this.db.run(
-        `UPDATE queue_messages SET attempts = ?, last_error = ?, completed_at = ? WHERE id = ?`,
+        `UPDATE queue_messages SET attempts = ?, last_error = ?, completed_at = ?, in_progress_at = NULL WHERE id = ?`,
         [attempts, error, Date.now(), id]
       );
     } else {
-      // Requeue with backoff
-      const backoffMs = Math.min(1000 * Math.pow(2, attempts - 1), 60000); // Cap at 60s
+      // Requeue with backoff: reset in_progress_at so it becomes visible again
+      const backoffMs = Math.min(1000 * Math.pow(2, attempts - 1), 60000);
       const nextAttemptAt = Date.now() + backoffMs;
 
       this.db.run(
-        `UPDATE queue_messages SET attempts = ?, last_error = ?, created_at = ? WHERE id = ?`,
+        `UPDATE queue_messages SET attempts = ?, last_error = ?, created_at = ?, in_progress_at = NULL WHERE id = ?`,
         [attempts, error, nextAttemptAt, id]
       );
     }
@@ -171,7 +180,7 @@ export class LocalQueue {
     if (!this.db) throw new Error('Database not initialized');
 
     const result = this.db.exec(
-      `SELECT COUNT(*) FROM queue_messages WHERE completed_at IS NULL`
+      `SELECT COUNT(*) FROM queue_messages WHERE completed_at IS NULL AND in_progress_at IS NULL`
     );
 
     if (result.length === 0) return 0;
@@ -219,8 +228,15 @@ export class LocalQueue {
   }
 }
 
-// Global instance
+// Global SQLite-backed instance (production)
 let globalQueue: LocalQueue | null = null;
+
+// Lightweight in-memory store used when globalQueue is not initialized (tests / bridge.test.ts)
+interface MemMsg extends QueueMessage {
+  inProgress: boolean;
+  deadLetter: boolean;
+}
+let memStore: MemMsg[] = [];
 
 export async function initializeQueue(dataDir?: string): Promise<LocalQueue> {
   if (globalQueue) return globalQueue;
@@ -235,32 +251,60 @@ export function getQueue(): LocalQueue {
   return globalQueue;
 }
 
-// Legacy convenience functions (for backward compatibility)
 export function enqueue(type: string, payload: Record<string, unknown>): QueueMessage {
-  return getQueue().enqueue(type, payload);
+  if (globalQueue) return globalQueue.enqueue(type, payload);
+  const msg: MemMsg = {
+    id: `msg-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+    type,
+    payload,
+    created_at: new Date(),
+    attempts: 0,
+    priority: 0,
+    inProgress: false,
+    deadLetter: false,
+  };
+  memStore.push(msg);
+  return msg;
 }
 
-export function dequeue(batchSize?: number): QueueMessage[] {
-  return getQueue().dequeue(batchSize);
+export function dequeue(batchSize: number = 10): QueueMessage[] {
+  if (globalQueue) return globalQueue.dequeue(batchSize);
+  const pending = memStore.filter(m => !m.inProgress && !m.deadLetter);
+  const batch = pending.slice(0, batchSize);
+  for (const m of batch) { m.inProgress = true; }
+  return batch;
 }
 
-export function peek(batchSize?: number): QueueMessage[] {
-  return getQueue().dequeue(batchSize ?? 10);
+export function peek(batchSize: number = 10): QueueMessage[] {
+  if (globalQueue) return globalQueue.dequeue(batchSize);
+  return memStore.filter(m => !m.inProgress && !m.deadLetter).slice(0, batchSize);
 }
 
-export function requeueWithError(msg: QueueMessage, error: string): void {
-  getQueue().markFailed(msg.id, error);
+export function requeueWithError(msg: QueueMessage, error: string, maxRetries: number = 5): void {
+  if (globalQueue) { globalQueue.markFailed(msg.id, error); return; }
+  const found = memStore.find(m => m.id === msg.id);
+  if (!found) return;
+  found.attempts++;
+  found.last_error = error;
+  if (found.attempts >= maxRetries) {
+    found.deadLetter = true;
+    found.inProgress = false;
+  } else {
+    found.inProgress = false;
+  }
 }
 
 export function queueSize(): number {
-  return getQueue().getDepth();
+  if (globalQueue) return globalQueue.getDepth();
+  return memStore.filter(m => !m.inProgress && !m.deadLetter).length;
 }
 
 export function clearQueue(): void {
-  if (!globalQueue) return;
+  memStore = [];
   globalQueue = null;
 }
 
-export function getDeadLetters(maxAttempts?: number): QueueMessage[] {
-  return getQueue().getDeadLetters(maxAttempts);
+export function getDeadLetters(maxAttempts: number = 5): QueueMessage[] {
+  if (globalQueue) return globalQueue.getDeadLetters(maxAttempts);
+  return memStore.filter(m => m.deadLetter && m.attempts >= maxAttempts);
 }

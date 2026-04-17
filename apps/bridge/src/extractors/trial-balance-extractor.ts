@@ -143,12 +143,14 @@ export class TrialBalanceExtractor extends BaseExtractor<TrialBalanceData> {
 
   private formatDateForTally(date: string): string {
     // Convert YYYY-MM-DD to DD-MMM-YYYY format that Tally expects
+    // Parse directly from string to avoid timezone shifting on new Date('YYYY-MM-DD')
     try {
-      const dateObj = new Date(date);
-      const day = String(dateObj.getDate()).padStart(2, '0');
-      const month = dateObj.toLocaleString('en-US', { month: 'short' }).toUpperCase();
-      const year = dateObj.getFullYear();
-      return `${day}-${month}-${year}`;
+      const [yearStr, monthStr, dayStr] = date.split('-');
+      const year = Number(yearStr);
+      const month = Number(monthStr) - 1; // 0-indexed
+      const day = Number(dayStr);
+      const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+      return `${String(day).padStart(2, '0')}-${months[month]}-${year}`;
     } catch {
       return date;
     }

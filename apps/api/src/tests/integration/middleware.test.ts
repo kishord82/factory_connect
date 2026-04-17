@@ -2,6 +2,7 @@
  * Integration: Middleware stack — auth, tenant context, rate limit, idempotency, validation
  */
 
+import jwt from 'jsonwebtoken';
 import request from 'supertest';
 import { v4 as uuidv4 } from 'uuid';
 import { describe, it, expect } from 'vitest';
@@ -14,11 +15,13 @@ const HEADER_USER = 'X-User-ID';
 const HEADER_CORRELATION = 'X-Correlation-ID';
 const HEADER_IDEMPOTENCY = 'X-Idempotency-Key';
 const API_ORDERS = '/api/v1/orders';
-const TEST_AUTH_TOKEN = 'Bearer test-token';
+const JWT_SECRET = 'fc-dev-secret-do-not-use-in-prod';
+const TEST_FACTORY_ID = '00000000-0000-0000-0000-000000000001';
+const TEST_AUTH_TOKEN = `Bearer ${jwt.sign({ sub: 'test-user', factory_id: TEST_FACTORY_ID, role: 'factory_admin' }, JWT_SECRET)}`;
 const API_ORDERS_INVALID = '/api/v1/orders/invalid-uuid';
 const RESP_CORRELATION_ID = 'x-correlation-id';
-const RESP_RATELIMIT_LIMIT = 'ratelimit-limit';
-const RESP_RATELIMIT_REMAINING = 'ratelimit-remaining';
+const RESP_RATELIMIT_LIMIT = 'x-ratelimit-limit';
+const RESP_RATELIMIT_REMAINING = 'x-ratelimit-remaining';
 
 const app = createApp();
 
@@ -64,11 +67,8 @@ describe('Integration: Middleware Stack', () => {
     });
 
     it('should accept request with valid JWT in Authorization header', async () => {
-      // Mock JWT (would be real token from Keycloak in production)
-      const validToken = 'Bearer valid-test-token';
+      const validToken = `Bearer ${jwt.sign({ sub: 'valid-user', factory_id: TEST_FACTORY_ID, role: 'factory_admin' }, JWT_SECRET)}`;
 
-      // Mock the JWT verification to accept this token
-      // (In real tests, use a test JWT generator or mock the auth middleware)
       const res = await request(app)
         .get(API_ORDERS)
         .set(HEADER_AUTH, validToken)
@@ -360,9 +360,10 @@ describe('Integration: Middleware Stack', () => {
           connection_id: uuidv4(),
           buyer_po_number: `PO-${Date.now()}`,
           order_date: new Date().toISOString(),
+          source_type: 'tally',
           subtotal: 1000,
           total_amount: 1000,
-          line_items: [],
+          line_items: [{ line_number: 1, buyer_sku: 'SKU-001', quantity_ordered: 1, unit_price: 1000, line_total: 1000 }],
         });
 
       // Should process (or fail for other reasons, not missing idempotency key)

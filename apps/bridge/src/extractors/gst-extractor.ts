@@ -5,7 +5,7 @@
 
 import { FcError } from '@fc/shared';
 
-import { BaseExtractor, type TallyConfig, type ExtractionResult } from './base-extractor.js';
+import { BaseExtractor, type ExtractionResult } from './base-extractor.js';
 
 const DATE_FORMAT = 'DD-MMM-YYYY';
 

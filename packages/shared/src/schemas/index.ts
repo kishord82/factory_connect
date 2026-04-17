@@ -416,9 +416,9 @@ export const MappingConfigSchema = z.object({
 
 export const ResyncRequestCreateSchema = z.object({
   connection_id: UuidSchema,
-  resync_type: z.string().max(50),
-  message_ids: z.array(UuidSchema).min(1),
-  reason: z.string().max(500),
+  resync_type: z.string().max(50).optional(),
+  message_ids: z.array(UuidSchema).optional(),
+  reason: z.string().max(500).optional(),
 });
 
 export const ResyncRequestSchema = ResyncRequestCreateSchema.extend({

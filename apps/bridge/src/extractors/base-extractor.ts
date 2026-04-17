@@ -4,7 +4,7 @@
  */
 
 import { FcError } from '@fc/shared';
-import { XMLParser } from 'fast-xml-parser';
+import { XMLParser, XMLValidator } from 'fast-xml-parser';
 
 export interface TallyConfig {
   host: string; // default: localhost
@@ -75,6 +75,9 @@ export abstract class BaseExtractor<T> {
    * Classify and rethrow fatal errors; return true when the error is retryable.
    */
   private handleCatchError(error: unknown, attempt: number): void {
+    // Already classified — propagate immediately without retrying
+    if (error instanceof FcError) throw error;
+
     if (!(error instanceof Error)) {
       return;
     }
@@ -143,6 +146,24 @@ export abstract class BaseExtractor<T> {
    * Validates structure and throws on malformed XML.
    */
   protected async parseXml(xml: string): Promise<TallyResponse> {
+    if (!xml?.trim()) {
+      throw new FcError(
+        'FC_ERR_TALLY_XML_PARSE_ERROR',
+        'Empty XML response from Tally',
+        { rawLength: xml?.length ?? 0 },
+      );
+    }
+
+    const validation = XMLValidator.validate(xml);
+    if (validation !== true) {
+      const errMsg = typeof validation === 'object' ? validation.err.msg : 'Invalid XML';
+      throw new FcError(
+        'FC_ERR_TALLY_XML_PARSE_ERROR',
+        `Invalid Tally XML: ${errMsg}`,
+        { rawLength: xml.length },
+      );
+    }
+
     try {
       const parser = new XMLParser({
         ignoreAttributes: false,
@@ -150,9 +171,7 @@ export abstract class BaseExtractor<T> {
         parseAttributeValue: true,
       });
 
-      const parsed = parser.parse(xml);
-
-      return parsed as TallyResponse;
+      return parser.parse(xml) as TallyResponse;
     } catch (error) {
       throw new FcError(
         'FC_ERR_TALLY_XML_PARSE_ERROR',

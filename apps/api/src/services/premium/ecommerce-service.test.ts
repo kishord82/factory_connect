@@ -116,11 +116,11 @@ describe('E-commerce Service', () => {
       const invalidPeriods = ['2024/01', '24-01', '2024-13'];
 
       validPeriods.forEach(p => {
-        expect(/^\d{4}-\d{2}$/.test(p)).toBe(true);
+        expect(/^\d{4}-(0[1-9]|1[0-2])$/.test(p)).toBe(true);
       });
 
       invalidPeriods.forEach(p => {
-        expect(/^\d{4}-\d{2}$/.test(p)).toBe(false);
+        expect(/^\d{4}-(0[1-9]|1[0-2])$/.test(p)).toBe(false);
       });
     });
   });

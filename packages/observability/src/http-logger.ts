@@ -3,8 +3,9 @@
  * Integrates with Express.js and applies PII redaction.
  */
 
-import type pino from 'pino';
 import type { IncomingMessage, ServerResponse } from 'node:http';
+
+import type pino from 'pino';
 
 export interface HttpLoggerOptions {
   logger: pino.Logger;
@@ -18,7 +19,7 @@ export interface HttpLoggerOptions {
  *
  * Uses dynamic import to handle pino-http's CJS export.
  */
-export async function createHttpLogger(opts: HttpLoggerOptions) {
+export async function createHttpLogger(opts: HttpLoggerOptions): Promise<unknown> {
   // pino-http uses `export =` which requires this import pattern in ESM
   const pinoHttpModule = await import('pino-http');
   const pinoHttp = pinoHttpModule.default ?? pinoHttpModule;

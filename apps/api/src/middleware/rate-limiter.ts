@@ -32,7 +32,8 @@ function getBucket(key: string): TokenBucket {
 }
 
 export function rateLimiter(req: Request, res: Response, next: NextFunction): void {
-  const key = req.auth?.factory_id || req.ip || 'anonymous';
+  const tenantHeader = req.headers['x-tenant-id'] as string | undefined;
+  const key = tenantHeader || req.auth?.factory_id || req.ip || 'anonymous';
   const bucket = getBucket(key);
 
   if (bucket.tokens <= 0) {

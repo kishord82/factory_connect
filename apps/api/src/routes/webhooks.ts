@@ -57,7 +57,8 @@ webhookRouter.get(
       const ctx = getRequestContext(req);
       const page = parseInt((req.query.page as string) ?? '1', 10);
       const pageSize = parseInt((req.query.pageSize as string) ?? '25', 10);
-      const result = await webhookService.listWebhooks(ctx, page, pageSize);
+      const eventType = req.query.event_type as string | undefined;
+      const result = await webhookService.listWebhooks(ctx, page, pageSize, eventType);
       res.json(result);
     } catch (err) {
       next(err);

@@ -6,7 +6,9 @@
  */
 
 import { FcError } from '@fc/shared';
+
 import { logger } from '../logger.js';
+
 import { BankExtractor } from './bank-extractor.js';
 import { BaseExtractor, type TallyConfig, type ExtractionResult } from './base-extractor.js';
 import { GstExtractor } from './gst-extractor.js';

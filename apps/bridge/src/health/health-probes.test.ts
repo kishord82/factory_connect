@@ -57,6 +57,9 @@ describe('HealthProbeManager', () => {
     const report1 = await manager.runAllProbes();
     expect(manager.getLastReport()).toBe(report1);
 
+    // Add 1ms gap so timestamps differ
+    await new Promise((resolve) => setTimeout(resolve, 2));
+
     const report2 = await manager.runAllProbes();
     expect(manager.getLastReport()).toBe(report2);
     expect(report1.timestamp).toBeLessThan(report2.timestamp);

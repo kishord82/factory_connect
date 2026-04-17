@@ -53,10 +53,7 @@ export async function paginatedQuery<T extends pg.QueryResultRow>(
   const total = result.rows.length > 0 ? parseInt(result.rows[0]._total_count, 10) : 0;
 
   // Strip _total_count from results
-  const data = result.rows.map((row) => {
-    const { _total_count, ...rest } = row;
-    return rest as unknown as T;
-  });
+  const data = result.rows.map(({ _total_count: _, ...rest }) => rest as unknown as T);
 
   return {
     data,

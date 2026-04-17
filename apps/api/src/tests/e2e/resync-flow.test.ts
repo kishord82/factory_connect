@@ -2,8 +2,10 @@
  * E2E: Resync flow — request, validate, approve, queue, execute, complete
  */
 
-import { withTenantTransaction, withTenantClient, getPool } from '@fc/database';
+import { withTenantTransaction, withTenantClient } from '@fc/database';
+import type { PoolClient } from '@fc/database';
 import type { RequestContext } from '@fc/shared';
+import jwt from 'jsonwebtoken';
 import request from 'supertest';
 import { v4 as uuidv4 } from 'uuid';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
@@ -16,8 +18,7 @@ const API_RESYNC = '/api/v1/resync';
 interface DbRow {
   [key: string]: unknown;
 }
-const TEST_DATE_FROM = '2024-01-01';
-const TEST_DATE_TO = '2024-01-31';
+const TEST_RESYNC_TYPE = 'manual';
 const TEST_REASON = 'Manual reconciliation';
 
 import { createApp } from '../../app.js';
@@ -35,7 +36,7 @@ function buildTestContext(): RequestContext {
 }
 
 async function createTestFactory(ctx: RequestContext): Promise<string> {
-  return withTenantTransaction(ctx, async (client) => {
+  return withTenantTransaction(ctx, async (client: PoolClient) => {
     const factoryId = ctx.tenantId;
     await client.query(
       `INSERT INTO factories (id, name, slug, factory_type, contact_email, timezone)
@@ -48,24 +49,20 @@ async function createTestFactory(ctx: RequestContext): Promise<string> {
 }
 
 async function createTestConnection(ctx: RequestContext, factoryId: string): Promise<string> {
-  return withTenantTransaction(ctx, async (client) => {
+  return withTenantTransaction(ctx, async (client: PoolClient) => {
+    const buyerId = uuidv4();
     const connId = uuidv4();
+    // Unique buyer_identifier per call to avoid (factory_id, buyer_identifier) unique constraint
+    const buyerIdentifier = `BUYER-${buyerId.slice(0, 8).toUpperCase()}`;
     await client.query(
       `INSERT INTO buyers (id, factory_id, name, buyer_identifier, protocol)
-       VALUES ($1, $2, $3, $4, $5)
-       ON CONFLICT (id) DO UPDATE SET name = $3`,
-      [uuidv4(), factoryId, 'Test Buyer', 'BUYER123', 'edi_x12'],
+       VALUES ($1, $2, $3, $4, $5)`,
+      [buyerId, factoryId, 'Test Buyer', buyerIdentifier, 'edi_x12'],
     );
-    const buyerRes = await client.query(
-      'SELECT id FROM buyers WHERE factory_id = $1 LIMIT 1',
-      [factoryId],
-    );
-    const buyerId = buyerRes.rows[0].id;
 
     await client.query(
       `INSERT INTO connections (id, factory_id, buyer_id, mode, source_type, status)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       ON CONFLICT (id) DO UPDATE SET status = $6`,
+       VALUES ($1, $2, $3, $4, $5, $6)`,
       [connId, factoryId, buyerId, 'sandbox', 'tally', 'active'],
     );
     return connId;
@@ -73,7 +70,7 @@ async function createTestConnection(ctx: RequestContext, factoryId: string): Pro
 }
 
 async function getResyncStatus(ctx: RequestContext, resyncId: string): Promise<DbRow> {
-  return withTenantClient(ctx, async (client) => {
+  return withTenantClient(ctx, async (client: PoolClient) => {
     const res = await client.query(
       'SELECT * FROM resync_requests WHERE id = $1',
       [resyncId],
@@ -89,23 +86,19 @@ describe('E2E: Resync Flow', () => {
 
   beforeEach(async () => {
     ctx = buildTestContext();
-    authToken = 'Bearer test-token';
+    authToken = `Bearer ${jwt.sign({ sub: ctx.userId, factory_id: ctx.tenantId, role: 'factory_admin' }, 'fc-dev-secret-do-not-use-in-prod')}`;
   });
 
   afterEach(async () => {
-    const pool = getPool();
-    const client = await pool.connect();
-    try {
-      await client.query('DELETE FROM resync_items WHERE resync_request_id IN (SELECT id FROM resync_requests WHERE factory_id = $1)', [ctx.tenantId]);
+    await withTenantTransaction(ctx, async (client: PoolClient) => {
+      await client.query('DELETE FROM resync_items WHERE resync_id IN (SELECT id FROM resync_requests WHERE factory_id = $1)', [ctx.tenantId]);
       await client.query('DELETE FROM resync_requests WHERE factory_id = $1', [ctx.tenantId]);
       await client.query('DELETE FROM canonical_order_line_items WHERE order_id IN (SELECT id FROM canonical_orders WHERE buyer_id IN (SELECT id FROM buyers WHERE factory_id = $1))', [ctx.tenantId]);
       await client.query('DELETE FROM canonical_orders WHERE buyer_id IN (SELECT id FROM buyers WHERE factory_id = $1)', [ctx.tenantId]);
       await client.query('DELETE FROM connections WHERE factory_id = $1', [ctx.tenantId]);
       await client.query('DELETE FROM buyers WHERE factory_id = $1', [ctx.tenantId]);
       await client.query('DELETE FROM factories WHERE id = $1', [ctx.tenantId]);
-    } finally {
-      client.release();
-    }
+    });
   });
 
   describe('Resync Lifecycle', () => {
@@ -115,9 +108,7 @@ describe('E2E: Resync Flow', () => {
 
       const resyncPayload = {
         connection_id: connId,
-        date_from: TEST_DATE_FROM,
-        date_to: TEST_DATE_TO,
-        reason: TEST_REASON,
+        resync_type: TEST_RESYNC_TYPE, reason: TEST_REASON,
       };
 
       const res = await request(app)
@@ -150,9 +141,7 @@ describe('E2E: Resync Flow', () => {
         .set(HEADER_USER, ctx.userId)
         .send({
           connection_id: connId,
-          date_from: TEST_DATE_FROM,
-          date_to: TEST_DATE_TO,
-          reason: TEST_REASON,
+          resync_type: TEST_RESYNC_TYPE, reason: TEST_REASON,
         });
 
       const resyncId = createRes.body.data.id;
@@ -184,9 +173,7 @@ describe('E2E: Resync Flow', () => {
         .set(HEADER_USER, ctx.userId)
         .send({
           connection_id: connId,
-          date_from: TEST_DATE_FROM,
-          date_to: TEST_DATE_TO,
-          reason: TEST_REASON,
+          resync_type: TEST_RESYNC_TYPE, reason: TEST_REASON,
         });
 
       const resyncId = createRes.body.data.id;
@@ -222,9 +209,7 @@ describe('E2E: Resync Flow', () => {
         .set(HEADER_USER, ctx.userId)
         .send({
           connection_id: connId,
-          date_from: TEST_DATE_FROM,
-          date_to: TEST_DATE_TO,
-          reason: TEST_REASON,
+          resync_type: TEST_RESYNC_TYPE, reason: TEST_REASON,
         });
 
       const resyncId = createRes.body.data.id;
@@ -266,9 +251,7 @@ describe('E2E: Resync Flow', () => {
         .set(HEADER_USER, ctx.userId)
         .send({
           connection_id: connId,
-          date_from: TEST_DATE_FROM,
-          date_to: TEST_DATE_TO,
-          reason: TEST_REASON,
+          resync_type: TEST_RESYNC_TYPE, reason: TEST_REASON,
         });
 
       const resyncId = createRes.body.data.id;
@@ -326,20 +309,12 @@ describe('E2E: Resync Flow', () => {
         .set(HEADER_USER, ctx.userId)
         .send({
           connection_id: connId,
-          date_from: TEST_DATE_FROM,
-          date_to: TEST_DATE_TO,
-          reason: TEST_REASON,
+          resync_type: TEST_RESYNC_TYPE, reason: TEST_REASON,
         });
 
       const resyncId = createRes.body.data.id;
 
-      await request(app)
-        .post(`/api/v1/resync/${resyncId}/validate`)
-        .set(HEADER_AUTH, authToken)
-        .set(HEADER_TENANT, ctx.tenantId)
-        .set(HEADER_USER, ctx.userId);
-
-      // Reject resync
+      // Reject from REQUESTED state (valid transition: REQUESTED → REJECTED)
       const rejectRes = await request(app)
         .post(`/api/v1/resync/${resyncId}/reject`)
         .set(HEADER_AUTH, authToken)
@@ -365,9 +340,7 @@ describe('E2E: Resync Flow', () => {
         .set(HEADER_USER, ctx.userId)
         .send({
           connection_id: connId,
-          date_from: TEST_DATE_FROM,
-          date_to: TEST_DATE_TO,
-          reason: TEST_REASON,
+          resync_type: TEST_RESYNC_TYPE, reason: TEST_REASON,
         });
 
       const resyncId = createRes.body.data.id;
@@ -413,10 +386,10 @@ describe('E2E: Resync Flow', () => {
 
     it('should list resync requests with filtering', async () => {
       await createTestFactory(ctx);
-      const connId = await createTestConnection(ctx, ctx.tenantId);
 
-      // Create 3 resync requests with different statuses
+      // Create 3 resync requests on separate connections (duplicate guard blocks same-connection duplicates)
       for (let i = 0; i < 3; i++) {
+        const connId = await createTestConnection(ctx, ctx.tenantId);
         await request(app)
           .post(API_RESYNC)
           .set(HEADER_AUTH, authToken)
@@ -424,8 +397,6 @@ describe('E2E: Resync Flow', () => {
           .set(HEADER_USER, ctx.userId)
           .send({
             connection_id: connId,
-            date_from: `2024-0${i + 1}-01`,
-            date_to: `2024-0${i + 1}-28`,
             reason: `Resync ${i + 1}`,
           });
       }
@@ -443,18 +414,17 @@ describe('E2E: Resync Flow', () => {
 
     it('should filter resync requests by status', async () => {
       await createTestFactory(ctx);
-      const connId = await createTestConnection(ctx, ctx.tenantId);
+      const connId1 = await createTestConnection(ctx, ctx.tenantId);
+      const connId2 = await createTestConnection(ctx, ctx.tenantId);
 
-      // Create two resync requests
+      // Create two resync requests on separate connections
       const res1 = await request(app)
         .post(API_RESYNC)
         .set(HEADER_AUTH, authToken)
         .set(HEADER_TENANT, ctx.tenantId)
         .set(HEADER_USER, ctx.userId)
         .send({
-          connection_id: connId,
-          date_from: TEST_DATE_FROM,
-          date_to: TEST_DATE_TO,
+          connection_id: connId1,
           reason: 'Resync 1',
         });
 
@@ -464,9 +434,7 @@ describe('E2E: Resync Flow', () => {
         .set(HEADER_TENANT, ctx.tenantId)
         .set(HEADER_USER, ctx.userId)
         .send({
-          connection_id: connId,
-          date_from: '2024-02-01',
-          date_to: '2024-02-29',
+          connection_id: connId2,
           reason: 'Resync 2',
         });
 

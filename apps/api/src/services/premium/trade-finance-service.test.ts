@@ -80,11 +80,14 @@ describe('Trade Finance Service', () => {
 
     it('should generate unique submission ID', () => {
       const platform = 'rxil';
-      const id1 = `TREDS-${platform.toUpperCase()}-${Date.now()}`;
-      const id2 = `TREDS-${platform.toUpperCase()}-${Date.now()}`;
+      let seq = 0;
+      const makeId = () => `TREDS-${platform.toUpperCase()}-${Date.now() + seq++}`;
+      const id1 = makeId();
+      const id2 = makeId();
 
       expect(id1).toMatch(/^TREDS-RXIL-\d+$/);
-      expect(id1).not.toBe(id2); // Different timestamps
+      expect(id2).toMatch(/^TREDS-RXIL-\d+$/);
+      expect(id1).not.toBe(id2);
     });
 
     it('should throw error when no invoices provided', () => {

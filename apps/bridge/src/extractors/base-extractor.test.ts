@@ -65,7 +65,7 @@ describe('BaseExtractor', () => {
       global.fetch = mockFetch;
 
       const xml = '<TEST>request</TEST>';
-      await expect(extractor['sendRequest'](xml)).rejects.toThrow('FC_ERR_TALLY_NOT_RUNNING');
+      await expect(extractor['sendRequest'](xml)).rejects.toMatchObject({ code: 'FC_ERR_TALLY_NOT_RUNNING' });
     });
 
     it('should throw FC_ERR_TALLY_TIMEOUT on timeout', async () => {
@@ -73,11 +73,11 @@ describe('BaseExtractor', () => {
       global.fetch = mockFetch;
 
       const xml = '<TEST>request</TEST>';
-      await expect(extractor['sendRequest'](xml)).rejects.toThrow('FC_ERR_TALLY_TIMEOUT');
+      await expect(extractor['sendRequest'](xml)).rejects.toMatchObject({ code: 'FC_ERR_TALLY_TIMEOUT' });
     });
 
     it('should throw FC_ERR_TALLY_HTTP_ERROR on non-2xx response', async () => {
-      const mockFetch = vi.fn().mockResolvedValueOnce({
+      const mockFetch = vi.fn().mockResolvedValue({
         ok: false,
         status: 500,
         statusText: 'Internal Server Error',
@@ -85,7 +85,7 @@ describe('BaseExtractor', () => {
       global.fetch = mockFetch;
 
       const xml = '<TEST>request</TEST>';
-      await expect(extractor['sendRequest'](xml)).rejects.toThrow('FC_ERR_TALLY_HTTP_ERROR');
+      await expect(extractor['sendRequest'](xml)).rejects.toMatchObject({ code: 'FC_ERR_TALLY_HTTP_ERROR' });
     });
 
     it('should retry on transient failure', async () => {
@@ -99,7 +99,7 @@ describe('BaseExtractor', () => {
 
       const xml = '<TEST>request</TEST>';
       // Should throw because ECONNREFUSED is treated as fatal (Tally not running)
-      await expect(extractor['sendRequest'](xml)).rejects.toThrow('FC_ERR_TALLY_NOT_RUNNING');
+      await expect(extractor['sendRequest'](xml)).rejects.toMatchObject({ code: 'FC_ERR_TALLY_NOT_RUNNING' });
     });
   });
 
@@ -113,14 +113,16 @@ describe('BaseExtractor', () => {
 
     it('should throw FC_ERR_TALLY_XML_PARSE_ERROR on malformed XML', async () => {
       const malformedXml = '<ENVELOPE><BODY><DATA>unclosed';
-      await expect(extractor['parseXml'](malformedXml)).rejects.toThrow(
-        'FC_ERR_TALLY_XML_PARSE_ERROR',
-      );
+      await expect(extractor['parseXml'](malformedXml)).rejects.toMatchObject({
+        code: 'FC_ERR_TALLY_XML_PARSE_ERROR',
+      });
     });
 
     it('should handle empty XML gracefully', async () => {
       const xml = '';
-      await expect(extractor['parseXml'](xml)).rejects.toThrow('FC_ERR_TALLY_XML_PARSE_ERROR');
+      await expect(extractor['parseXml'](xml)).rejects.toMatchObject({
+        code: 'FC_ERR_TALLY_XML_PARSE_ERROR',
+      });
     });
   });
 
@@ -131,15 +133,19 @@ describe('BaseExtractor', () => {
     });
 
     it('should throw FC_ERR_TALLY_EMPTY_RESPONSE on null/undefined', () => {
-      expect(() => extractor['validateResponse'](null)).toThrow('FC_ERR_TALLY_EMPTY_RESPONSE');
-      expect(() => extractor['validateResponse'](undefined)).toThrow('FC_ERR_TALLY_EMPTY_RESPONSE');
+      const catchCode = (fn: () => void): string => {
+        try { fn(); return ''; } catch (e) { return (e as { code?: string }).code ?? ''; }
+      };
+      expect(catchCode(() => extractor['validateResponse'](null))).toBe('FC_ERR_TALLY_EMPTY_RESPONSE');
+      expect(catchCode(() => extractor['validateResponse'](undefined))).toBe('FC_ERR_TALLY_EMPTY_RESPONSE');
     });
 
     it('should throw FC_ERR_TALLY_INVALID_RESPONSE_TYPE on non-object', () => {
-      expect(() => extractor['validateResponse']('string')).toThrow(
-        'FC_ERR_TALLY_INVALID_RESPONSE_TYPE',
-      );
-      expect(() => extractor['validateResponse'](123)).toThrow('FC_ERR_TALLY_INVALID_RESPONSE_TYPE');
+      const catchCode = (fn: () => void): string => {
+        try { fn(); return ''; } catch (e) { return (e as { code?: string }).code ?? ''; }
+      };
+      expect(catchCode(() => extractor['validateResponse']('string'))).toBe('FC_ERR_TALLY_INVALID_RESPONSE_TYPE');
+      expect(catchCode(() => extractor['validateResponse'](123))).toBe('FC_ERR_TALLY_INVALID_RESPONSE_TYPE');
     });
   });
 

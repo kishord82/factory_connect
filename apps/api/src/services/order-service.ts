@@ -335,9 +335,9 @@ async function insertAuditLog(
   newRecord: unknown,
 ): Promise<void> {
   await client.query(
-    `INSERT INTO audit_log (tenant_id, action, entity_type, entity_id, actor_id,
+    `INSERT INTO audit_log (factory_id, tenant_id, action, entity_type, entity_id, actor_id,
       old_record, new_record, metadata)
-     VALUES ($1, $2::audit_action, $3, $4, $5, $6, $7, $8)`,
+     VALUES ($1, $1, $2::audit_action, $3, $4, $5, $6, $7, $8)`,
     [
       ctx.tenantId, action, entityType, entityId, ctx.userId,
       oldRecord ? JSON.stringify(oldRecord) : null,

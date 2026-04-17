@@ -285,9 +285,13 @@ describe('ExtractionScheduler', () => {
     });
 
     it('should throw on updating non-existent schedule', () => {
-      expect(() => {
+      let thrownCode = '';
+      try {
         scheduler.updateSchedule('INVALID' as unknown as ExtractionType, { enabled: false });
-      }).toThrow('FC_ERR_BRIDGE_SCHEDULE_NOT_FOUND');
+      } catch (e) {
+        thrownCode = (e as { code?: string }).code ?? '';
+      }
+      expect(thrownCode).toBe('FC_ERR_BRIDGE_SCHEDULE_NOT_FOUND');
     });
   });
 

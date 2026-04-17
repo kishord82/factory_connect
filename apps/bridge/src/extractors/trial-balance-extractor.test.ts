@@ -272,7 +272,9 @@ describe('TrialBalanceExtractor', () => {
 
     it('should throw on XML parse error', async () => {
       const mockFetch = vi.fn().mockResolvedValueOnce({
-        ok: true,
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error',
         text: async () => '<unclosed>xml',
       });
       global.fetch = mockFetch;

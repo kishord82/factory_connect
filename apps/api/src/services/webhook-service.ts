@@ -74,7 +74,7 @@ export async function registerWebhook(
       `INSERT INTO webhook_subscriptions (
         factory_id, url, events, secret, custom_headers, active
       ) VALUES ($1, $2, $3, $4, $5, true)
-      RETURNING *`,
+      RETURNING id, factory_id, url, events, custom_headers, active, created_at, updated_at`,
       [
         ctx.tenantId,
         data.url,
@@ -96,16 +96,23 @@ export async function listWebhooks(
   ctx: RequestContext,
   page: number = 1,
   pageSize: number = 25,
+  eventType?: string,
 ): Promise<PaginatedResult<WebhookSubscriptionRow>> {
   return withTenantClient(ctx, async (client: PoolClient) => {
+    const params: unknown[] = [ctx.tenantId];
+    let whereClause = 'WHERE factory_id = $1';
+    if (eventType) {
+      params.push(JSON.stringify([eventType]));
+      whereClause += ` AND events @> $${params.length}::jsonb`;
+    }
     return paginatedQuery<WebhookSubscriptionRow>(
       client,
-      `SELECT id, factory_id, url, events, secret, custom_headers, active,
+      `SELECT id, factory_id, url, events, custom_headers, active,
               last_delivery_at, failure_count, created_at, updated_at
        FROM platform.webhook_subscriptions
-       WHERE factory_id = $1
+       ${whereClause}
        ORDER BY created_at DESC`,
-      [ctx.tenantId],
+      params,
       page,
       pageSize,
     );

@@ -55,14 +55,22 @@ resyncRouter.get('/', validate({ query: PaginationSchema }), async (req, res, ne
   try {
     const ctx = getRequestContext(req);
     const q = getValidatedQuery<z.infer<typeof PaginationSchema>>(req);
+    const status = req.query.status as string | undefined;
     const result = await withTenantClient(ctx, async (client: PoolClient) => {
+      const params: unknown[] = [];
+      let whereClause = '';
+      if (status) {
+        params.push(status);
+        whereClause = `WHERE status = $${params.length}::resync_status`;
+      }
       return paginatedQuery(
         client,
-        `SELECT id, factory_id, connection_id, resync_type, message_ids, reason,
+        `SELECT id, factory_id, connection_id, resync_type, reason,
                 requested_by, status, approved_by, created_at, updated_at
          FROM workflow.resync_requests
+         ${whereClause}
          ORDER BY created_at DESC`,
-        [],
+        params,
         q.page,
         q.pageSize,
       );
@@ -71,34 +79,50 @@ resyncRouter.get('/', validate({ query: PaginationSchema }), async (req, res, ne
   } catch (err) { next(err); }
 });
 
-/** POST /api/v1/resync/:id/transition — advance resync state */
+async function performTransition(
+  req: import('express').Request,
+  res: import('express').Response,
+  next: import('express').NextFunction,
+  targetStatus: string,
+): Promise<void> {
+  try {
+    const ctx = getRequestContext(req);
+    const { id } = getValidatedParams<z.infer<typeof IdParams>>(req);
+    const result = await withTenantTransaction(ctx, async (client: PoolClient) => {
+      const current = await findOne<{ id: string; status: string }>(
+        client, 'SELECT id, status FROM resync_requests WHERE id = $1', [id],
+      );
+      if (!current) throw new FcError('FC_ERR_RESYNC_NOT_FOUND', 'Resync request not found', {}, 404);
+
+      const allowed = VALID_TRANSITIONS[current.status];
+      if (!allowed?.includes(targetStatus)) {
+        throw new FcError('FC_ERR_RESYNC_INVALID_TRANSITION',
+          `Cannot transition from ${current.status} to ${targetStatus}`,
+          { current: current.status, target: targetStatus }, 400);
+      }
+
+      return insertOne(
+        client,
+        `UPDATE resync_requests SET status = $1::resync_status, updated_at = NOW() WHERE id = $2 RETURNING *`,
+        [targetStatus, id],
+      );
+    });
+    res.json({ data: result });
+  } catch (err) { next(err); }
+}
+
+/** Named transition routes */
+resyncRouter.post('/:id/validate', validate({ params: IdParams }), (req, res, next) => performTransition(req, res, next, 'VALIDATED'));
+resyncRouter.post('/:id/approve', validate({ params: IdParams }), (req, res, next) => performTransition(req, res, next, 'APPROVED'));
+resyncRouter.post('/:id/queue', validate({ params: IdParams }), (req, res, next) => performTransition(req, res, next, 'QUEUED'));
+resyncRouter.post('/:id/start', validate({ params: IdParams }), (req, res, next) => performTransition(req, res, next, 'IN_PROGRESS'));
+resyncRouter.post('/:id/complete', validate({ params: IdParams }), (req, res, next) => performTransition(req, res, next, 'COMPLETED'));
+resyncRouter.post('/:id/reject', validate({ params: IdParams }), (req, res, next) => performTransition(req, res, next, 'REJECTED'));
+resyncRouter.post('/:id/partial-fail', validate({ params: IdParams }), (req, res, next) => performTransition(req, res, next, 'PARTIAL_FAIL'));
+
+/** POST /api/v1/resync/:id/transition — generic state transition */
 resyncRouter.post(
   '/:id/transition',
   validate({ params: IdParams, body: z.object({ target_status: z.string() }) }),
-  async (req, res, next) => {
-    try {
-      const ctx = getRequestContext(req);
-      const { target_status } = req.body;
-      const result = await withTenantTransaction(ctx, async (client: PoolClient) => {
-        const current = await findOne<{ id: string; status: string }>(
-          client, 'SELECT id, status FROM resync_requests WHERE id = $1', [getValidatedParams<z.infer<typeof IdParams>>(req).id],
-        );
-        if (!current) throw new FcError('FC_ERR_RESYNC_NOT_FOUND', 'Resync request not found', {}, 404);
-
-        const allowed = VALID_TRANSITIONS[current.status];
-        if (!allowed?.includes(target_status)) {
-          throw new FcError('FC_ERR_RESYNC_INVALID_TRANSITION',
-            `Cannot transition from ${current.status} to ${target_status}`,
-            { current: current.status, target: target_status }, 400);
-        }
-
-        return insertOne(
-          client,
-          `UPDATE resync_requests SET status = $1::resync_status, updated_at = NOW() WHERE id = $2 RETURNING *`,
-          [target_status, getValidatedParams<z.infer<typeof IdParams>>(req).id],
-        );
-      });
-      res.json({ data: result });
-    } catch (err) { next(err); }
-  },
+  (req, res, next) => performTransition(req, res, next, req.body.target_status),
 );

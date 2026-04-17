@@ -34,6 +34,18 @@ export function errorHandler(
     return;
   }
 
+  // Express JSON body-parse error — body syntax is a client error
+  if (err instanceof SyntaxError && 'body' in err) {
+    res.status(400).json({
+      error: {
+        code: 'FC_ERR_VALIDATION_INVALID_JSON',
+        message: 'Invalid JSON in request body',
+        correlationId,
+      },
+    });
+    return;
+  }
+
   // Unexpected errors — log full stack, return generic message
   logger.error({ err, correlationId }, 'Unhandled error');
   res.status(500).json({

@@ -4,8 +4,10 @@
 
 import crypto from 'crypto';
 
-import { withTenantTransaction, withTenantClient, getPool } from '@fc/database';
+import { withTenantTransaction, withTenantClient } from '@fc/database';
+import type { PoolClient } from '@fc/database';
 import type { RequestContext } from '@fc/shared';
+import jwt from 'jsonwebtoken';
 import request from 'supertest';
 import { v4 as uuidv4 } from 'uuid';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
@@ -25,7 +27,7 @@ const HEADER_USER = 'X-User-ID';
 const API_WEBHOOKS = '/api/v1/webhooks';
 const API_ORDERS = '/api/v1/orders';
 const TEST_WEBHOOK_URL = 'https://webhook.example.com/orders';
-const TEST_WEBHOOK_SECRET = 'test-secret';
+const TEST_WEBHOOK_SECRET = 'test-webhook-secret-12345';
 const EVENT_ORDER_CONFIRMED = 'ORDER_CONFIRMED';
 const WEBHOOK_URL_1 = 'https://webhook1.example.com';
 const WEBHOOK_URL_2 = 'https://webhook2.example.com';
@@ -42,7 +44,7 @@ function buildTestContext(): RequestContext {
 }
 
 async function createTestFactory(ctx: RequestContext): Promise<string> {
-  return withTenantTransaction(ctx, async (client) => {
+  return withTenantTransaction(ctx, async (client: PoolClient) => {
     const factoryId = ctx.tenantId;
     await client.query(
       `INSERT INTO factories (id, name, slug, factory_type, contact_email, timezone)
@@ -55,7 +57,7 @@ async function createTestFactory(ctx: RequestContext): Promise<string> {
 }
 
 async function createTestBuyer(ctx: RequestContext, factoryId: string): Promise<string> {
-  return withTenantTransaction(ctx, async (client) => {
+  return withTenantTransaction(ctx, async (client: PoolClient) => {
     const buyerId = uuidv4();
     await client.query(
       `INSERT INTO buyers (id, factory_id, name, buyer_identifier, protocol)
@@ -68,7 +70,7 @@ async function createTestBuyer(ctx: RequestContext, factoryId: string): Promise<
 }
 
 async function createTestConnection(ctx: RequestContext, factoryId: string, buyerId: string): Promise<string> {
-  return withTenantTransaction(ctx, async (client) => {
+  return withTenantTransaction(ctx, async (client: PoolClient) => {
     const connId = uuidv4();
     await client.query(
       `INSERT INTO connections (id, factory_id, buyer_id, mode, source_type, status)
@@ -81,14 +83,14 @@ async function createTestConnection(ctx: RequestContext, factoryId: string, buye
 }
 
 async function getWebhookSubscriptions(ctx: RequestContext): Promise<DbRow[]> {
-  return withTenantClient(ctx, async (client) => {
+  return withTenantClient(ctx, async (client: PoolClient) => {
     const res = await client.query('SELECT * FROM webhook_subscriptions ORDER BY created_at DESC');
     return res.rows;
   });
 }
 
 async function getWebhookDeliveries(ctx: RequestContext, subscriptionId: string): Promise<DbRow[]> {
-  return withTenantClient(ctx, async (client) => {
+  return withTenantClient(ctx, async (client: PoolClient) => {
     const res = await client.query(
       'SELECT * FROM webhook_deliveries WHERE subscription_id = $1 ORDER BY created_at DESC',
       [subscriptionId],
@@ -111,23 +113,20 @@ describe('E2E: Webhook Delivery', () => {
 
   beforeEach(async () => {
     ctx = buildTestContext();
-    authToken = 'Bearer test-token';
+    authToken = `Bearer ${jwt.sign({ sub: ctx.userId, factory_id: ctx.tenantId, role: 'factory_admin' }, 'fc-dev-secret-do-not-use-in-prod')}`;
   });
 
   afterEach(async () => {
-    const pool = getPool();
-    const client = await pool.connect();
-    try {
+    await withTenantTransaction(ctx, async (client: PoolClient) => {
       await client.query('DELETE FROM webhook_deliveries WHERE subscription_id IN (SELECT id FROM webhook_subscriptions WHERE factory_id = $1)', [ctx.tenantId]);
       await client.query('DELETE FROM webhook_subscriptions WHERE factory_id = $1', [ctx.tenantId]);
+      await client.query('DELETE FROM order_sagas WHERE factory_id = $1', [ctx.tenantId]);
       await client.query('DELETE FROM canonical_order_line_items WHERE order_id IN (SELECT id FROM canonical_orders WHERE buyer_id IN (SELECT id FROM buyers WHERE factory_id = $1))', [ctx.tenantId]);
       await client.query('DELETE FROM canonical_orders WHERE buyer_id IN (SELECT id FROM buyers WHERE factory_id = $1)', [ctx.tenantId]);
       await client.query('DELETE FROM connections WHERE factory_id = $1', [ctx.tenantId]);
       await client.query('DELETE FROM buyers WHERE factory_id = $1', [ctx.tenantId]);
       await client.query('DELETE FROM factories WHERE id = $1', [ctx.tenantId]);
-    } finally {
-      client.release();
-    }
+    });
   });
 
   describe('Webhook Registration and Delivery', () => {
@@ -136,8 +135,8 @@ describe('E2E: Webhook Delivery', () => {
 
       const subscriptionPayload = {
         url: TEST_WEBHOOK_URL,
-        event_types: [EVENT_ORDER_CONFIRMED, 'SHIPMENT_CREATED'],
-        secret: 'test-webhook-secret',
+        events: [EVENT_ORDER_CONFIRMED, 'SHIPMENT_CREATED'],
+        secret: 'test-webhook-secret-00000',
       };
 
       const res = await request(app)
@@ -163,7 +162,7 @@ describe('E2E: Webhook Delivery', () => {
 
       const invalidPayload = {
         url: 'not-a-url',
-        event_types: [EVENT_ORDER_CONFIRMED],
+        events: [EVENT_ORDER_CONFIRMED],
         secret: TEST_WEBHOOK_SECRET,
       };
 
@@ -195,7 +194,7 @@ describe('E2E: Webhook Delivery', () => {
         .set(HEADER_USER, ctx.userId)
         .send({
           url: webhookUrl,
-          event_types: [EVENT_ORDER_CONFIRMED],
+          events: [EVENT_ORDER_CONFIRMED],
           secret: webhookSecret,
         });
 
@@ -207,6 +206,7 @@ describe('E2E: Webhook Delivery', () => {
         buyer_id: buyerId,
         connection_id: connId,
         buyer_po_number: `PO-${Date.now()}`,
+        source_type: 'tally',
         order_date: new Date().toISOString(),
         subtotal: 1000,
         tax_amount: 180,
@@ -283,8 +283,8 @@ describe('E2E: Webhook Delivery', () => {
           .set(HEADER_USER, ctx.userId)
           .send({
             url: `https://webhook.example.com/endpoint-${i}`,
-            event_types: [EVENT_ORDER_CONFIRMED],
-            secret: `secret-${i}`,
+            events: [EVENT_ORDER_CONFIRMED],
+            secret: `secret-${i}-padded-1234567890`,
           });
       }
 
@@ -310,7 +310,7 @@ describe('E2E: Webhook Delivery', () => {
         .set(HEADER_USER, ctx.userId)
         .send({
           url: TEST_WEBHOOK_URL,
-          event_types: [EVENT_ORDER_CONFIRMED],
+          events: [EVENT_ORDER_CONFIRMED],
           secret: TEST_WEBHOOK_SECRET,
         });
 
@@ -341,8 +341,8 @@ describe('E2E: Webhook Delivery', () => {
         .set(HEADER_USER, ctx.userId)
         .send({
           url: WEBHOOK_URL_1,
-          event_types: [EVENT_ORDER_CONFIRMED],
-          secret: 'secret1',
+          events: [EVENT_ORDER_CONFIRMED],
+          secret: 'secret1-padded-1234567890',
         });
 
       await request(app)
@@ -352,8 +352,8 @@ describe('E2E: Webhook Delivery', () => {
         .set(HEADER_USER, ctx.userId)
         .send({
           url: WEBHOOK_URL_2,
-          event_types: ['SHIPMENT_CREATED', 'INVOICE_CREATED'],
-          secret: 'secret2',
+          events: ['SHIPMENT_CREATED', 'INVOICE_CREATED'],
+          secret: 'secret2-padded-1234567890',
         });
 
       // List and filter by event type
@@ -384,8 +384,8 @@ describe('E2E: Webhook Delivery', () => {
         .set(HEADER_USER, ctx1.userId)
         .send({
           url: WEBHOOK_URL_1,
-          event_types: [EVENT_ORDER_CONFIRMED],
-          secret: 'secret1',
+          events: [EVENT_ORDER_CONFIRMED],
+          secret: 'secret1-padded-1234567890',
         });
 
       // Try to list webhooks as ctx2
