@@ -8,6 +8,13 @@ import type { RequestContext } from '@fc/shared';
 import { v4 as uuidv4 } from 'uuid';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
+const BUYER_PROTOCOL = 'edi_x12';
+const SQL_SELECT_FACTORY_BY_ID = 'SELECT * FROM factories WHERE id = $1';
+const TENANT1_BUYER_NAME = 'Tenant 1 Buyer';
+const TENANT2_BUYER_NAME = 'Tenant 2 Buyer';
+const TENANT1_BUYER_ID_KEY = 'T1BUYER';
+const TENANT2_BUYER_ID_KEY = 'T2BUYER';
+
 describe('Integration: Row-Level Security (RLS)', () => {
   // Create two separate tenant contexts
   const tenant1: RequestContext = {
@@ -65,7 +72,7 @@ describe('Integration: Row-Level Security (RLS)', () => {
   describe('Factory RLS', () => {
     it('should allow tenant1 to see its own factory', async () => {
       const factory = await withTenantClient(tenant1, async (client) => {
-        const res = await client.query('SELECT * FROM factories WHERE id = $1', [tenant1.tenantId]);
+        const res = await client.query(SQL_SELECT_FACTORY_BY_ID, [tenant1.tenantId]);
         return res.rows[0];
       });
 
@@ -76,7 +83,7 @@ describe('Integration: Row-Level Security (RLS)', () => {
 
     it('should deny tenant1 access to tenant2 factory', async () => {
       const factory = await withTenantClient(tenant1, async (client) => {
-        const res = await client.query('SELECT * FROM factories WHERE id = $1', [tenant2.tenantId]);
+        const res = await client.query(SQL_SELECT_FACTORY_BY_ID, [tenant2.tenantId]);
         return res.rows[0];
       });
 
@@ -103,7 +110,7 @@ describe('Integration: Row-Level Security (RLS)', () => {
           `INSERT INTO buyers (id, factory_id, name, buyer_identifier, protocol)
            VALUES ($1, $2, $3, $4, $5)
            ON CONFLICT (id) DO UPDATE SET name = $3`,
-          [uuidv4(), tenant1.tenantId, 'Tenant 1 Buyer', 'T1BUYER', 'edi_x12'],
+          [uuidv4(), tenant1.tenantId, TENANT1_BUYER_NAME, TENANT1_BUYER_ID_KEY, BUYER_PROTOCOL],
         );
       });
 
@@ -112,7 +119,7 @@ describe('Integration: Row-Level Security (RLS)', () => {
           `INSERT INTO buyers (id, factory_id, name, buyer_identifier, protocol)
            VALUES ($1, $2, $3, $4, $5)
            ON CONFLICT (id) DO UPDATE SET name = $3`,
-          [uuidv4(), tenant2.tenantId, 'Tenant 2 Buyer', 'T2BUYER', 'edi_x12'],
+          [uuidv4(), tenant2.tenantId, TENANT2_BUYER_NAME, TENANT2_BUYER_ID_KEY, BUYER_PROTOCOL],
         );
       });
     });
@@ -124,12 +131,12 @@ describe('Integration: Row-Level Security (RLS)', () => {
       });
 
       expect(buyers.length).toBeGreaterThan(0);
-      expect(buyers[0].name).toBe('Tenant 1 Buyer');
+      expect(buyers[0].name).toBe(TENANT1_BUYER_NAME);
     });
 
     it('should deny tenant1 access to tenant2 buyers', async () => {
       const buyers = await withTenantClient(tenant1, async (client) => {
-        const res = await client.query('SELECT * FROM buyers WHERE buyer_identifier = $1', ['T2BUYER']);
+        const res = await client.query('SELECT * FROM buyers WHERE buyer_identifier = $1', [TENANT2_BUYER_ID_KEY]);
         return res.rows;
       });
 
@@ -167,7 +174,7 @@ describe('Integration: Row-Level Security (RLS)', () => {
           `INSERT INTO buyers (id, factory_id, name, buyer_identifier, protocol)
            VALUES ($1, $2, $3, $4, $5)
            RETURNING id`,
-          [uuidv4(), tenant1.tenantId, 'Tenant 1 Buyer', 'T1BUYER', 'edi_x12'],
+          [uuidv4(), tenant1.tenantId, TENANT1_BUYER_NAME, TENANT1_BUYER_ID_KEY, BUYER_PROTOCOL],
         );
         tenant1BuyerId = buyerRes.rows[0].id;
 
@@ -196,7 +203,7 @@ describe('Integration: Row-Level Security (RLS)', () => {
           `INSERT INTO buyers (id, factory_id, name, buyer_identifier, protocol)
            VALUES ($1, $2, $3, $4, $5)
            RETURNING id`,
-          [uuidv4(), tenant2.tenantId, 'Tenant 2 Buyer', 'T2BUYER', 'edi_x12'],
+          [uuidv4(), tenant2.tenantId, TENANT2_BUYER_NAME, TENANT2_BUYER_ID_KEY, BUYER_PROTOCOL],
         );
         tenant2BuyerId = buyerRes.rows[0].id;
 
@@ -280,7 +287,7 @@ describe('Integration: Row-Level Security (RLS)', () => {
           `INSERT INTO buyers (id, factory_id, name, buyer_identifier, protocol)
            VALUES ($1, $2, $3, $4, $5)
            RETURNING id`,
-          [uuidv4(), tenant1.tenantId, 'Buyer', 'BUYER1', 'edi_x12'],
+          [uuidv4(), tenant1.tenantId, 'Buyer', 'BUYER1', BUYER_PROTOCOL],
         );
 
         const orderRes = await client.query(
@@ -321,7 +328,7 @@ describe('Integration: Row-Level Security (RLS)', () => {
           `INSERT INTO buyers (id, factory_id, name, buyer_identifier, protocol)
            VALUES ($1, $2, $3, $4, $5)
            RETURNING id`,
-          [uuidv4(), tenant1.tenantId, 'Buyer', 'BUYER1', 'edi_x12'],
+          [uuidv4(), tenant1.tenantId, 'Buyer', 'BUYER1', BUYER_PROTOCOL],
         );
 
         const orderRes = await client.query(
@@ -383,7 +390,7 @@ describe('Integration: Row-Level Security (RLS)', () => {
 
       // Even if someone tries to modify the context, RLS at DB level should block
       const result = await withTenantClient(impersonatorCtx, async (client) => {
-        const res = await client.query('SELECT * FROM factories WHERE id = $1', [tenant1.tenantId]);
+        const res = await client.query(SQL_SELECT_FACTORY_BY_ID, [tenant1.tenantId]);
         return res.rows;
       });
 

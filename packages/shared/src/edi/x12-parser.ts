@@ -199,56 +199,75 @@ export function validateEnvelope(document: EdiDocument): EdiValidationResult {
   };
 }
 
+/** State tracked while scanning transaction sets. */
+interface TxnScanState {
+  results: EdiDocument[];
+  currentTxn: EdiSegment[];
+  isaSegment: EdiSegment | undefined;
+  gsSegment: EdiSegment | undefined;
+  stSegment: EdiSegment | undefined;
+}
+
+/** Handle SE segment — close the current transaction set. currentTxn already has SE pushed. */
+function closeTxnSet(state: TxnScanState, document: EdiDocument): void {
+  const { isaSegment, gsSegment, stSegment } = state;
+  if (isaSegment && gsSegment && stSegment) {
+    state.results.push({
+      standard: document.standard,
+      document_type: document.document_type,
+      control_number: stSegment.elements[1] ?? '',
+      sender_id: document.sender_id,
+      receiver_id: document.receiver_id,
+      segments: state.currentTxn,
+      timestamp: new Date(),
+    });
+    state.currentTxn = [isaSegment, gsSegment];
+    state.stSegment = undefined;
+  }
+}
+
+/** Process a single segment during transaction-set extraction. */
+function processSegmentForTxn(seg: EdiSegment, state: TxnScanState, document: EdiDocument): void {
+  if (seg.id === 'ISA') {
+    state.isaSegment = seg;
+    state.currentTxn = [seg];
+  } else if (seg.id === 'GS') {
+    state.gsSegment = seg;
+    if (state.currentTxn.length > 0) state.currentTxn.push(seg);
+  } else if (seg.id === 'ST') {
+    state.stSegment = seg;
+    state.currentTxn.push(seg);
+  } else if (seg.id === 'SE') {
+    state.currentTxn.push(seg);
+    closeTxnSet(state, document);
+  } else {
+    state.currentTxn.push(seg);
+  }
+}
+
 /**
  * Extract transaction sets from a multi-transaction document.
  * Returns array of EdiDocument, one per ST/SE block.
  */
 export function extractTransactionSets(document: EdiDocument): EdiDocument[] {
-  const results: EdiDocument[] = [];
-  let currentTxn: EdiSegment[] = [];
-  let isaSegment: EdiSegment | undefined;
-  let gsSegment: EdiSegment | undefined;
-  let stSegment: EdiSegment | undefined;
+  const state: TxnScanState = {
+    results: [],
+    currentTxn: [],
+    isaSegment: undefined,
+    gsSegment: undefined,
+    stSegment: undefined,
+  };
 
   for (const seg of document.segments) {
-    if (seg.id === 'ISA') {
-      isaSegment = seg;
-      currentTxn = [seg];
-    } else if (seg.id === 'GS') {
-      gsSegment = seg;
-      if (currentTxn.length > 0) {
-        currentTxn.push(seg);
-      }
-    } else if (seg.id === 'ST') {
-      stSegment = seg;
-      currentTxn.push(seg);
-    } else if (seg.id === 'SE') {
-      currentTxn.push(seg);
-      // End of transaction set
-      if (isaSegment && gsSegment && stSegment) {
-        const txnDoc: EdiDocument = {
-          standard: document.standard,
-          document_type: document.document_type,
-          control_number: stSegment.elements[1] ?? '',
-          sender_id: document.sender_id,
-          receiver_id: document.receiver_id,
-          segments: currentTxn,
-          timestamp: new Date(),
-        };
-        results.push(txnDoc);
-        currentTxn = [isaSegment, gsSegment];
-      }
-    } else {
-      currentTxn.push(seg);
-    }
+    processSegmentForTxn(seg, state, document);
   }
 
   // If no SE found, return original document
-  if (results.length === 0) {
-    results.push(document);
+  if (state.results.length === 0) {
+    state.results.push(document);
   }
 
-  return results;
+  return state.results;
 }
 
 /**

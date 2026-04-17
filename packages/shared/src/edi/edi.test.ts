@@ -33,6 +33,10 @@ import {
   extractPOData,
 } from './x12-parser.js';
 
+const ERR_DOCUMENT_UNDEFINED = 'Expected document to be defined';
+const ERR_DATA_UNDEFINED = 'Expected data to be defined';
+const ERR_SEGMENT_UNDEFINED = 'Expected segment to be defined';
+
 // Sample X12 documents
 const sampleX12_850 = [
   'ISA*00*          *00*          *ZZ*SENDER         *ZZ*RECEIVER       *240101*1200*U*00401*000000001*0*T*:~',
@@ -64,16 +68,18 @@ describe('X12 Parser', () => {
       const result = parseX12(sampleX12_850);
       expect(result.success).toBe(true);
       expect(result.document).toBeDefined();
-      expect(result.document!.standard).toBe('X12');
-      expect(result.document!.document_type).toBe('PO_850');
-      expect(result.document!.sender_id).toBe('SENDER');
-      expect(result.document!.receiver_id).toBe('RECEIVER');
+      if (!result.document) throw new Error(ERR_DOCUMENT_UNDEFINED);
+      expect(result.document.standard).toBe('X12');
+      expect(result.document.document_type).toBe('PO_850');
+      expect(result.document.sender_id).toBe('SENDER');
+      expect(result.document.receiver_id).toBe('RECEIVER');
     });
 
     it('parses X12 855 document', () => {
       const result = parseX12(sampleX12_855);
       expect(result.success).toBe(true);
-      expect(result.document!.document_type).toBe('PO_ACK_855');
+      if (!result.document) throw new Error(ERR_DOCUMENT_UNDEFINED);
+      expect(result.document.document_type).toBe('PO_ACK_855');
     });
 
     it('handles empty document gracefully', () => {
@@ -84,7 +90,8 @@ describe('X12 Parser', () => {
 
     it('extracts control number from ISA segment', () => {
       const result = parseX12(sampleX12_850);
-      expect(result.document!.control_number).toBe('000000001');
+      if (!result.document) throw new Error(ERR_DOCUMENT_UNDEFINED);
+      expect(result.document.control_number).toBe('000000001');
     });
   });
 
@@ -100,9 +107,11 @@ describe('X12 Parser', () => {
   describe('parseIsaSegment', () => {
     it('extracts ISA fields', () => {
       const result = parseX12(sampleX12_850);
-      const isaSeg = result.document!.segments.find((s) => s.id === 'ISA');
+      if (!result.document) throw new Error(ERR_DOCUMENT_UNDEFINED);
+      const isaSeg = result.document.segments.find((s) => s.id === 'ISA');
       expect(isaSeg).toBeDefined();
-      const isa = parseIsaSegment(isaSeg!);
+      if (!isaSeg) throw new Error(ERR_SEGMENT_UNDEFINED);
+      const isa = parseIsaSegment(isaSeg);
       expect(isa.senderQualifier).toBe('ZZ');
       expect(isa.version).toBe('00401');
     });
@@ -111,9 +120,11 @@ describe('X12 Parser', () => {
   describe('parseGsSegment', () => {
     it('extracts GS fields', () => {
       const result = parseX12(sampleX12_850);
-      const gsSeg = result.document!.segments.find((s) => s.id === 'GS');
+      if (!result.document) throw new Error(ERR_DOCUMENT_UNDEFINED);
+      const gsSeg = result.document.segments.find((s) => s.id === 'GS');
       expect(gsSeg).toBeDefined();
-      const gs = parseGsSegment(gsSeg!);
+      if (!gsSeg) throw new Error(ERR_SEGMENT_UNDEFINED);
+      const gs = parseGsSegment(gsSeg);
       expect(gs.functionalId).toBe('PO');
       expect(gs.version).toBe('004010');
     });
@@ -122,7 +133,8 @@ describe('X12 Parser', () => {
   describe('extractPOData', () => {
     it('extracts PO data from 850 document', () => {
       const parseResult = parseX12(sampleX12_850);
-      const data = extractPOData(parseResult.document!);
+      if (!parseResult.document) throw new Error(ERR_DOCUMENT_UNDEFINED);
+      const data = extractPOData(parseResult.document);
       expect(data.po_number).toBe('PO-12345');
       expect(data.po_date).toBe('20240101');
       expect((data.line_items as Record<string, unknown>[])).toHaveLength(2);
@@ -130,7 +142,8 @@ describe('X12 Parser', () => {
 
     it('extracts line item details', () => {
       const parseResult = parseX12(sampleX12_850);
-      const data = extractPOData(parseResult.document!);
+      if (!parseResult.document) throw new Error(ERR_DOCUMENT_UNDEFINED);
+      const data = extractPOData(parseResult.document);
       const items = data.line_items as Array<Record<string, unknown>>;
       expect(items[0].buyer_sku).toBe('SKU-001');
       expect(items[0].quantity).toBe('10');
@@ -141,14 +154,16 @@ describe('X12 Parser', () => {
   describe('validateEnvelope', () => {
     it('validates correct envelope structure', () => {
       const parseResult = parseX12(sampleX12_850);
-      const validation = validateEnvelope(parseResult.document!);
+      if (!parseResult.document) throw new Error(ERR_DOCUMENT_UNDEFINED);
+      const validation = validateEnvelope(parseResult.document);
       expect(validation.valid).toBe(true);
       expect(validation.errors).toHaveLength(0);
     });
 
     it('detects missing ISA segment', () => {
       const result = parseX12(sampleX12_850);
-      const doc = result.document!;
+      if (!result.document) throw new Error(ERR_DOCUMENT_UNDEFINED);
+      const doc = result.document;
       // Remove ISA
       doc.segments = doc.segments.filter((s) => s.id !== 'ISA');
       const validation = validateEnvelope(doc);
@@ -159,7 +174,8 @@ describe('X12 Parser', () => {
   describe('extractTransactionSets', () => {
     it('extracts transaction sets from multi-txn document', () => {
       const result = parseX12(sampleX12_850);
-      const txns = extractTransactionSets(result.document!);
+      if (!result.document) throw new Error(ERR_DOCUMENT_UNDEFINED);
+      const txns = extractTransactionSets(result.document);
       expect(txns.length).toBeGreaterThan(0);
       expect(txns[0].document_type).toBe('PO_850');
     });
@@ -342,8 +358,9 @@ describe('JSON REST Adapter', () => {
         line_items: [{ sku: 'SKU-1', quantity: 10, price: 500, uom: 'EA' }],
       });
       expect(result.success).toBe(true);
-      expect(result.data!.po_number).toBe('PO-100');
-      expect(result.data!.currency).toBe('INR');
+      if (!result.data) throw new Error(ERR_DATA_UNDEFINED);
+      expect(result.data.po_number).toBe('PO-100');
+      expect(result.data.currency).toBe('INR');
     });
 
     it('normalizes alternate field names', () => {
@@ -353,7 +370,8 @@ describe('JSON REST Adapter', () => {
         items: [{ part_number: 'P-1', qty: 5, price: 100 }],
       });
       expect(result.success).toBe(true);
-      expect(result.data!.po_number).toBe('ORD-200');
+      if (!result.data) throw new Error(ERR_DATA_UNDEFINED);
+      expect(result.data.po_number).toBe('ORD-200');
     });
 
     it('normalizes shipping address variants', () => {
@@ -361,13 +379,15 @@ describe('JSON REST Adapter', () => {
         id: 'ID1',
         ship_to: { city: 'NYC' },
       });
-      expect(result1.data!.ship_to).toBeDefined();
+      if (!result1.data) throw new Error(ERR_DATA_UNDEFINED);
+      expect(result1.data.ship_to).toBeDefined();
 
       const result2 = parseJsonOrder({
         id: 'ID2',
         shipping_address: { city: 'LA' },
       });
-      expect(result2.data!.ship_to).toBeDefined();
+      if (!result2.data) throw new Error(ERR_DATA_UNDEFINED);
+      expect(result2.data.ship_to).toBeDefined();
     });
 
     it('handles missing line items gracefully', () => {
@@ -375,14 +395,16 @@ describe('JSON REST Adapter', () => {
         po_number: 'PO-50',
       });
       expect(result.success).toBe(true);
-      expect(result.data!.line_items).toEqual([]);
+      if (!result.data) throw new Error(ERR_DATA_UNDEFINED);
+      expect(result.data.line_items).toEqual([]);
     });
   });
 
   describe('ediToJson', () => {
     it('converts EDI document to JSON', () => {
       const parseResult = parseX12(sampleX12_850);
-      const json = ediToJson(parseResult.document!);
+      if (!parseResult.document) throw new Error(ERR_DOCUMENT_UNDEFINED);
+      const json = ediToJson(parseResult.document);
       expect(json.standard).toBe('X12');
       expect(json.document_type).toBe('PO_850');
       expect(json.segments).toBeDefined();
@@ -392,7 +414,8 @@ describe('JSON REST Adapter', () => {
   describe('jsonToEdi', () => {
     it('converts JSON back to EDI', () => {
       const parseResult = parseX12(sampleX12_850);
-      const json = ediToJson(parseResult.document!);
+      if (!parseResult.document) throw new Error(ERR_DOCUMENT_UNDEFINED);
+      const json = ediToJson(parseResult.document);
       const edi = jsonToEdi(json, 'PO_850', {});
       expect(edi.standard).toBe('JSON_REST');
       expect(edi.segments.length).toBeGreaterThan(0);
@@ -415,7 +438,8 @@ describe('JSON REST Adapter', () => {
         status: 'accepted',
       });
       expect(result.success).toBe(true);
-      const parsed = JSON.parse(result.document!);
+      if (!result.document) throw new Error(ERR_DOCUMENT_UNDEFINED);
+      const parsed = JSON.parse(result.document);
       expect(parsed.type).toBe('order_acknowledgment');
       expect(parsed.status).toBe('accepted');
       expect(parsed.acknowledged_at).toBeDefined();
@@ -430,7 +454,8 @@ describe('JSON REST Adapter', () => {
         ],
       });
       expect(result.success).toBe(true);
-      const parsed = JSON.parse(result.document!);
+      if (!result.document) throw new Error(ERR_DOCUMENT_UNDEFINED);
+      const parsed = JSON.parse(result.document);
       expect(parsed.line_items.length).toBe(1);
     });
   });
@@ -451,7 +476,8 @@ describe('JSON REST Adapter', () => {
         ],
       });
       expect(result.success).toBe(true);
-      const parsed = JSON.parse(result.document!);
+      if (!result.document) throw new Error(ERR_DOCUMENT_UNDEFINED);
+      const parsed = JSON.parse(result.document);
       expect(parsed.type).toBe('advance_ship_notice');
       expect(parsed.packs.length).toBe(1);
     });
@@ -473,8 +499,9 @@ describe('cXML Adapter', () => {
 </OrderRequest>`;
       const result = parseCxmlOrderRequest(xml);
       expect(result.success).toBe(true);
-      expect(result.data!.po_number).toBe('PO-500');
-      expect(result.data!.currency).toBe('USD');
+      if (!result.data) throw new Error(ERR_DATA_UNDEFINED);
+      expect(result.data.po_number).toBe('PO-500');
+      expect(result.data.currency).toBe('USD');
     });
 
     it('handles multiple line items', () => {
@@ -492,7 +519,8 @@ describe('cXML Adapter', () => {
 </OrderRequest>`;
       const result = parseCxmlOrderRequest(xml);
       expect(result.success).toBe(true);
-      expect((result.data!.line_items as unknown[]).length).toBe(2);
+      if (!result.data) throw new Error(ERR_DATA_UNDEFINED);
+      expect((result.data.line_items as unknown[]).length).toBe(2);
     });
   });
 

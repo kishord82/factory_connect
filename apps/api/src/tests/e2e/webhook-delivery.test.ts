@@ -14,6 +14,21 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 import { createApp } from '../../app.js';
 
+interface DbRow {
+  id: string;
+  [key: string]: unknown;
+}
+
+const HEADER_AUTH = 'Authorization';
+const HEADER_TENANT = 'X-Tenant-ID';
+const HEADER_USER = 'X-User-ID';
+const API_WEBHOOKS = '/api/v1/webhooks';
+const API_ORDERS = '/api/v1/orders';
+const TEST_WEBHOOK_URL = 'https://webhook.example.com/orders';
+const TEST_WEBHOOK_SECRET = 'test-secret';
+const EVENT_ORDER_CONFIRMED = 'ORDER_CONFIRMED';
+const WEBHOOK_URL_1 = 'https://webhook1.example.com';
+const WEBHOOK_URL_2 = 'https://webhook2.example.com';
 
 const app = createApp();
 
@@ -26,7 +41,7 @@ function buildTestContext(): RequestContext {
   };
 }
 
-async function createTestFactory(ctx: RequestContext) {
+async function createTestFactory(ctx: RequestContext): Promise<string> {
   return withTenantTransaction(ctx, async (client) => {
     const factoryId = ctx.tenantId;
     await client.query(
@@ -39,7 +54,7 @@ async function createTestFactory(ctx: RequestContext) {
   });
 }
 
-async function createTestBuyer(ctx: RequestContext, factoryId: string) {
+async function createTestBuyer(ctx: RequestContext, factoryId: string): Promise<string> {
   return withTenantTransaction(ctx, async (client) => {
     const buyerId = uuidv4();
     await client.query(
@@ -52,7 +67,7 @@ async function createTestBuyer(ctx: RequestContext, factoryId: string) {
   });
 }
 
-async function createTestConnection(ctx: RequestContext, factoryId: string, buyerId: string) {
+async function createTestConnection(ctx: RequestContext, factoryId: string, buyerId: string): Promise<string> {
   return withTenantTransaction(ctx, async (client) => {
     const connId = uuidv4();
     await client.query(
@@ -65,14 +80,14 @@ async function createTestConnection(ctx: RequestContext, factoryId: string, buye
   });
 }
 
-async function getWebhookSubscriptions(ctx: RequestContext) {
+async function getWebhookSubscriptions(ctx: RequestContext): Promise<DbRow[]> {
   return withTenantClient(ctx, async (client) => {
     const res = await client.query('SELECT * FROM webhook_subscriptions ORDER BY created_at DESC');
     return res.rows;
   });
 }
 
-async function getWebhookDeliveries(ctx: RequestContext, subscriptionId: string) {
+async function getWebhookDeliveries(ctx: RequestContext, subscriptionId: string): Promise<DbRow[]> {
   return withTenantClient(ctx, async (client) => {
     const res = await client.query(
       'SELECT * FROM webhook_deliveries WHERE subscription_id = $1 ORDER BY created_at DESC',
@@ -120,16 +135,16 @@ describe('E2E: Webhook Delivery', () => {
       await createTestFactory(ctx);
 
       const subscriptionPayload = {
-        url: 'https://webhook.example.com/orders',
-        event_types: ['ORDER_CONFIRMED', 'SHIPMENT_CREATED'],
+        url: TEST_WEBHOOK_URL,
+        event_types: [EVENT_ORDER_CONFIRMED, 'SHIPMENT_CREATED'],
         secret: 'test-webhook-secret',
       };
 
       const res = await request(app)
-        .post('/api/v1/webhooks')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId)
+        .post(API_WEBHOOKS)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId)
         .send(subscriptionPayload);
 
       expect(res.status).toBe(201);
@@ -148,15 +163,15 @@ describe('E2E: Webhook Delivery', () => {
 
       const invalidPayload = {
         url: 'not-a-url',
-        event_types: ['ORDER_CONFIRMED'],
-        secret: 'test-secret',
+        event_types: [EVENT_ORDER_CONFIRMED],
+        secret: TEST_WEBHOOK_SECRET,
       };
 
       const res = await request(app)
-        .post('/api/v1/webhooks')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId)
+        .post(API_WEBHOOKS)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId)
         .send(invalidPayload);
 
       expect(res.status).toBe(400);
@@ -170,17 +185,17 @@ describe('E2E: Webhook Delivery', () => {
       const connId = await createTestConnection(ctx, ctx.tenantId, buyerId);
 
       // Register webhook
-      const webhookUrl = 'https://webhook.example.com/orders';
-      const webhookSecret = 'test-secret';
+      const webhookUrl = TEST_WEBHOOK_URL;
+      const webhookSecret = TEST_WEBHOOK_SECRET;
 
       const subRes = await request(app)
-        .post('/api/v1/webhooks')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId)
+        .post(API_WEBHOOKS)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId)
         .send({
           url: webhookUrl,
-          event_types: ['ORDER_CONFIRMED'],
+          event_types: [EVENT_ORDER_CONFIRMED],
           secret: webhookSecret,
         });
 
@@ -209,10 +224,10 @@ describe('E2E: Webhook Delivery', () => {
       };
 
       const orderRes = await request(app)
-        .post('/api/v1/orders')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId)
+        .post(API_ORDERS)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId)
         .send(orderPayload);
 
       const orderId = orderRes.body.data.id;
@@ -220,9 +235,9 @@ describe('E2E: Webhook Delivery', () => {
       // Confirm order (should trigger webhook)
       await request(app)
         .post(`/api/v1/orders/${orderId}/confirm`)
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId);
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId);
 
       // In real system, webhook would be delivered asynchronously
       // Verify delivery record exists
@@ -234,12 +249,12 @@ describe('E2E: Webhook Delivery', () => {
     it('should include HMAC signature in webhook headers', async () => {
       // This test verifies the HMAC generation logic
       const payload = JSON.stringify({
-        event: 'ORDER_CONFIRMED',
+        event: EVENT_ORDER_CONFIRMED,
         order_id: 'order-123',
         timestamp: new Date().toISOString(),
       });
 
-      const secret = 'test-secret';
+      const secret = TEST_WEBHOOK_SECRET;
       const signature = generateHmacSignature(payload, secret);
 
       // Verify signature is deterministic
@@ -248,7 +263,7 @@ describe('E2E: Webhook Delivery', () => {
 
       // Verify signature changes with different payload
       const payload2 = JSON.stringify({
-        event: 'ORDER_CONFIRMED',
+        event: EVENT_ORDER_CONFIRMED,
         order_id: 'order-456',
         timestamp: new Date().toISOString(),
       });
@@ -262,23 +277,23 @@ describe('E2E: Webhook Delivery', () => {
       // Register 3 webhooks
       for (let i = 0; i < 3; i++) {
         await request(app)
-          .post('/api/v1/webhooks')
-          .set('Authorization', authToken)
-          .set('X-Tenant-ID', ctx.tenantId)
-          .set('X-User-ID', ctx.userId)
+          .post(API_WEBHOOKS)
+          .set(HEADER_AUTH, authToken)
+          .set(HEADER_TENANT, ctx.tenantId)
+          .set(HEADER_USER, ctx.userId)
           .send({
             url: `https://webhook.example.com/endpoint-${i}`,
-            event_types: ['ORDER_CONFIRMED'],
+            event_types: [EVENT_ORDER_CONFIRMED],
             secret: `secret-${i}`,
           });
       }
 
       // List webhooks
       const res = await request(app)
-        .get('/api/v1/webhooks')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId);
+        .get(API_WEBHOOKS)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId);
 
       expect(res.status).toBe(200);
       expect(res.body.data.length).toBe(3);
@@ -289,14 +304,14 @@ describe('E2E: Webhook Delivery', () => {
 
       // Register webhook
       const subRes = await request(app)
-        .post('/api/v1/webhooks')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId)
+        .post(API_WEBHOOKS)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId)
         .send({
-          url: 'https://webhook.example.com/orders',
-          event_types: ['ORDER_CONFIRMED'],
-          secret: 'test-secret',
+          url: TEST_WEBHOOK_URL,
+          event_types: [EVENT_ORDER_CONFIRMED],
+          secret: TEST_WEBHOOK_SECRET,
         });
 
       const subscriptionId = subRes.body.data.id;
@@ -304,15 +319,15 @@ describe('E2E: Webhook Delivery', () => {
       // Delete webhook
       const deleteRes = await request(app)
         .delete(`/api/v1/webhooks/${subscriptionId}`)
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId);
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId);
 
       expect(deleteRes.status).toBe(204);
 
       // Verify deleted
       const subs = await getWebhookSubscriptions(ctx);
-      expect(subs.find((s: any) => s.id === subscriptionId)).toBeUndefined();
+      expect(subs.find((s) => s.id === subscriptionId)).toBeUndefined();
     });
 
     it('should filter webhook subscriptions by event type', async () => {
@@ -320,37 +335,37 @@ describe('E2E: Webhook Delivery', () => {
 
       // Register webhooks with different event types
       await request(app)
-        .post('/api/v1/webhooks')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId)
+        .post(API_WEBHOOKS)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId)
         .send({
-          url: 'https://webhook1.example.com',
-          event_types: ['ORDER_CONFIRMED'],
+          url: WEBHOOK_URL_1,
+          event_types: [EVENT_ORDER_CONFIRMED],
           secret: 'secret1',
         });
 
       await request(app)
-        .post('/api/v1/webhooks')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId)
+        .post(API_WEBHOOKS)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId)
         .send({
-          url: 'https://webhook2.example.com',
+          url: WEBHOOK_URL_2,
           event_types: ['SHIPMENT_CREATED', 'INVOICE_CREATED'],
           secret: 'secret2',
         });
 
       // List and filter by event type
       const res = await request(app)
-        .get('/api/v1/webhooks?event_type=ORDER_CONFIRMED')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId);
+        .get(`${API_WEBHOOKS}?event_type=${EVENT_ORDER_CONFIRMED}`)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId);
 
       expect(res.status).toBe(200);
       expect(res.body.data.length).toBe(1);
-      expect(res.body.data[0].url).toBe('https://webhook1.example.com');
+      expect(res.body.data[0].url).toBe(WEBHOOK_URL_1);
     });
 
     it('should enforce tenant isolation for webhooks', async () => {
@@ -363,22 +378,22 @@ describe('E2E: Webhook Delivery', () => {
 
       // Register webhook for ctx1
       await request(app)
-        .post('/api/v1/webhooks')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx1.tenantId)
-        .set('X-User-ID', ctx1.userId)
+        .post(API_WEBHOOKS)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx1.tenantId)
+        .set(HEADER_USER, ctx1.userId)
         .send({
-          url: 'https://webhook1.example.com',
-          event_types: ['ORDER_CONFIRMED'],
+          url: WEBHOOK_URL_1,
+          event_types: [EVENT_ORDER_CONFIRMED],
           secret: 'secret1',
         });
 
       // Try to list webhooks as ctx2
       const res = await request(app)
-        .get('/api/v1/webhooks')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx2.tenantId)
-        .set('X-User-ID', ctx2.userId);
+        .get(API_WEBHOOKS)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx2.tenantId)
+        .set(HEADER_USER, ctx2.userId);
 
       expect(res.status).toBe(200);
       expect(res.body.data.length).toBe(0); // Should see only its own webhooks

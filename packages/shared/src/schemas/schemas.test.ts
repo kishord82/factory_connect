@@ -155,6 +155,7 @@ describe('Zod Canonical Schemas', () => {
     });
 
     it('rejects shipment without order_id', () => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { order_id, ...noOrder } = validShipment;
       const result = CanonicalShipmentCreateSchema.safeParse(noOrder);
       expect(result.success).toBe(false);

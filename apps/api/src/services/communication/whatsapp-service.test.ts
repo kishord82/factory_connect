@@ -2,6 +2,7 @@
  * Tests for WhatsApp service.
  */
 
+import type { CaRequestContext } from '@fc/shared';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import * as whatsappService from './whatsapp-service.js';
@@ -37,7 +38,7 @@ const mockCtx = {
   role: 'admin',
   caFirmId: 'firm1',
   subscriptionTier: 'professional',
-} as any;
+} satisfies CaRequestContext;
 
 describe('WhatsApp Service', () => {
   beforeEach(() => {

@@ -169,7 +169,7 @@ describe('Export EDI Service', () => {
     });
 
     it('should return empty array when no claims exist', () => {
-      const claims: any[] = [];
+      const claims: unknown[] = [];
       expect(claims).toHaveLength(0);
     });
   });

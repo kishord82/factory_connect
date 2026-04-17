@@ -2,12 +2,23 @@
  * Integration: Middleware stack — auth, tenant context, rate limit, idempotency, validation
  */
 
-import type { RequestContext } from '@fc/shared';
 import request from 'supertest';
 import { v4 as uuidv4 } from 'uuid';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 
 import { createApp } from '../../app.js';
+
+const HEADER_AUTH = 'Authorization';
+const HEADER_TENANT = 'X-Tenant-ID';
+const HEADER_USER = 'X-User-ID';
+const HEADER_CORRELATION = 'X-Correlation-ID';
+const HEADER_IDEMPOTENCY = 'X-Idempotency-Key';
+const API_ORDERS = '/api/v1/orders';
+const TEST_AUTH_TOKEN = 'Bearer test-token';
+const API_ORDERS_INVALID = '/api/v1/orders/invalid-uuid';
+const RESP_CORRELATION_ID = 'x-correlation-id';
+const RESP_RATELIMIT_LIMIT = 'ratelimit-limit';
+const RESP_RATELIMIT_REMAINING = 'ratelimit-remaining';
 
 const app = createApp();
 
@@ -27,7 +38,7 @@ describe('Integration: Middleware Stack', () => {
 
     it('should reject request without authorization header on protected endpoint', async () => {
       const res = await request(app)
-        .get('/api/v1/orders');
+        .get(API_ORDERS);
 
       expect(res.status).toBe(401);
       expect(res.body.error?.code).toBeDefined();
@@ -35,8 +46,8 @@ describe('Integration: Middleware Stack', () => {
 
     it('should reject request with invalid JWT token', async () => {
       const res = await request(app)
-        .get('/api/v1/orders')
-        .set('Authorization', 'Bearer invalid-token');
+        .get(API_ORDERS)
+        .set(HEADER_AUTH, 'Bearer invalid-token');
 
       expect(res.status).toBe(401);
     });
@@ -46,8 +57,8 @@ describe('Integration: Middleware Stack', () => {
       const expiredToken = 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MDAwMDAwMDB9.invalid';
 
       const res = await request(app)
-        .get('/api/v1/orders')
-        .set('Authorization', expiredToken);
+        .get(API_ORDERS)
+        .set(HEADER_AUTH, expiredToken);
 
       expect(res.status).toBe(401);
     });
@@ -59,10 +70,10 @@ describe('Integration: Middleware Stack', () => {
       // Mock the JWT verification to accept this token
       // (In real tests, use a test JWT generator or mock the auth middleware)
       const res = await request(app)
-        .get('/api/v1/orders')
-        .set('Authorization', validToken)
-        .set('X-Tenant-ID', validTenantId)
-        .set('X-User-ID', validUserId);
+        .get(API_ORDERS)
+        .set(HEADER_AUTH, validToken)
+        .set(HEADER_TENANT, validTenantId)
+        .set(HEADER_USER, validUserId);
 
       // Should get past auth middleware
       // Actual response depends on whether test data exists
@@ -71,14 +82,14 @@ describe('Integration: Middleware Stack', () => {
   });
 
   describe('Tenant Context Middleware', () => {
-    const authToken = 'Bearer test-token';
+    const authToken = TEST_AUTH_TOKEN;
 
     it('should extract tenant_id from X-Tenant-ID header', async () => {
       const res = await request(app)
-        .get('/api/v1/orders')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', validTenantId)
-        .set('X-User-ID', validUserId);
+        .get(API_ORDERS)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, validTenantId)
+        .set(HEADER_USER, validUserId);
 
       // Should accept the request with proper tenant context
       expect(res.status).not.toBe(400);
@@ -86,9 +97,9 @@ describe('Integration: Middleware Stack', () => {
 
     it('should reject request without X-Tenant-ID header', async () => {
       const res = await request(app)
-        .get('/api/v1/orders')
-        .set('Authorization', authToken)
-        .set('X-User-ID', validUserId);
+        .get(API_ORDERS)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_USER, validUserId);
 
       expect(res.status).toBe(400);
       expect(res.body.error?.code).toContain('TENANT');
@@ -96,29 +107,29 @@ describe('Integration: Middleware Stack', () => {
 
     it('should reject request with invalid tenant_id format', async () => {
       const res = await request(app)
-        .get('/api/v1/orders')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', 'not-a-uuid')
-        .set('X-User-ID', validUserId);
+        .get(API_ORDERS)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, 'not-a-uuid')
+        .set(HEADER_USER, validUserId);
 
       expect(res.status).toBe(400);
     });
 
     it('should extract user_id from X-User-ID header', async () => {
       const res = await request(app)
-        .get('/api/v1/orders')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', validTenantId)
-        .set('X-User-ID', validUserId);
+        .get(API_ORDERS)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, validTenantId)
+        .set(HEADER_USER, validUserId);
 
       expect(res.status).not.toBe(400);
     });
 
     it('should reject request without X-User-ID header', async () => {
       const res = await request(app)
-        .get('/api/v1/orders')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', validTenantId);
+        .get(API_ORDERS)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, validTenantId);
 
       expect(res.status).toBe(400);
       expect(res.body.error?.code).toContain('USER');
@@ -126,15 +137,15 @@ describe('Integration: Middleware Stack', () => {
   });
 
   describe('Correlation ID Middleware', () => {
-    const authToken = 'Bearer test-token';
+    const authToken = TEST_AUTH_TOKEN;
 
     it('should accept request with X-Correlation-ID header', async () => {
       const res = await request(app)
-        .get('/api/v1/orders')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', validTenantId)
-        .set('X-User-ID', validUserId)
-        .set('X-Correlation-ID', validCorrelationId);
+        .get(API_ORDERS)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, validTenantId)
+        .set(HEADER_USER, validUserId)
+        .set(HEADER_CORRELATION,validCorrelationId);
 
       // Should pass correlation ID middleware
       expect([200, 404, 500]).toContain(res.status);
@@ -142,29 +153,29 @@ describe('Integration: Middleware Stack', () => {
 
     it('should generate correlation ID if not provided', async () => {
       const res = await request(app)
-        .get('/api/v1/orders')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', validTenantId)
-        .set('X-User-ID', validUserId);
+        .get(API_ORDERS)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, validTenantId)
+        .set(HEADER_USER, validUserId);
 
       // Should generate a correlation ID in response headers
-      expect(res.headers['x-correlation-id']).toBeDefined();
+      expect(res.headers[RESP_CORRELATION_ID]).toBeDefined();
     });
 
     it('should propagate correlation ID in response header', async () => {
       const res = await request(app)
-        .get('/api/v1/orders')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', validTenantId)
-        .set('X-User-ID', validUserId)
-        .set('X-Correlation-ID', validCorrelationId);
+        .get(API_ORDERS)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, validTenantId)
+        .set(HEADER_USER, validUserId)
+        .set(HEADER_CORRELATION,validCorrelationId);
 
-      expect(res.headers['x-correlation-id']).toBe(validCorrelationId);
+      expect(res.headers[RESP_CORRELATION_ID]).toBe(validCorrelationId);
     });
   });
 
   describe('Rate Limiter Middleware', () => {
-    const authToken = 'Bearer test-token';
+    const authToken = TEST_AUTH_TOKEN;
 
     it('should allow requests within rate limit', async () => {
       const tenantId = uuidv4();
@@ -173,10 +184,10 @@ describe('Integration: Middleware Stack', () => {
       // Make several requests (below limit)
       for (let i = 0; i < 5; i++) {
         const res = await request(app)
-          .get('/api/v1/orders')
-          .set('Authorization', authToken)
-          .set('X-Tenant-ID', tenantId)
-          .set('X-User-ID', userId);
+          .get(API_ORDERS)
+          .set(HEADER_AUTH, authToken)
+          .set(HEADER_TENANT, tenantId)
+          .set(HEADER_USER, userId);
 
         expect(res.status).not.toBe(429);
       }
@@ -190,10 +201,10 @@ describe('Integration: Middleware Stack', () => {
       let statusCode = 200;
       for (let i = 0; i < 200; i++) {
         const res = await request(app)
-          .get('/api/v1/orders')
-          .set('Authorization', authToken)
-          .set('X-Tenant-ID', tenantId)
-          .set('X-User-ID', userId);
+          .get(API_ORDERS)
+          .set(HEADER_AUTH, authToken)
+          .set(HEADER_TENANT, tenantId)
+          .set(HEADER_USER, userId);
 
         statusCode = res.status;
         if (statusCode === 429) break;
@@ -204,25 +215,25 @@ describe('Integration: Middleware Stack', () => {
 
     it('should include rate limit headers', async () => {
       const res = await request(app)
-        .get('/api/v1/orders')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', validTenantId)
-        .set('X-User-ID', validUserId);
+        .get(API_ORDERS)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, validTenantId)
+        .set(HEADER_USER, validUserId);
 
-      expect(res.headers['ratelimit-limit']).toBeDefined();
-      expect(res.headers['ratelimit-remaining']).toBeDefined();
+      expect(res.headers[RESP_RATELIMIT_LIMIT]).toBeDefined();
+      expect(res.headers[RESP_RATELIMIT_REMAINING]).toBeDefined();
     });
   });
 
   describe('Validation Middleware', () => {
-    const authToken = 'Bearer test-token';
+    const authToken = TEST_AUTH_TOKEN;
 
     it('should reject request with invalid JSON body', async () => {
       const res = await request(app)
-        .post('/api/v1/orders')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', validTenantId)
-        .set('X-User-ID', validUserId)
+        .post(API_ORDERS)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, validTenantId)
+        .set(HEADER_USER, validUserId)
         .set('Content-Type', 'application/json')
         .send('{invalid json}');
 
@@ -231,10 +242,10 @@ describe('Integration: Middleware Stack', () => {
 
     it('should validate request body against schema', async () => {
       const res = await request(app)
-        .post('/api/v1/orders')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', validTenantId)
-        .set('X-User-ID', validUserId)
+        .post(API_ORDERS)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, validTenantId)
+        .set(HEADER_USER, validUserId)
         .send({
           // Missing required fields
           buyer_id: uuidv4(),
@@ -247,9 +258,9 @@ describe('Integration: Middleware Stack', () => {
     it('should validate URL parameters', async () => {
       const res = await request(app)
         .get('/api/v1/orders/not-a-uuid')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', validTenantId)
-        .set('X-User-ID', validUserId);
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, validTenantId)
+        .set(HEADER_USER, validUserId);
 
       expect(res.status).toBe(400);
     });
@@ -257,9 +268,9 @@ describe('Integration: Middleware Stack', () => {
     it('should validate query parameters', async () => {
       const res = await request(app)
         .get('/api/v1/orders?page=invalid&pageSize=100')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', validTenantId)
-        .set('X-User-ID', validUserId);
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, validTenantId)
+        .set(HEADER_USER, validUserId);
 
       expect(res.status).toBe(400);
     });
@@ -267,9 +278,9 @@ describe('Integration: Middleware Stack', () => {
     it('should coerce query parameters to correct types', async () => {
       const res = await request(app)
         .get('/api/v1/orders?page=2&pageSize=50')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', validTenantId)
-        .set('X-User-ID', validUserId);
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, validTenantId)
+        .set(HEADER_USER, validUserId);
 
       // Should pass validation (coerced to numbers)
       expect([200, 404, 500]).toContain(res.status);
@@ -277,17 +288,17 @@ describe('Integration: Middleware Stack', () => {
   });
 
   describe('Idempotency Middleware', () => {
-    const authToken = 'Bearer test-token';
+    const authToken = TEST_AUTH_TOKEN;
 
     it('should accept request with X-Idempotency-Key header', async () => {
       const idempotencyKey = `idem-${uuidv4()}`;
 
       const res = await request(app)
-        .post('/api/v1/orders')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', validTenantId)
-        .set('X-User-ID', validUserId)
-        .set('X-Idempotency-Key', idempotencyKey)
+        .post(API_ORDERS)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, validTenantId)
+        .set(HEADER_USER, validUserId)
+        .set(HEADER_IDEMPOTENCY,idempotencyKey)
         .send({
           buyer_id: uuidv4(),
           connection_id: uuidv4(),
@@ -315,19 +326,19 @@ describe('Integration: Middleware Stack', () => {
       };
 
       const res1 = await request(app)
-        .post('/api/v1/orders')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', validTenantId)
-        .set('X-User-ID', validUserId)
-        .set('X-Idempotency-Key', idempotencyKey)
+        .post(API_ORDERS)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, validTenantId)
+        .set(HEADER_USER, validUserId)
+        .set(HEADER_IDEMPOTENCY,idempotencyKey)
         .send(orderPayload);
 
       const res2 = await request(app)
-        .post('/api/v1/orders')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', validTenantId)
-        .set('X-User-ID', validUserId)
-        .set('X-Idempotency-Key', idempotencyKey)
+        .post(API_ORDERS)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, validTenantId)
+        .set(HEADER_USER, validUserId)
+        .set(HEADER_IDEMPOTENCY,idempotencyKey)
         .send(orderPayload);
 
       // Second request should return cached response
@@ -340,10 +351,10 @@ describe('Integration: Middleware Stack', () => {
 
     it('should allow POST without idempotency key (backward compatibility)', async () => {
       const res = await request(app)
-        .post('/api/v1/orders')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', validTenantId)
-        .set('X-User-ID', validUserId)
+        .post(API_ORDERS)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, validTenantId)
+        .set(HEADER_USER, validUserId)
         .send({
           buyer_id: uuidv4(),
           connection_id: uuidv4(),
@@ -360,16 +371,16 @@ describe('Integration: Middleware Stack', () => {
   });
 
   describe('Feature Gate Middleware', () => {
-    const authToken = 'Bearer test-token';
+    const authToken = TEST_AUTH_TOKEN;
 
     it('should reject request if feature flag is disabled', async () => {
       // This would test against a disabled feature flag
       // Implementation depends on which endpoints have feature gates
       const res = await request(app)
-        .post('/api/v1/orders')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', validTenantId)
-        .set('X-User-ID', validUserId)
+        .post(API_ORDERS)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, validTenantId)
+        .set(HEADER_USER, validUserId)
         .set('X-Feature-Override', 'false')
         .send({
           buyer_id: uuidv4(),
@@ -387,14 +398,14 @@ describe('Integration: Middleware Stack', () => {
   });
 
   describe('Error Handler Middleware', () => {
-    const authToken = 'Bearer test-token';
+    const authToken = TEST_AUTH_TOKEN;
 
     it('should return error in standardized format', async () => {
       const res = await request(app)
-        .get('/api/v1/orders/invalid-uuid')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', validTenantId)
-        .set('X-User-ID', validUserId);
+        .get(API_ORDERS_INVALID)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, validTenantId)
+        .set(HEADER_USER, validUserId);
 
       expect(res.status).toBe(400);
       expect(res.body.error).toBeDefined();
@@ -406,21 +417,21 @@ describe('Integration: Middleware Stack', () => {
       const correlationId = `error-${uuidv4()}`;
 
       const res = await request(app)
-        .get('/api/v1/orders/invalid-uuid')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', validTenantId)
-        .set('X-User-ID', validUserId)
-        .set('X-Correlation-ID', correlationId);
+        .get(API_ORDERS_INVALID)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, validTenantId)
+        .set(HEADER_USER, validUserId)
+        .set(HEADER_CORRELATION,correlationId);
 
-      expect(res.headers['x-correlation-id']).toBe(correlationId);
+      expect(res.headers[RESP_CORRELATION_ID]).toBe(correlationId);
     });
 
     it('should not expose sensitive information in error messages', async () => {
       const res = await request(app)
-        .get('/api/v1/orders/invalid-uuid')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', validTenantId)
-        .set('X-User-ID', validUserId);
+        .get(API_ORDERS_INVALID)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, validTenantId)
+        .set(HEADER_USER, validUserId);
 
       // Error message should not contain database details, stack traces, etc.
       expect(res.body.error.message).not.toMatch(/query|sql|table|column/i);
@@ -429,9 +440,9 @@ describe('Integration: Middleware Stack', () => {
     it('should return 404 for non-existent endpoint', async () => {
       const res = await request(app)
         .get('/api/v1/nonexistent')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', validTenantId)
-        .set('X-User-ID', validUserId);
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, validTenantId)
+        .set(HEADER_USER, validUserId);
 
       expect(res.status).toBe(404);
     });

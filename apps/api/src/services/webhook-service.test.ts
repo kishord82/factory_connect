@@ -3,18 +3,12 @@
  * Covers registration, listing, deletion, testing, signature verification, and delivery.
  */
 
-import type { RequestContext } from '@fc/shared';
-import { FcError } from '@fc/shared';
+import crypto from 'crypto';
+
 import { beforeEach, describe, it, expect, vi } from 'vitest';
 
 import {
-  registerWebhook,
-  listWebhooks,
-  deleteWebhook,
-  testWebhook,
   verifySignature,
-  deliverWebhook,
-  processWebhookDeliveries,
 } from './webhook-service.js';
 
 // Mock database
@@ -33,12 +27,8 @@ vi.mock('@fc/database', () => ({
 // Mock fetch
 global.fetch = vi.fn();
 
-const mockCtx: RequestContext = {
-  tenantId: 'tenant-123',
-  userId: 'user-456',
-  correlationId: 'corr-789',
-  role: 'admin',
-};
+const TEST_SIGNING_SECRET = 'test-secret-key-for-signing';
+const EVENT_TYPE_ORDER_CONFIRMED = 'ORDER_CONFIRMED';
 
 describe('Webhook Service', () => {
   beforeEach(() => {
@@ -47,68 +37,29 @@ describe('Webhook Service', () => {
 
   describe('registerWebhook', () => {
     it('should register a new webhook with valid data', async () => {
-      const data = {
-        url: 'https://example.com/webhook',
-        events: ['ORDER_CONFIRMED', 'SHIPMENT_CREATED'],
-        secret: '1234567890123456789012345',
-        custom_headers: { 'Authorization': 'Bearer token' },
-      };
-
-      // Mock insertOne to return created webhook
-      const mockWebhook = {
-        id: 'webhook-123',
-        factory_id: mockCtx.tenantId,
-        ...data,
-        active: true,
-        failure_count: 0,
-        created_at: new Date(),
-        updated_at: new Date(),
-      };
-
-      vi.mocked(require('@fc/database').insertOne).mockResolvedValueOnce(mockWebhook);
-
       // This would require full database mocking, simplified here
       // Real test would use test database fixture
     });
 
     it('should reject webhook with invalid URL', async () => {
-      const data = {
-        url: 'not-a-url',
-        events: ['ORDER_CONFIRMED'],
-        secret: '1234567890123456789012345',
-      };
-
-      // expect(registerWebhook(mockCtx, data)).rejects.toThrow(FcError);
+      // expect(registerWebhook(mockCtx, { url: 'not-a-url', events: ['ORDER_CONFIRMED'], secret: '1234567890123456789012345' })).rejects.toThrow();
     });
 
     it('should reject webhook with no events', async () => {
-      const data = {
-        url: 'https://example.com/webhook',
-        events: [],
-        secret: '1234567890123456789012345',
-      };
-
-      // expect(registerWebhook(mockCtx, data)).rejects.toThrow(FcError);
+      // expect(registerWebhook(mockCtx, { url: 'https://example.com/webhook', events: [], secret: '1234567890123456789012345' })).rejects.toThrow();
     });
 
     it('should reject webhook with short secret', async () => {
-      const data = {
-        url: 'https://example.com/webhook',
-        events: ['ORDER_CONFIRMED'],
-        secret: 'short',
-      };
-
-      // expect(registerWebhook(mockCtx, data)).rejects.toThrow(FcError);
+      // expect(registerWebhook(mockCtx, { url: 'https://example.com/webhook', events: ['ORDER_CONFIRMED'], secret: 'short' })).rejects.toThrow();
     });
   });
 
   describe('verifySignature', () => {
     it('should verify valid HMAC-SHA256 signature', () => {
-      const payload = { event_type: 'ORDER_CONFIRMED', order_id: '123' };
-      const secret = 'test-secret-key-for-signing';
+      const payload = { event_type: EVENT_TYPE_ORDER_CONFIRMED, order_id: '123' };
+      const secret = TEST_SIGNING_SECRET;
 
       // Calculate signature
-      const crypto = require('crypto');
       const hmac = crypto.createHmac('sha256', secret);
       hmac.update(JSON.stringify(payload));
       const signature = `v1=${hmac.digest('base64')}`;
@@ -117,19 +68,18 @@ describe('Webhook Service', () => {
     });
 
     it('should reject invalid signature', () => {
-      const payload = { event_type: 'ORDER_CONFIRMED', order_id: '123' };
-      const secret = 'test-secret-key-for-signing';
+      const payload = { event_type: EVENT_TYPE_ORDER_CONFIRMED, order_id: '123' };
+      const secret = TEST_SIGNING_SECRET;
       const badSignature = 'v1=invalid-signature';
 
       expect(verifySignature(payload, badSignature, secret)).toBe(false);
     });
 
     it('should reject signature with wrong payload', () => {
-      const payload = { event_type: 'ORDER_CONFIRMED', order_id: '123' };
+      const payload = { event_type: EVENT_TYPE_ORDER_CONFIRMED, order_id: '123' };
       const otherPayload = { event_type: 'SHIPMENT_CREATED', order_id: '456' };
-      const secret = 'test-secret-key-for-signing';
+      const secret = TEST_SIGNING_SECRET;
 
-      const crypto = require('crypto');
       const hmac = crypto.createHmac('sha256', secret);
       hmac.update(JSON.stringify(payload));
       const signature = `v1=${hmac.digest('base64')}`;
@@ -138,11 +88,10 @@ describe('Webhook Service', () => {
     });
 
     it('should reject signature with wrong secret', () => {
-      const payload = { event_type: 'ORDER_CONFIRMED', order_id: '123' };
-      const secret = 'test-secret-key-for-signing';
+      const payload = { event_type: EVENT_TYPE_ORDER_CONFIRMED, order_id: '123' };
+      const secret = TEST_SIGNING_SECRET;
       const wrongSecret = 'different-secret-key';
 
-      const crypto = require('crypto');
       const hmac = crypto.createHmac('sha256', secret);
       hmac.update(JSON.stringify(payload));
       const signature = `v1=${hmac.digest('base64')}`;
@@ -151,13 +100,8 @@ describe('Webhook Service', () => {
     });
 
     it('should use timing-safe comparison', () => {
-      const payload = { event_type: 'ORDER_CONFIRMED' };
-      const secret = 'test-secret-key-for-signing';
-
-      const crypto = require('crypto');
-      const hmac = crypto.createHmac('sha256', secret);
-      hmac.update(JSON.stringify(payload));
-      const validSignature = `v1=${hmac.digest('base64')}`;
+      const payload = { event_type: EVENT_TYPE_ORDER_CONFIRMED };
+      const secret = TEST_SIGNING_SECRET;
 
       // Both should be false (for different reasons)
       expect(verifySignature(payload, 'v1=invalid', secret)).toBe(false);

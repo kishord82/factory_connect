@@ -29,6 +29,13 @@ import {
 } from './transform.js';
 import type { MappingConfig, MappingConfigDef } from './types.js';
 
+const DATE_ISO_STR = '2024-03-15T00:00:00Z';
+const DATE_FORMAT_YMD = 'YYYY-MM-DD';
+const DATE_FORMATTED_YMD = '2024-03-15';
+const HELLO_WORLD = 'hello world';
+const TEST_PO_NUMBER = 'PO-123';
+const TEST_ORDER_DATE = '2024-01-15T00:00:00Z';
+
 describe('Mapping Engine', () => {
   describe('getNestedValue', () => {
     it('gets top-level value', () => {
@@ -81,7 +88,7 @@ describe('Mapping Engine', () => {
           target_path: 'order_date',
           is_required: true,
           required: true,
-          transform: { type: 'format_date', params: { format: 'YYYY-MM-DD' } },
+          transform: { type: 'format_date', params: { format: DATE_FORMAT_YMD } },
         },
         {
           source_path: 'total',
@@ -104,21 +111,21 @@ describe('Mapping Engine', () => {
 
     it('maps fields with transforms', () => {
       const source = {
-        po_number: 'PO-123',
-        date: '2024-01-15T00:00:00Z',
+        po_number: TEST_PO_NUMBER,
+        date: TEST_ORDER_DATE,
         total: 1234.5,
         extra: 'x',
       };
       const result = applyMapping(source, config);
       expect(result.success).toBe(true);
-      expect(result.data.buyer_po_number).toBe('PO-123');
+      expect(result.data.buyer_po_number).toBe(TEST_PO_NUMBER);
       expect(result.data.order_date).toBe('2024-01-15');
       expect(result.data.total_amount).toBe('1234.50');
       expect(result.data.optional_val).toBe('N/A');
     });
 
     it('reports error for missing required field', () => {
-      const source = { date: '2024-01-15T00:00:00Z' };
+      const source = { date: TEST_ORDER_DATE };
       const result = applyMapping(source, config);
       expect(result.success).toBe(false);
       expect(result.errors[0].severity).toBe('error');
@@ -127,7 +134,7 @@ describe('Mapping Engine', () => {
     it('detects unmapped fields', () => {
       const source = {
         po_number: 'PO-1',
-        date: '2024-01-15T00:00:00Z',
+        date: TEST_ORDER_DATE,
         unknown_field: 'value',
       };
       const result = applyMapping(source, config);
@@ -177,7 +184,7 @@ describe('Transform Engine', () => {
   });
   it('applies format_date YYYYMMDD', () => {
     expect(
-      applyTransform('2024-03-15T00:00:00Z', {
+      applyTransform(DATE_ISO_STR, {
         type: 'format_date',
         params: { format: 'YYYYMMDD' },
       }),
@@ -209,7 +216,7 @@ describe('Transform Engine', () => {
 
 describe('Transform Chain', () => {
   it('applies multiple transforms in sequence', () => {
-    const result = applyTransformChain('hello world', [
+    const result = applyTransformChain(HELLO_WORLD, [
       { type: 'uppercase' },
       { type: 'pad', params: { length: 15, char: '*', side: 'right' } },
     ]);
@@ -228,15 +235,15 @@ describe('Transform Chain', () => {
 describe('Individual Transform Functions', () => {
   describe('dateFormat', () => {
     it('formats to ISO', () => {
-      expect(dateFormat('2024-03-15T00:00:00Z', { format: 'ISO' })).toBe(
+      expect(dateFormat(DATE_ISO_STR, { format: 'ISO' })).toBe(
         '2024-03-15T00:00:00.000Z',
       );
     });
     it('formats to YYYYMMDD', () => {
-      expect(dateFormat('2024-03-15T00:00:00Z', { format: 'YYYYMMDD' })).toBe('20240315');
+      expect(dateFormat(DATE_ISO_STR, { format: 'YYYYMMDD' })).toBe('20240315');
     });
     it('formats to YYYY-MM-DD', () => {
-      expect(dateFormat('2024-03-15T00:00:00Z', { format: 'YYYY-MM-DD' })).toBe('2024-03-15');
+      expect(dateFormat(DATE_ISO_STR, { format: DATE_FORMAT_YMD })).toBe(DATE_FORMATTED_YMD);
     });
   });
 
@@ -253,7 +260,7 @@ describe('Individual Transform Functions', () => {
     });
     it('evaluates contains condition', () => {
       expect(
-        conditional('hello world', {
+        conditional(HELLO_WORLD, {
           condition: 'contains',
           value: 'world',
           then: 'found',
@@ -301,10 +308,10 @@ describe('Individual Transform Functions', () => {
 
   describe('substring', () => {
     it('extracts substring with start and end', () => {
-      expect(substring('hello world', { start: 0, end: 5 })).toBe('hello');
+      expect(substring(HELLO_WORLD, { start: 0, end: 5 })).toBe('hello');
     });
     it('extracts from start to end of string', () => {
-      expect(substring('hello world', { start: 6 })).toBe('world');
+      expect(substring(HELLO_WORLD, { start: 6 })).toBe('world');
     });
   });
 
@@ -412,7 +419,7 @@ describe('Validation', () => {
         ],
         is_active: true,
       };
-      const errors = validateRequiredFields({ po_number: 'PO-123' }, config);
+      const errors = validateRequiredFields({ po_number: TEST_PO_NUMBER }, config);
       expect(errors).toHaveLength(0);
     });
   });

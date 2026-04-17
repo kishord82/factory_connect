@@ -13,6 +13,7 @@ import type { LlmProvider, LlmOptions, LlmResponse, LlmProviderConfig } from './
 const TEST_API_KEY = 'test-api-key';
 const TEST_PRIORITY = 0;
 const TEST_PRIORITY_1 = 1;
+const TEST_PROMPT = 'test prompt';
 
 class MockProvider implements LlmProvider {
   name: string;
@@ -148,7 +149,7 @@ describe('LlmRegistry', () => {
         mockProvider2,
       );
 
-      const response = await registry.generate('test prompt');
+      const response = await registry.generate(TEST_PROMPT);
 
       expect(response.provider).toBe('provider2'); // Lower priority number
       expect(mockProvider2.getCallCount()).toBe(1);
@@ -180,7 +181,7 @@ describe('LlmRegistry', () => {
         mockProvider2,
       );
 
-      const response = await registry.generate('test prompt');
+      const response = await registry.generate(TEST_PROMPT);
 
       expect(response.provider).toBe('provider2');
       expect(mockProvider1.getCallCount()).toBe(1);
@@ -385,7 +386,7 @@ describe('LlmRegistry', () => {
         mockProvider1,
       );
 
-      await registry.generate('test prompt');
+      await registry.generate(TEST_PROMPT);
 
       expect(usageLogMock).toHaveBeenCalledWith(
         expect.objectContaining({

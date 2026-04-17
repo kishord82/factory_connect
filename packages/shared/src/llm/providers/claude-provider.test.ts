@@ -8,11 +8,14 @@ import { FcError } from '../../errors/index.js';
 
 import { ClaudeProvider } from './claude-provider.js';
 
+const TEST_PROMPT = 'test';
+const TEST_MODEL = 'claude-test';
+
 const MOCK_RESPONSE_BASE = {
   id: 'msg-123',
   type: 'message',
   role: 'assistant',
-  model: 'claude-test',
+  model: TEST_MODEL,
   stop_reason: 'end_turn',
   stop_sequence: null,
 };
@@ -32,14 +35,12 @@ function createMockResponse(
   };
 }
 
-const TEST_PROMPT = 'test';
-
 describe('ClaudeProvider', () => {
   let provider: ClaudeProvider;
   let fetchMock: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    provider = new ClaudeProvider('test-api-key', 'claude-test');
+    provider = new ClaudeProvider('test-api-key', TEST_MODEL);
     fetchMock = vi.fn();
     global.fetch = fetchMock;
   });
@@ -88,7 +89,7 @@ describe('ClaudeProvider', () => {
       const response = await provider.generate('test prompt');
 
       expect(response.content).toBe('Test response');
-      expect(response.model).toBe('claude-test');
+      expect(response.model).toBe(TEST_MODEL);
       expect(response.tokens_used).toBe(30);
       expect(response.provider).toBe('claude');
       expect(response.latency_ms).toBeGreaterThanOrEqual(0);
@@ -272,7 +273,7 @@ describe('ClaudeProvider', () => {
           type: 'message',
           role: 'assistant',
           content: [{ type: 'text', text: 'Response' }],
-          model: 'claude-test',
+          model: TEST_MODEL,
           stop_reason: 'end_turn',
           stop_sequence: null,
           usage: { input_tokens: 10, output_tokens: 10 },
@@ -293,7 +294,7 @@ describe('ClaudeProvider', () => {
           type: 'message',
           role: 'assistant',
           content: [{ type: 'text', text: 'Response' }],
-          model: 'claude-test',
+          model: TEST_MODEL,
           stop_reason: 'end_turn',
           stop_sequence: null,
           usage: { input_tokens: 10, output_tokens: 10 },

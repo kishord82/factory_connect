@@ -8,6 +8,18 @@ import request from 'supertest';
 import { v4 as uuidv4 } from 'uuid';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
+const HEADER_AUTH = 'Authorization';
+const HEADER_TENANT = 'X-Tenant-ID';
+const HEADER_USER = 'X-User-ID';
+const API_RESYNC = '/api/v1/resync';
+
+interface DbRow {
+  [key: string]: unknown;
+}
+const TEST_DATE_FROM = '2024-01-01';
+const TEST_DATE_TO = '2024-01-31';
+const TEST_REASON = 'Manual reconciliation';
+
 import { createApp } from '../../app.js';
 
 
@@ -22,7 +34,7 @@ function buildTestContext(): RequestContext {
   };
 }
 
-async function createTestFactory(ctx: RequestContext) {
+async function createTestFactory(ctx: RequestContext): Promise<string> {
   return withTenantTransaction(ctx, async (client) => {
     const factoryId = ctx.tenantId;
     await client.query(
@@ -35,7 +47,7 @@ async function createTestFactory(ctx: RequestContext) {
   });
 }
 
-async function createTestConnection(ctx: RequestContext, factoryId: string) {
+async function createTestConnection(ctx: RequestContext, factoryId: string): Promise<string> {
   return withTenantTransaction(ctx, async (client) => {
     const connId = uuidv4();
     await client.query(
@@ -60,7 +72,7 @@ async function createTestConnection(ctx: RequestContext, factoryId: string) {
   });
 }
 
-async function getResyncStatus(ctx: RequestContext, resyncId: string) {
+async function getResyncStatus(ctx: RequestContext, resyncId: string): Promise<DbRow> {
   return withTenantClient(ctx, async (client) => {
     const res = await client.query(
       'SELECT * FROM resync_requests WHERE id = $1',
@@ -70,15 +82,6 @@ async function getResyncStatus(ctx: RequestContext, resyncId: string) {
   });
 }
 
-async function getResyncItems(ctx: RequestContext, resyncId: string) {
-  return withTenantClient(ctx, async (client) => {
-    const res = await client.query(
-      'SELECT * FROM resync_items WHERE resync_request_id = $1 ORDER BY created_at ASC',
-      [resyncId],
-    );
-    return res.rows;
-  });
-}
 
 describe('E2E: Resync Flow', () => {
   let ctx: RequestContext;
@@ -112,16 +115,16 @@ describe('E2E: Resync Flow', () => {
 
       const resyncPayload = {
         connection_id: connId,
-        date_from: '2024-01-01',
-        date_to: '2024-01-31',
-        reason: 'Manual reconciliation',
+        date_from: TEST_DATE_FROM,
+        date_to: TEST_DATE_TO,
+        reason: TEST_REASON,
       };
 
       const res = await request(app)
-        .post('/api/v1/resync')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId)
+        .post(API_RESYNC)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId)
         .send(resyncPayload);
 
       expect(res.status).toBe(201);
@@ -141,15 +144,15 @@ describe('E2E: Resync Flow', () => {
 
       // Create resync
       const createRes = await request(app)
-        .post('/api/v1/resync')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId)
+        .post(API_RESYNC)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId)
         .send({
           connection_id: connId,
-          date_from: '2024-01-01',
-          date_to: '2024-01-31',
-          reason: 'Manual reconciliation',
+          date_from: TEST_DATE_FROM,
+          date_to: TEST_DATE_TO,
+          reason: TEST_REASON,
         });
 
       const resyncId = createRes.body.data.id;
@@ -157,9 +160,9 @@ describe('E2E: Resync Flow', () => {
       // Validate resync
       const validateRes = await request(app)
         .post(`/api/v1/resync/${resyncId}/validate`)
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId);
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId);
 
       expect(validateRes.status).toBe(200);
       expect(validateRes.body.data.status).toBe('VALIDATED');
@@ -175,31 +178,31 @@ describe('E2E: Resync Flow', () => {
 
       // Create and validate resync
       const createRes = await request(app)
-        .post('/api/v1/resync')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId)
+        .post(API_RESYNC)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId)
         .send({
           connection_id: connId,
-          date_from: '2024-01-01',
-          date_to: '2024-01-31',
-          reason: 'Manual reconciliation',
+          date_from: TEST_DATE_FROM,
+          date_to: TEST_DATE_TO,
+          reason: TEST_REASON,
         });
 
       const resyncId = createRes.body.data.id;
 
       await request(app)
         .post(`/api/v1/resync/${resyncId}/validate`)
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId);
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId);
 
       // Approve resync
       const approveRes = await request(app)
         .post(`/api/v1/resync/${resyncId}/approve`)
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId);
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId);
 
       expect(approveRes.status).toBe(200);
       expect(approveRes.body.data.status).toBe('APPROVED');
@@ -213,37 +216,37 @@ describe('E2E: Resync Flow', () => {
       const connId = await createTestConnection(ctx, ctx.tenantId);
 
       const createRes = await request(app)
-        .post('/api/v1/resync')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId)
+        .post(API_RESYNC)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId)
         .send({
           connection_id: connId,
-          date_from: '2024-01-01',
-          date_to: '2024-01-31',
-          reason: 'Manual reconciliation',
+          date_from: TEST_DATE_FROM,
+          date_to: TEST_DATE_TO,
+          reason: TEST_REASON,
         });
 
       const resyncId = createRes.body.data.id;
 
       await request(app)
         .post(`/api/v1/resync/${resyncId}/validate`)
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId);
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId);
 
       await request(app)
         .post(`/api/v1/resync/${resyncId}/approve`)
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId);
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId);
 
       // Queue resync
       const queueRes = await request(app)
         .post(`/api/v1/resync/${resyncId}/queue`)
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId);
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId);
 
       expect(queueRes.status).toBe(200);
       expect(queueRes.body.data.status).toBe('QUEUED');
@@ -257,43 +260,43 @@ describe('E2E: Resync Flow', () => {
       const connId = await createTestConnection(ctx, ctx.tenantId);
 
       const createRes = await request(app)
-        .post('/api/v1/resync')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId)
+        .post(API_RESYNC)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId)
         .send({
           connection_id: connId,
-          date_from: '2024-01-01',
-          date_to: '2024-01-31',
-          reason: 'Manual reconciliation',
+          date_from: TEST_DATE_FROM,
+          date_to: TEST_DATE_TO,
+          reason: TEST_REASON,
         });
 
       const resyncId = createRes.body.data.id;
 
       await request(app)
         .post(`/api/v1/resync/${resyncId}/validate`)
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId);
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId);
 
       await request(app)
         .post(`/api/v1/resync/${resyncId}/approve`)
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId);
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId);
 
       await request(app)
         .post(`/api/v1/resync/${resyncId}/queue`)
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId);
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId);
 
       // Start processing
       const startRes = await request(app)
         .post(`/api/v1/resync/${resyncId}/start`)
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId);
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId);
 
       expect(startRes.status).toBe(200);
       expect(startRes.body.data.status).toBe('IN_PROGRESS');
@@ -301,9 +304,9 @@ describe('E2E: Resync Flow', () => {
       // Complete processing
       const completeRes = await request(app)
         .post(`/api/v1/resync/${resyncId}/complete`)
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId);
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId);
 
       expect(completeRes.status).toBe(200);
       expect(completeRes.body.data.status).toBe('COMPLETED');
@@ -317,31 +320,31 @@ describe('E2E: Resync Flow', () => {
       const connId = await createTestConnection(ctx, ctx.tenantId);
 
       const createRes = await request(app)
-        .post('/api/v1/resync')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId)
+        .post(API_RESYNC)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId)
         .send({
           connection_id: connId,
-          date_from: '2024-01-01',
-          date_to: '2024-01-31',
-          reason: 'Manual reconciliation',
+          date_from: TEST_DATE_FROM,
+          date_to: TEST_DATE_TO,
+          reason: TEST_REASON,
         });
 
       const resyncId = createRes.body.data.id;
 
       await request(app)
         .post(`/api/v1/resync/${resyncId}/validate`)
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId);
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId);
 
       // Reject resync
       const rejectRes = await request(app)
         .post(`/api/v1/resync/${resyncId}/reject`)
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId)
         .send({ reason: 'Invalid date range' });
 
       expect(rejectRes.status).toBe(200);
@@ -356,49 +359,49 @@ describe('E2E: Resync Flow', () => {
       const connId = await createTestConnection(ctx, ctx.tenantId);
 
       const createRes = await request(app)
-        .post('/api/v1/resync')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId)
+        .post(API_RESYNC)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId)
         .send({
           connection_id: connId,
-          date_from: '2024-01-01',
-          date_to: '2024-01-31',
-          reason: 'Manual reconciliation',
+          date_from: TEST_DATE_FROM,
+          date_to: TEST_DATE_TO,
+          reason: TEST_REASON,
         });
 
       const resyncId = createRes.body.data.id;
 
       await request(app)
         .post(`/api/v1/resync/${resyncId}/validate`)
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId);
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId);
 
       await request(app)
         .post(`/api/v1/resync/${resyncId}/approve`)
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId);
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId);
 
       await request(app)
         .post(`/api/v1/resync/${resyncId}/queue`)
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId);
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId);
 
       await request(app)
         .post(`/api/v1/resync/${resyncId}/start`)
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId);
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId);
 
       // Mark as partial failure
       const failRes = await request(app)
         .post(`/api/v1/resync/${resyncId}/partial-fail`)
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId)
         .send({ failed_items: ['item-1', 'item-2'] });
 
       expect(failRes.status).toBe(200);
@@ -415,10 +418,10 @@ describe('E2E: Resync Flow', () => {
       // Create 3 resync requests with different statuses
       for (let i = 0; i < 3; i++) {
         await request(app)
-          .post('/api/v1/resync')
-          .set('Authorization', authToken)
-          .set('X-Tenant-ID', ctx.tenantId)
-          .set('X-User-ID', ctx.userId)
+          .post(API_RESYNC)
+          .set(HEADER_AUTH, authToken)
+          .set(HEADER_TENANT, ctx.tenantId)
+          .set(HEADER_USER, ctx.userId)
           .send({
             connection_id: connId,
             date_from: `2024-0${i + 1}-01`,
@@ -429,10 +432,10 @@ describe('E2E: Resync Flow', () => {
 
       // List all resync requests
       const listRes = await request(app)
-        .get('/api/v1/resync')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId);
+        .get(API_RESYNC)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId);
 
       expect(listRes.status).toBe(200);
       expect(listRes.body.data.length).toBe(3);
@@ -444,22 +447,22 @@ describe('E2E: Resync Flow', () => {
 
       // Create two resync requests
       const res1 = await request(app)
-        .post('/api/v1/resync')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId)
+        .post(API_RESYNC)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId)
         .send({
           connection_id: connId,
-          date_from: '2024-01-01',
-          date_to: '2024-01-31',
+          date_from: TEST_DATE_FROM,
+          date_to: TEST_DATE_TO,
           reason: 'Resync 1',
         });
 
-      const res2 = await request(app)
-        .post('/api/v1/resync')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId)
+      await request(app)
+        .post(API_RESYNC)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId)
         .send({
           connection_id: connId,
           date_from: '2024-02-01',
@@ -471,16 +474,16 @@ describe('E2E: Resync Flow', () => {
       const resyncId1 = res1.body.data.id;
       await request(app)
         .post(`/api/v1/resync/${resyncId1}/validate`)
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId);
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId);
 
       // Filter by status
       const listRes = await request(app)
-        .get('/api/v1/resync?status=VALIDATED')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId);
+        .get(`${API_RESYNC}?status=VALIDATED`)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId);
 
       expect(listRes.status).toBe(200);
       expect(listRes.body.data.length).toBe(1);

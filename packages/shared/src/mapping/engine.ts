@@ -171,6 +171,77 @@ export function validateRequiredFields(
 }
 
 /**
+ * Resolve the effective fields array — prefers field_mappings over legacy fields.
+ */
+function resolveFields(config: MappingConfig | MappingConfigDef): (FieldMapping | MappingFieldDef)[] {
+  const fieldMappings = ('field_mappings' in config) ? config.field_mappings : [];
+  const legacyFields = ('fields' in config) ? ((config as MappingConfigDef).fields ?? []) : [];
+  return fieldMappings.length > 0 ? fieldMappings : legacyFields;
+}
+
+/**
+ * Resolve the value to use — returns default or pushes an error if required and missing.
+ */
+function resolveMissingValue(
+  field: FieldMapping | MappingFieldDef,
+  errors: ValidationError[],
+): { value: unknown; skip: boolean } {
+  if (field.default_value !== undefined) {
+    return { value: field.default_value, skip: false };
+  }
+  if (resolveIsRequired(field)) {
+    errors.push({
+      path: field.target_path,
+      message: `Required field missing: ${field.source_path}`,
+      severity: 'error',
+    });
+  }
+  return { value: undefined, skip: true };
+}
+
+/**
+ * Apply transforms to a value — supports chain (new) and single (legacy).
+ */
+function applyFieldTransforms(value: unknown, field: FieldMapping | MappingFieldDef): unknown {
+  if ('transform_rules' in field && field.transform_rules?.length) {
+    return applyTransformChain(value, field.transform_rules);
+  }
+  if ('transform' in field && field.transform) {
+    return applyTransform(value, field.transform);
+  }
+  return value;
+}
+
+/**
+ * Map a single field from source to result — returns false if field should be skipped.
+ */
+function applyFieldMapping(
+  field: FieldMapping | MappingFieldDef,
+  source: Record<string, unknown>,
+  result: Record<string, unknown>,
+  errors: ValidationError[],
+): void {
+  let value = getNestedValue(source, field.source_path);
+
+  if (value === undefined || value === null) {
+    const resolved = resolveMissingValue(field, errors);
+    if (resolved.skip) return;
+    value = resolved.value;
+  }
+
+  try {
+    const transformed = applyFieldTransforms(value, field);
+    setNestedValue(result, field.target_path, transformed);
+  } catch (err) {
+    errors.push({
+      path: field.target_path,
+      message: err instanceof Error ? err.message : 'Transform failed',
+      severity: 'error',
+    });
+  }
+}
+
+/**
  * Apply a mapping configuration to source data.
  * Supports both new MappingConfig and legacy MappingConfigDef.
  */
@@ -185,52 +256,11 @@ export function applyMapping(
   const warnings: string[] = [];
   const mappedSourcePaths = new Set<string>();
 
-  // Handle both new and legacy field names — prefer non-empty array
-  const fieldMappings = ('field_mappings' in config) ? config.field_mappings : [];
-  const legacyFields = ('fields' in config) ? ((config as MappingConfigDef).fields ?? []) : [];
-  const fields: (FieldMapping | MappingFieldDef)[] = fieldMappings.length > 0 ? fieldMappings : legacyFields;
+  const fields = resolveFields(config);
 
   for (const field of fields) {
     mappedSourcePaths.add(field.source_path);
-
-    try {
-      let value = getNestedValue(source, field.source_path);
-
-      // Check required status (handle both is_required and required)
-      const isRequired = 'is_required' in field ? field.is_required : ('required' in field ? (field as MappingFieldDef).required : false);
-
-      // Apply default if value is missing
-      if (value === undefined || value === null) {
-        if (field.default_value !== undefined) {
-          value = field.default_value;
-        } else if (isRequired) {
-          errors.push({
-            path: field.target_path,
-            message: `Required field missing: ${field.source_path}`,
-            severity: 'error',
-          });
-          continue;
-        } else {
-          continue; // Optional and no default — skip
-        }
-      }
-
-      // Apply transform(s)
-      // Support both single transform (legacy) and chain (new)
-      if ('transform_rules' in field && field.transform_rules?.length) {
-        value = applyTransformChain(value, field.transform_rules);
-      } else if ('transform' in field && field.transform) {
-        value = applyTransform(value, field.transform);
-      }
-
-      setNestedValue(result, field.target_path, value);
-    } catch (err) {
-      errors.push({
-        path: field.target_path,
-        message: err instanceof Error ? err.message : 'Transform failed',
-        severity: 'error',
-      });
-    }
+    applyFieldMapping(field, source, result, errors);
   }
 
   // Detect unmapped fields

@@ -5,6 +5,12 @@
 import type { CaRequestContext } from '@fc/shared';
 import { describe, it, expect } from 'vitest';
 
+const NOTICE_TYPE_IT = 'IT_NOTICE';
+const NOTICE_TYPE_GST = 'GST_NOTICE';
+const TEST_ISSUED_DATE = '2024-01-15';
+const TEST_RECEIVED_DATE = '2024-01-20';
+const TEST_RESPONSE_DUE_DATE = '2024-02-20';
+
 const mockCaCtx: CaRequestContext = {
   caFirmId: 'ca-firm-123',
   tenantId: 'ca-firm-123',
@@ -21,12 +27,12 @@ describe('Notice Service', () => {
         id: 'notice-1',
         ca_firm_id: mockCaCtx.caFirmId,
         client_id: 'client-123',
-        notice_type: 'IT_NOTICE',
+        notice_type: NOTICE_TYPE_IT,
         reference: 'IT-2024-001',
         authority: 'Income Tax Department',
-        issued_date: new Date('2024-01-15'),
-        received_date: new Date('2024-01-20'),
-        response_due_date: new Date('2024-02-20'),
+        issued_date: new Date(TEST_ISSUED_DATE),
+        received_date: new Date(TEST_RECEIVED_DATE),
+        response_due_date: new Date(TEST_RESPONSE_DUE_DATE),
         appeal_due_date: new Date('2024-03-20'),
         amount: '50000.00',
         priority: 'high' as const,
@@ -38,14 +44,14 @@ describe('Notice Service', () => {
         updated_at: new Date(),
       };
 
-      expect(mockNotice.notice_type).toBe('IT_NOTICE');
+      expect(mockNotice.notice_type).toBe(NOTICE_TYPE_IT);
       expect(mockNotice.status).toBe('received');
       expect(mockNotice.priority).toBe('high');
     });
 
     it('rejects invalid notice type', async () => {
       const invalidType = 'INVALID_TYPE';
-      const validTypes = ['IT_NOTICE', 'GST_NOTICE', 'TDS_NOTICE', 'INCOME_TAX_SHOW_CAUSE', 'GST_DEMAND'];
+      const validTypes = [NOTICE_TYPE_IT, NOTICE_TYPE_GST, 'TDS_NOTICE', 'INCOME_TAX_SHOW_CAUSE', 'GST_DEMAND'];
 
       expect(validTypes.includes(invalidType)).toBe(false);
     });
@@ -55,12 +61,12 @@ describe('Notice Service', () => {
         id: 'notice-1',
         ca_firm_id: mockCaCtx.caFirmId,
         client_id: 'client-123',
-        notice_type: 'GST_NOTICE',
+        notice_type: NOTICE_TYPE_GST,
         reference: 'GST-2024-001',
         authority: 'GST Authorities',
-        issued_date: new Date('2024-01-15'),
-        received_date: new Date('2024-01-20'),
-        response_due_date: new Date('2024-02-20'),
+        issued_date: new Date(TEST_ISSUED_DATE),
+        received_date: new Date(TEST_RECEIVED_DATE),
+        response_due_date: new Date(TEST_RESPONSE_DUE_DATE),
         appeal_due_date: null,
         amount: '100000.00',
         priority: 'critical' as const,
@@ -156,7 +162,7 @@ describe('Notice Service', () => {
 
     it('filters by date range', async () => {
       const allNotices = [
-        { id: 'n1', due_date: new Date('2024-01-15') },
+        { id: 'n1', due_date: new Date(TEST_ISSUED_DATE) },
         { id: 'n2', due_date: new Date('2024-02-15') },
         { id: 'n3', due_date: new Date('2024-03-15') },
       ];
@@ -180,7 +186,7 @@ describe('Notice Service', () => {
     it('orders by response_due_date ascending', async () => {
       const notices = [
         { id: 'n3', due_date: new Date('2024-03-15') },
-        { id: 'n1', due_date: new Date('2024-01-15') },
+        { id: 'n1', due_date: new Date(TEST_ISSUED_DATE) },
         { id: 'n2', due_date: new Date('2024-02-15') },
       ];
 
@@ -327,7 +333,7 @@ describe('Notice Service', () => {
   });
 
   describe('generateResponseTemplate', () => {
-    it('generates IT_NOTICE template', async () => {
+    it(`generates ${NOTICE_TYPE_IT} template`, async () => {
       const template = `Tax Notice Response
 
 Authority: [Authority Name]
@@ -346,7 +352,7 @@ Regards,
       expect(template).toContain('Authority');
     });
 
-    it('generates GST_NOTICE template', async () => {
+    it(`generates ${NOTICE_TYPE_GST} template`, async () => {
       const template = `GST Notice Response
 
 GSTIN: [Your GSTIN]
@@ -370,8 +376,8 @@ Regards,
 
     it('throws for unsupported notice type', async () => {
       const supportedTypes = [
-        'IT_NOTICE',
-        'GST_NOTICE',
+        NOTICE_TYPE_IT,
+        NOTICE_TYPE_GST,
         'TDS_NOTICE',
         'INCOME_TAX_SHOW_CAUSE',
         'GST_DEMAND',
@@ -415,10 +421,10 @@ Regards,
     });
 
     it('handles multiple status updates', async () => {
-      let notice = {
+      let notice: { id: string; status: string } = {
         id: 'n1',
         status: 'received' as const,
-      } as any;
+      };
 
       notice = { ...notice, status: 'in_progress' as const };
       expect(notice.status).toBe('in_progress');

@@ -51,7 +51,7 @@ describe('Trade Finance Service', () => {
       const maxAge = 90;
 
       const eligible = invoices.filter(
-        inv => parseFloat(inv.amount as any) >= minAmount && inv.age_days <= maxAge,
+        inv => parseFloat(inv.amount) >= minAmount && inv.age_days <= maxAge,
       );
       expect(eligible).toHaveLength(1);
       expect(eligible[0].id).toBe('inv-1');

@@ -23,6 +23,14 @@ import {
   regexReplace,
 } from './transform.js';
 
+const HELLO_LOWER = 'hello';
+const HELLO_UPPER = 'HELLO';
+const HELLO_WORLD_STR = 'hello world';
+const DATE_ISO_STR = '2024-03-15T00:00:00Z';
+const DATE_FORMAT_YMD = 'YYYY-MM-DD';
+const DATE_FORMATTED_YMD = '2024-03-15';
+const APPLIES_VIA = 'applies via applyTransform';
+
 describe('Transform Registry', () => {
   it('lists available transforms', () => {
     const transforms = getAvailableTransforms();
@@ -34,14 +42,14 @@ describe('Transform Registry', () => {
 
   it('throws on unknown transform type', () => {
     expect(() => {
-      applyTransform('value', { type: 'unknown_transform' as any });
+      applyTransform('value', { type: 'unknown_transform' as never });
     }).toThrow();
   });
 });
 
 describe('Direct Transform', () => {
   it('returns value unchanged', () => {
-    expect(applyTransform('hello', { type: 'direct' })).toBe('hello');
+    expect(applyTransform(HELLO_LOWER, { type: 'direct' })).toBe(HELLO_LOWER);
     expect(applyTransform(42, { type: 'direct' })).toBe(42);
     expect(applyTransform(null, { type: 'direct' })).toBe(null);
   });
@@ -50,7 +58,7 @@ describe('Direct Transform', () => {
 describe('String Transforms', () => {
   describe('uppercase', () => {
     it('converts to uppercase', () => {
-      expect(uppercase('hello')).toBe('HELLO');
+      expect(uppercase(HELLO_LOWER)).toBe(HELLO_UPPER);
       expect(uppercase('Hello World')).toBe('HELLO WORLD');
     });
 
@@ -58,32 +66,32 @@ describe('String Transforms', () => {
       expect(uppercase(123)).toBe('123');
     });
 
-    it('applies via applyTransform', () => {
-      expect(applyTransform('hello', { type: 'uppercase' })).toBe('HELLO');
-      expect(applyTransform('hello', { type: 'to_upper' })).toBe('HELLO'); // legacy
+    it(APPLIES_VIA, () => {
+      expect(applyTransform(HELLO_LOWER, { type: 'uppercase' })).toBe(HELLO_UPPER);
+      expect(applyTransform(HELLO_LOWER, { type: 'to_upper' })).toBe(HELLO_UPPER); // legacy
     });
   });
 
   describe('lowercase', () => {
     it('converts to lowercase', () => {
-      expect(lowercase('HELLO')).toBe('hello');
-      expect(lowercase('Hello World')).toBe('hello world');
+      expect(lowercase(HELLO_UPPER)).toBe(HELLO_LOWER);
+      expect(lowercase('Hello World')).toBe(HELLO_WORLD_STR);
     });
 
-    it('applies via applyTransform', () => {
-      expect(applyTransform('HELLO', { type: 'lowercase' })).toBe('hello');
-      expect(applyTransform('HELLO', { type: 'to_lower' })).toBe('hello'); // legacy
+    it(APPLIES_VIA, () => {
+      expect(applyTransform(HELLO_UPPER, { type: 'lowercase' })).toBe(HELLO_LOWER);
+      expect(applyTransform(HELLO_UPPER, { type: 'to_lower' })).toBe(HELLO_LOWER); // legacy
     });
   });
 
   describe('trim', () => {
     it('removes leading/trailing whitespace', () => {
-      expect(trim('  hello  ')).toBe('hello');
-      expect(trim('\nhello\n')).toBe('hello');
+      expect(trim('  hello  ')).toBe(HELLO_LOWER);
+      expect(trim('\nhello\n')).toBe(HELLO_LOWER);
     });
 
-    it('applies via applyTransform', () => {
-      expect(applyTransform('  hello  ', { type: 'trim' })).toBe('hello');
+    it(APPLIES_VIA, () => {
+      expect(applyTransform('  hello  ', { type: 'trim' })).toBe(HELLO_LOWER);
     });
   });
 
@@ -97,7 +105,7 @@ describe('String Transforms', () => {
     });
 
     it('handles single value', () => {
-      expect(concatenate('hello', { separator: '-' })).toBe('hello');
+      expect(concatenate(HELLO_LOWER, { separator: '-' })).toBe(HELLO_LOWER);
     });
 
     it('adds prefix and suffix', () => {
@@ -110,7 +118,7 @@ describe('String Transforms', () => {
       ).toBe('Mr. first last Esq.');
     });
 
-    it('applies via applyTransform', () => {
+    it(APPLIES_VIA, () => {
       expect(
         applyTransform(['a', 'b', 'c'], {
           type: 'concatenate',
@@ -143,7 +151,7 @@ describe('String Transforms', () => {
       ).toBe('b');
     });
 
-    it('applies via applyTransform', () => {
+    it(APPLIES_VIA, () => {
       expect(
         applyTransform('a,b,c', {
           type: 'split',
@@ -155,20 +163,20 @@ describe('String Transforms', () => {
 
   describe('substring', () => {
     it('extracts substring with start and end', () => {
-      expect(substring('hello world', { start: 0, end: 5 })).toBe('hello');
+      expect(substring(HELLO_WORLD_STR, { start: 0, end: 5 })).toBe(HELLO_LOWER);
     });
 
     it('extracts from start to end', () => {
-      expect(substring('hello world', { start: 6 })).toBe('world');
+      expect(substring(HELLO_WORLD_STR, { start: 6 })).toBe('world');
     });
 
-    it('applies via applyTransform', () => {
+    it(APPLIES_VIA, () => {
       expect(
-        applyTransform('hello world', {
+        applyTransform(HELLO_WORLD_STR, {
           type: 'substring',
           params: { start: 0, end: 5 },
         }),
-      ).toBe('hello');
+      ).toBe(HELLO_LOWER);
     });
   });
 
@@ -178,14 +186,14 @@ describe('String Transforms', () => {
     });
 
     it('pads right when specified', () => {
-      expect(pad('hello', { length: 10, char: '*', side: 'right' })).toBe('hello*****');
+      expect(pad(HELLO_LOWER, { length: 10, char: '*', side: 'right' })).toBe('hello*****');
     });
 
     it('uses space as default char for right padding', () => {
       expect(pad('test', { length: 8, side: 'right' })).toBe('test    ');
     });
 
-    it('applies via applyTransform', () => {
+    it(APPLIES_VIA, () => {
       expect(
         applyTransform('42', {
           type: 'pad',
@@ -231,7 +239,7 @@ describe('String Transforms', () => {
       ).toBe('bar bar bar');
     });
 
-    it('applies via applyTransform', () => {
+    it(APPLIES_VIA, () => {
       expect(
         applyTransform('foo-bar', {
           type: 'regex_replace',
@@ -252,50 +260,48 @@ describe('String Transforms', () => {
 
 describe('Date Transforms', () => {
   describe('dateFormat', () => {
-    const dateStr = '2024-03-15T00:00:00Z';
-
     it('formats to ISO', () => {
-      const result = dateFormat(dateStr, { format: 'ISO' });
+      const result = dateFormat(DATE_ISO_STR, { format: 'ISO' });
       expect(result).toBe('2024-03-15T00:00:00.000Z');
     });
 
     it('formats to YYYYMMDD', () => {
-      expect(dateFormat(dateStr, { format: 'YYYYMMDD' })).toBe('20240315');
+      expect(dateFormat(DATE_ISO_STR, { format: 'YYYYMMDD' })).toBe('20240315');
     });
 
     it('formats to YYYY-MM-DD', () => {
-      expect(dateFormat(dateStr, { format: 'YYYY-MM-DD' })).toBe('2024-03-15');
+      expect(dateFormat(DATE_ISO_STR, { format: DATE_FORMAT_YMD })).toBe(DATE_FORMATTED_YMD);
     });
 
     it('formats to MM/DD/YYYY', () => {
-      expect(dateFormat(dateStr, { format: 'MM/DD/YYYY' })).toBe('03/15/2024');
+      expect(dateFormat(DATE_ISO_STR, { format: 'MM/DD/YYYY' })).toBe('03/15/2024');
     });
 
     it('defaults to ISO format', () => {
-      const result = dateFormat(dateStr);
+      const result = dateFormat(DATE_ISO_STR);
       expect(result).toBe('2024-03-15T00:00:00.000Z');
     });
 
     it('handles Date objects', () => {
-      const date = new Date('2024-03-15T00:00:00Z');
-      expect(dateFormat(date, { format: 'YYYY-MM-DD' })).toBe('2024-03-15');
+      const date = new Date(DATE_ISO_STR);
+      expect(dateFormat(date, { format: DATE_FORMAT_YMD })).toBe(DATE_FORMATTED_YMD);
     });
 
-    it('applies via applyTransform', () => {
+    it(APPLIES_VIA, () => {
       expect(
-        applyTransform(dateStr, {
+        applyTransform(DATE_ISO_STR, {
           type: 'date_format',
-          params: { format: 'YYYY-MM-DD' },
+          params: { format: DATE_FORMAT_YMD },
         }),
-      ).toBe('2024-03-15');
+      ).toBe(DATE_FORMATTED_YMD);
 
       // legacy
       expect(
-        applyTransform(dateStr, {
+        applyTransform(DATE_ISO_STR, {
           type: 'format_date',
-          params: { format: 'YYYY-MM-DD' },
+          params: { format: DATE_FORMAT_YMD },
         }),
-      ).toBe('2024-03-15');
+      ).toBe(DATE_FORMATTED_YMD);
     });
   });
 });
@@ -327,7 +333,7 @@ describe('Lookup/Mapping Transforms', () => {
       ).toBe('XYZ');
     });
 
-    it('applies via applyTransform', () => {
+    it(APPLIES_VIA, () => {
       expect(
         applyTransform('USD', {
           type: 'value_map',
@@ -425,7 +431,7 @@ describe('Conditional Transforms', () => {
 
     it('evaluates contains condition', () => {
       expect(
-        conditional('hello world', {
+        conditional(HELLO_WORLD_STR, {
           condition: 'contains',
           value: 'world',
           then: 'found',
@@ -434,7 +440,7 @@ describe('Conditional Transforms', () => {
       ).toBe('found');
     });
 
-    it('applies via applyTransform', () => {
+    it(APPLIES_VIA, () => {
       expect(
         applyTransform('USD', {
           type: 'conditional',
@@ -472,7 +478,7 @@ describe('Arithmetic Transforms', () => {
       expect(arithmetic(10, { operation: 'divide', operand: 0 })).toBe(0);
     });
 
-    it('applies via applyTransform', () => {
+    it(APPLIES_VIA, () => {
       expect(
         applyTransform(10, {
           type: 'arithmetic',
@@ -558,7 +564,7 @@ describe('Default Value Transforms', () => {
       expect(defaultValue('actual', { value: 'default' })).toBe('actual');
     });
 
-    it('applies via applyTransform', () => {
+    it(APPLIES_VIA, () => {
       expect(
         applyTransform(undefined, {
           type: 'default_value',
@@ -571,7 +577,7 @@ describe('Default Value Transforms', () => {
 
 describe('Transform Chaining', () => {
   it('applies multiple transforms in sequence', () => {
-    const result = applyTransformChain('hello world', [
+    const result = applyTransformChain(HELLO_WORLD_STR, [
       { type: 'uppercase' },
       { type: 'pad', params: { length: 15, char: '*', side: 'right' } },
     ]);
@@ -608,8 +614,8 @@ describe('Transform Chaining', () => {
   });
 
   it('returns original value for empty chain', () => {
-    const result = applyTransformChain('hello', []);
-    expect(result).toBe('hello');
+    const result = applyTransformChain(HELLO_LOWER, []);
+    expect(result).toBe(HELLO_LOWER);
   });
 });
 

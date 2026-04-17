@@ -5,6 +5,9 @@
 import type { CaRequestContext } from '@fc/shared';
 import { describe, it, expect } from 'vitest';
 
+const TEST_PERIOD = '2024-01';
+const TEST_CLIENT_ID = 'client-123';
+
 const mockCaCtx: CaRequestContext = {
   caFirmId: 'ca-firm-123',
   tenantId: 'ca-firm-123',
@@ -20,8 +23,8 @@ describe('GSTR-2B Reconciliation Service', () => {
       const mockSession = {
         id: 'session-1',
         ca_firm_id: mockCaCtx.caFirmId,
-        client_id: 'client-123',
-        period: '2024-01',
+        client_id: TEST_CLIENT_ID,
+        period: TEST_PERIOD,
         session_status: 'completed' as const,
         total_invoices_2b: 100,
         total_invoices_register: 100,
@@ -41,8 +44,8 @@ describe('GSTR-2B Reconciliation Service', () => {
       const mockSession = {
         id: 'session-1',
         ca_firm_id: mockCaCtx.caFirmId,
-        client_id: 'client-123',
-        period: '2024-01',
+        client_id: TEST_CLIENT_ID,
+        period: TEST_PERIOD,
         session_status: 'completed' as const,
         total_invoices_2b: 110,
         total_invoices_register: 100,
@@ -62,8 +65,8 @@ describe('GSTR-2B Reconciliation Service', () => {
       const mockSession = {
         id: 'session-1',
         ca_firm_id: mockCaCtx.caFirmId,
-        client_id: 'client-123',
-        period: '2024-01',
+        client_id: TEST_CLIENT_ID,
+        period: TEST_PERIOD,
         session_status: 'completed' as const,
         total_invoices_2b: 90,
         total_invoices_register: 100,
@@ -83,8 +86,8 @@ describe('GSTR-2B Reconciliation Service', () => {
       const mockSession = {
         id: 'session-1',
         ca_firm_id: mockCaCtx.caFirmId,
-        client_id: 'client-123',
-        period: '2024-01',
+        client_id: TEST_CLIENT_ID,
+        period: TEST_PERIOD,
         session_status: 'completed' as const,
         total_invoices_2b: 100,
         total_invoices_register: 100,
@@ -249,8 +252,8 @@ describe('GSTR-2B Reconciliation Service', () => {
         session: {
           id: 'session-1',
           ca_firm_id: mockCaCtx.caFirmId,
-          client_id: 'client-123',
-          period: '2024-01',
+          client_id: TEST_CLIENT_ID,
+          period: TEST_PERIOD,
           session_status: 'completed' as const,
           total_invoices_2b: 100,
           total_invoices_register: 100,
@@ -299,8 +302,8 @@ describe('GSTR-2B Reconciliation Service', () => {
       const mockSession = {
         id: 'session-1',
         ca_firm_id: mockCaCtx.caFirmId,
-        client_id: 'client-123',
-        period: '2024-01',
+        client_id: TEST_CLIENT_ID,
+        period: TEST_PERIOD,
         session_status: 'completed' as const,
         total_invoices_2b: 0,
         total_invoices_register: 0,
@@ -319,8 +322,8 @@ describe('GSTR-2B Reconciliation Service', () => {
       const mockSession = {
         id: 'session-1',
         ca_firm_id: mockCaCtx.caFirmId,
-        client_id: 'client-123',
-        period: '2024-01',
+        client_id: TEST_CLIENT_ID,
+        period: TEST_PERIOD,
         session_status: 'completed' as const,
         total_invoices_2b: 0,
         total_invoices_register: 100,
@@ -339,8 +342,8 @@ describe('GSTR-2B Reconciliation Service', () => {
       const mockSession = {
         id: 'session-1',
         ca_firm_id: mockCaCtx.caFirmId,
-        client_id: 'client-123',
-        period: '2024-01',
+        client_id: TEST_CLIENT_ID,
+        period: TEST_PERIOD,
         session_status: 'completed' as const,
         total_invoices_2b: 100,
         total_invoices_register: 100,

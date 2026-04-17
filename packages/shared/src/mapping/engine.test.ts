@@ -14,6 +14,8 @@ import {
 } from './engine.js';
 import type { MappingConfig, MappingConfigDef } from './types.js';
 
+const TEST_DATE_ISO = '2024-01-15T00:00:00Z';
+
 describe('Path Resolution', () => {
   describe('getNestedValue', () => {
     it('gets top-level value', () => {
@@ -338,7 +340,7 @@ describe('Mapping Application', () => {
   it('maps fields with transforms', () => {
     const source = {
       po_number: 'PO-123',
-      date: '2024-01-15T00:00:00Z',
+      date: TEST_DATE_ISO,
       total: 1234.5,
       extra: 'x',
     };
@@ -351,7 +353,7 @@ describe('Mapping Application', () => {
   });
 
   it('reports error for missing required field', () => {
-    const source = { date: '2024-01-15T00:00:00Z' };
+    const source = { date: TEST_DATE_ISO };
     const result = applyMapping(source, config);
     expect(result.success).toBe(false);
     expect(result.errors.length).toBeGreaterThan(0);
@@ -361,7 +363,7 @@ describe('Mapping Application', () => {
   it('detects unmapped fields', () => {
     const source = {
       po_number: 'PO-1',
-      date: '2024-01-15T00:00:00Z',
+      date: TEST_DATE_ISO,
       unknown_field: 'value',
     };
     const result = applyMapping(source, config);
@@ -371,7 +373,7 @@ describe('Mapping Application', () => {
   it('provides execution time', () => {
     const source = {
       po_number: 'PO-1',
-      date: '2024-01-15T00:00:00Z',
+      date: TEST_DATE_ISO,
     };
     const result = applyMapping(source, config);
     expect(result.execution_time_ms).toBeGreaterThanOrEqual(0);

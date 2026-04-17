@@ -69,6 +69,32 @@ export function ediToJson(document: EdiDocument): Record<string, unknown> {
 }
 
 /**
+ * Reconstruct element array from a JSON-serialised segment item.
+ * Reads element_0, element_1, ... up to 100 entries.
+ */
+function reconstructElements(mapped: Record<string, unknown>): string[] {
+  const elements: string[] = [];
+  for (let i = 0; i < 100; i++) {
+    const key = `element_${i}`;
+    if (key in mapped) {
+      elements.push(String(mapped[key]));
+    }
+  }
+  return elements;
+}
+
+/**
+ * Convert one segData entry (may be an array or single item) into EdiSegment list.
+ */
+function segDataToSegments(segId: string, segData: unknown): EdiSegment[] {
+  const segArray = Array.isArray(segData) ? segData : [segData];
+  return segArray.map((item) => ({
+    id: segId,
+    elements: reconstructElements(item as Record<string, unknown>),
+  }));
+}
+
+/**
  * Convert JSON to EDI document.
  * Reconstructs segments from flattened JSON.
  */
@@ -77,25 +103,10 @@ export function jsonToEdi(
   type: string,
   _config: Record<string, unknown>,
 ): EdiDocument {
-  const segments: EdiSegment[] = [];
-
-  // Reconstruct segments from JSON structure
   const segs = json.segments as Record<string, unknown>;
-  for (const [segId, segData] of Object.entries(segs)) {
-    const segArray = Array.isArray(segData) ? segData : [segData];
-    for (const item of segArray) {
-      const mapped = item as Record<string, unknown>;
-      const elements: string[] = [];
-      // Reconstruct in order
-      for (let i = 0; i < 100; i++) {
-        const key = `element_${i}`;
-        if (key in mapped) {
-          elements.push(String(mapped[key]));
-        }
-      }
-      segments.push({ id: segId, elements });
-    }
-  }
+  const segments: EdiSegment[] = Object.entries(segs).flatMap(([segId, segData]) =>
+    segDataToSegments(segId, segData),
+  );
 
   return {
     standard: 'JSON_REST',

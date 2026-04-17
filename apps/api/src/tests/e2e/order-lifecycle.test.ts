@@ -5,17 +5,21 @@
 
 import { withTenantTransaction, withTenantClient, getPool } from '@fc/database';
 import type { RequestContext } from '@fc/shared';
-import {
-  CanonicalOrderCreateSchema,
-  LineItemCreateSchema,
-  AddressSchema,
-} from '@fc/shared';
 import request from 'supertest';
 import { v4 as uuidv4 } from 'uuid';
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 import { createApp } from '../../app.js';
 
+const HEADER_AUTH = 'Authorization';
+const HEADER_TENANT = 'X-Tenant-ID';
+const HEADER_USER = 'X-User-ID';
+const API_ORDERS = '/api/v1/orders';
+
+interface DbRow {
+  id: string;
+  [key: string]: unknown;
+}
 
 const app = createApp();
 
@@ -29,7 +33,7 @@ function buildTestContext(): RequestContext {
   };
 }
 
-async function createTestFactory(ctx: RequestContext) {
+async function createTestFactory(ctx: RequestContext): Promise<DbRow> {
   return withTenantTransaction(ctx, async (client) => {
     const factoryId = ctx.tenantId;
     const res = await client.query(
@@ -43,7 +47,7 @@ async function createTestFactory(ctx: RequestContext) {
   });
 }
 
-async function createTestBuyer(ctx: RequestContext, factoryId: string) {
+async function createTestBuyer(ctx: RequestContext, factoryId: string): Promise<DbRow> {
   return withTenantTransaction(ctx, async (client) => {
     const buyerId = uuidv4();
     const res = await client.query(
@@ -56,7 +60,7 @@ async function createTestBuyer(ctx: RequestContext, factoryId: string) {
   });
 }
 
-async function createTestConnection(ctx: RequestContext, factoryId: string, buyerId: string) {
+async function createTestConnection(ctx: RequestContext, factoryId: string, buyerId: string): Promise<DbRow> {
   return withTenantTransaction(ctx, async (client) => {
     const connId = uuidv4();
     const res = await client.query(
@@ -69,7 +73,7 @@ async function createTestConnection(ctx: RequestContext, factoryId: string, buye
   });
 }
 
-async function getSagaStatus(ctx: RequestContext, orderId: string) {
+async function getSagaStatus(ctx: RequestContext, orderId: string): Promise<DbRow> {
   return withTenantClient(ctx, async (client) => {
     const res = await client.query(
       'SELECT * FROM order_sagas WHERE order_id = $1',
@@ -79,7 +83,7 @@ async function getSagaStatus(ctx: RequestContext, orderId: string) {
   });
 }
 
-async function getAuditLog(ctx: RequestContext, entityId: string) {
+async function getAuditLog(ctx: RequestContext, entityId: string): Promise<DbRow[]> {
   return withTenantClient(ctx, async (client) => {
     const res = await client.query(
       'SELECT * FROM audit_log WHERE entity_id = $1 ORDER BY created_at ASC',
@@ -145,10 +149,10 @@ describe('E2E: Order Lifecycle', () => {
       };
 
       const res = await request(app)
-        .post('/api/v1/orders')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId)
+        .post(API_ORDERS)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId)
         .send(orderPayload);
 
       expect(res.status).toBe(201);
@@ -195,10 +199,10 @@ describe('E2E: Order Lifecycle', () => {
       };
 
       const createRes = await request(app)
-        .post('/api/v1/orders')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId)
+        .post(API_ORDERS)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId)
         .send(orderPayload);
 
       const orderId = createRes.body.data.id;
@@ -206,9 +210,9 @@ describe('E2E: Order Lifecycle', () => {
       // Confirm order
       const confirmRes = await request(app)
         .post(`/api/v1/orders/${orderId}/confirm`)
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId);
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId);
 
       expect(confirmRes.status).toBe(200);
 
@@ -218,7 +222,7 @@ describe('E2E: Order Lifecycle', () => {
 
       // Verify audit log includes CONFIRM action
       const auditLog = await getAuditLog(ctx, orderId);
-      const confirmAction = auditLog.find((entry: any) => entry.action === 'CONFIRM');
+      const confirmAction = auditLog.find((entry) => entry.action === 'CONFIRM');
       expect(confirmAction).toBeDefined();
     });
 
@@ -251,10 +255,10 @@ describe('E2E: Order Lifecycle', () => {
       };
 
       const res = await request(app)
-        .post('/api/v1/orders')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId)
+        .post(API_ORDERS)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId)
         .send(orderPayload);
 
       expect(res.status).toBe(201);
@@ -263,9 +267,9 @@ describe('E2E: Order Lifecycle', () => {
       // Verify all line items were created
       const getRes = await request(app)
         .get(`/api/v1/orders/${orderId}`)
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId);
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId);
 
       expect(getRes.status).toBe(200);
       expect(getRes.body.data.line_items.length).toBe(5);
@@ -289,10 +293,10 @@ describe('E2E: Order Lifecycle', () => {
       };
 
       const res = await request(app)
-        .post('/api/v1/orders')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId)
+        .post(API_ORDERS)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId)
         .send(invalidPayload);
 
       expect(res.status).toBe(400);
@@ -329,18 +333,18 @@ describe('E2E: Order Lifecycle', () => {
 
       // Send same request twice with same idempotency key
       const res1 = await request(app)
-        .post('/api/v1/orders')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId)
+        .post(API_ORDERS)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId)
         .set('X-Idempotency-Key', idempotencyKey)
         .send(orderPayload);
 
       const res2 = await request(app)
-        .post('/api/v1/orders')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId)
+        .post(API_ORDERS)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId)
         .set('X-Idempotency-Key', idempotencyKey)
         .send(orderPayload);
 
@@ -378,19 +382,19 @@ describe('E2E: Order Lifecycle', () => {
       };
 
       const createRes = await request(app)
-        .post('/api/v1/orders')
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId)
+        .post(API_ORDERS)
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId)
         .send(orderPayload);
 
       const orderId = createRes.body.data.id;
 
       await request(app)
         .post(`/api/v1/orders/${orderId}/confirm`)
-        .set('Authorization', authToken)
-        .set('X-Tenant-ID', ctx.tenantId)
-        .set('X-User-ID', ctx.userId);
+        .set(HEADER_AUTH, authToken)
+        .set(HEADER_TENANT, ctx.tenantId)
+        .set(HEADER_USER, ctx.userId);
 
       // Verify audit log has sequential hash chain
       const auditLog = await getAuditLog(ctx, orderId);

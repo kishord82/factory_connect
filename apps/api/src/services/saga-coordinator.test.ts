@@ -3,33 +3,15 @@
  * Covers all valid transitions, error cases, deadline detection, and compensation.
  */
 
-import type { PoolClient } from '@fc/database';
-import type { RequestContext, SagaStep } from '@fc/shared';
-import { FcError } from '@fc/shared';
-import { beforeEach, describe, it, expect, vi } from 'vitest';
+import type { SagaStep } from '@fc/shared';
+import { describe, it, expect } from 'vitest';
 
 import {
-  advanceSaga,
-  failSaga,
-  getSagaStatus,
-  listSagasByFactory,
-  compensate,
-  initSaga,
   isValidTransition,
   VALID_TRANSITIONS,
   startSagaCoordinator,
   stopSagaCoordinator,
-  detectSlaBreaches,
-  recoverStaleLocks,
 } from './saga-coordinator.js';
-
-// Mock context
-const mockCtx: RequestContext = {
-  tenantId: 'tenant-123',
-  userId: 'user-456',
-  correlationId: 'corr-789',
-  role: 'admin',
-};
 
 describe('Saga Coordinator', () => {
   describe('Valid Transitions Map', () => {

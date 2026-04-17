@@ -8,13 +8,17 @@ import { describe, it, expect } from 'vitest';
 import { applyMapping } from '../mapping/index.js';
 import type { MappingConfig } from '../mapping/types.js';
 
+const TARGET_CANONICAL_ORDER = 'canonical_order';
+const SOURCE_TALLY = 'tally';
+const BUYER_NAME = 'GlobalBuyer Inc';
+
 describe('E2E: Mapping Pipeline', () => {
   describe('Tally → Canonical Order', () => {
     it('should map simple Tally data to canonical order', () => {
       const tallySourceData = {
         po_number: 'PO-2024-001',
         order_date: '04/Jan/2024',
-        buyer_name: 'GlobalBuyer Inc',
+        buyer_name: BUYER_NAME,
         buyer_address: '123 Market Street, New York, NY 10001',
         line_items: [
           {
@@ -29,8 +33,8 @@ describe('E2E: Mapping Pipeline', () => {
         id: 'tally-canonical-v1',
         name: 'Tally to Canonical Order',
         version: 1,
-        source_type: 'tally',
-        target_type: 'canonical_order',
+        source_type: SOURCE_TALLY,
+        target_type: TARGET_CANONICAL_ORDER,
         field_mappings: [
           {
             source_path: 'po_number',
@@ -56,21 +60,21 @@ describe('E2E: Mapping Pipeline', () => {
       expect(result.success).toBe(true);
       expect(result.data.buyer_po_number).toBe('PO-2024-001');
       expect(result.data.order_date).toBe('04/Jan/2024');
-      expect(result.data.buyer_name).toBe('GlobalBuyer Inc');
+      expect(result.data.buyer_name).toBe(BUYER_NAME);
       expect(result.errors).toHaveLength(0);
     });
 
     it('should detect missing required fields', () => {
       const incompleteData = {
-        buyer_name: 'GlobalBuyer Inc',
+        buyer_name: BUYER_NAME,
       };
 
       const mappingConfig: MappingConfig = {
         id: 'test-required',
         name: 'Test Required Fields',
         version: 1,
-        source_type: 'tally',
-        target_type: 'canonical_order',
+        source_type: SOURCE_TALLY,
+        target_type: TARGET_CANONICAL_ORDER,
         field_mappings: [
           {
             source_path: 'po_number',
@@ -109,8 +113,8 @@ describe('E2E: Mapping Pipeline', () => {
         id: 'nested-mapping',
         name: 'Nested Path Mapping',
         version: 1,
-        source_type: 'tally',
-        target_type: 'canonical_order',
+        source_type: SOURCE_TALLY,
+        target_type: TARGET_CANONICAL_ORDER,
         field_mappings: [
           {
             source_path: 'order.header.po_number',
@@ -160,7 +164,7 @@ describe('E2E: Mapping Pipeline', () => {
         name: 'Zoho to Canonical Order',
         version: 1,
         source_type: 'zoho',
-        target_type: 'canonical_order',
+        target_type: TARGET_CANONICAL_ORDER,
         field_mappings: [
           {
             source_path: 'order_id',
@@ -205,7 +209,7 @@ describe('E2E: Mapping Pipeline', () => {
         name: 'Array Test',
         version: 1,
         source_type: 'json',
-        target_type: 'canonical_order',
+        target_type: TARGET_CANONICAL_ORDER,
         field_mappings: [
           {
             source_path: 'items[0].sku',
@@ -242,7 +246,7 @@ describe('E2E: Mapping Pipeline', () => {
         name: 'Unmapped Fields Test',
         version: 1,
         source_type: 'test',
-        target_type: 'canonical_order',
+        target_type: TARGET_CANONICAL_ORDER,
         field_mappings: [
           {
             source_path: 'po_number',

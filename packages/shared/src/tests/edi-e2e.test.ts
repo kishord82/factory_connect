@@ -12,14 +12,18 @@ import {
   parseX12,
 } from '../edi/index.js';
 
+const SENDER_FACTORY = 'FACTORY';
+const RECEIVER_BUYER = 'BUYER';
+const TEST_PO_NUMBER = 'PO-2024-001';
+
 describe('E2E: EDI Round-Trip', () => {
   describe('X12 855 ACK', () => {
     it('generates and validates 855 acknowledgment', () => {
       const result = generate855({
-        sender_id: 'FACTORY',
-        receiver_id: 'BUYER',
+        sender_id: SENDER_FACTORY,
+        receiver_id: RECEIVER_BUYER,
         control_number: '001',
-        po_number: 'PO-2024-001',
+        po_number: TEST_PO_NUMBER,
         po_date: '20240104',
         ack_status: 'AC',
       });
@@ -32,10 +36,10 @@ describe('E2E: EDI Round-Trip', () => {
 
     it('parses generated 855 back to structured data', () => {
       const genResult = generate855({
-        sender_id: 'FACTORY',
-        receiver_id: 'BUYER',
+        sender_id: SENDER_FACTORY,
+        receiver_id: RECEIVER_BUYER,
         control_number: '001',
-        po_number: 'PO-2024-001',
+        po_number: TEST_PO_NUMBER,
         po_date: '20240104',
         ack_status: 'AC',
       });
@@ -51,11 +55,11 @@ describe('E2E: EDI Round-Trip', () => {
   describe('X12 856 ASN', () => {
     it('generates and validates 856 shipment notice', () => {
       const result = generate856({
-        sender_id: 'FACTORY',
-        receiver_id: 'BUYER',
+        sender_id: SENDER_FACTORY,
+        receiver_id: RECEIVER_BUYER,
         control_number: '002',
         shipment_id: 'SHIP-001',
-        po_number: 'PO-2024-001',
+        po_number: TEST_PO_NUMBER,
         ship_date: '20240115',
         carrier_name: 'FedEx',
         tracking_number: 'TRACK123',
@@ -69,11 +73,11 @@ describe('E2E: EDI Round-Trip', () => {
 
     it('parses generated 856 back to structured data', () => {
       const genResult = generate856({
-        sender_id: 'FACTORY',
-        receiver_id: 'BUYER',
+        sender_id: SENDER_FACTORY,
+        receiver_id: RECEIVER_BUYER,
         control_number: '002',
         shipment_id: 'SHIP-001',
-        po_number: 'PO-2024-001',
+        po_number: TEST_PO_NUMBER,
         ship_date: '20240115',
       });
 
@@ -88,12 +92,12 @@ describe('E2E: EDI Round-Trip', () => {
   describe('X12 810 Invoice', () => {
     it('generates and validates 810 invoice', () => {
       const result = generate810({
-        sender_id: 'FACTORY',
-        receiver_id: 'BUYER',
+        sender_id: SENDER_FACTORY,
+        receiver_id: RECEIVER_BUYER,
         control_number: '003',
         invoice_number: 'INV-001',
         invoice_date: '20240120',
-        po_number: 'PO-2024-001',
+        po_number: TEST_PO_NUMBER,
         total_amount: '750.00',
         line_items: [
           {
@@ -113,12 +117,12 @@ describe('E2E: EDI Round-Trip', () => {
 
     it('parses generated 810 back to structured data', () => {
       const genResult = generate810({
-        sender_id: 'FACTORY',
-        receiver_id: 'BUYER',
+        sender_id: SENDER_FACTORY,
+        receiver_id: RECEIVER_BUYER,
         control_number: '003',
         invoice_number: 'INV-001',
         invoice_date: '20240120',
-        po_number: 'PO-2024-001',
+        po_number: TEST_PO_NUMBER,
         total_amount: '750.00',
         line_items: [
           {

@@ -6,6 +6,7 @@ import type { EdiGenerationResult, EdiConfig } from './types.js';
 
 const SEP = '*';
 const TERM = '~';
+const GENERATION_ERROR_MSG = 'Generation error';
 
 /**
  * Pad string to length, with optional character fill.
@@ -170,7 +171,7 @@ export function generate855(data: {
 
     return { success: true, document: lines.join('\n'), errors: [] };
   } catch (err) {
-    return { success: false, errors: [err instanceof Error ? err.message : 'Generation error'] };
+    return { success: false, errors: [err instanceof Error ? err.message : GENERATION_ERROR_MSG] };
   }
 }
 
@@ -231,7 +232,7 @@ export function generate856(data: {
 
     return { success: true, document: lines.join('\n'), errors: [] };
   } catch (err) {
-    return { success: false, errors: [err instanceof Error ? err.message : 'Generation error'] };
+    return { success: false, errors: [err instanceof Error ? err.message : GENERATION_ERROR_MSG] };
   }
 }
 
@@ -280,6 +281,6 @@ export function generate810(data: {
 
     return { success: true, document: lines.join('\n'), errors: [] };
   } catch (err) {
-    return { success: false, errors: [err instanceof Error ? err.message : 'Generation error'] };
+    return { success: false, errors: [err instanceof Error ? err.message : GENERATION_ERROR_MSG] };
   }
 }

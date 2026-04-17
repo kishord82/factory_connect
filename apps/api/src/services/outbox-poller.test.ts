@@ -3,14 +3,11 @@
  * Covers batch processing, distributed locking, retry logic, claim-check pattern, and metrics.
  */
 
-import type { PoolClient } from '@fc/database';
-import { beforeEach, afterEach, describe, it, expect, vi } from 'vitest';
+import { beforeEach, afterEach, describe, it, vi } from 'vitest';
 
 import {
   setOutboxHandler,
   stopOutboxPoller,
-  startOutboxPoller,
-  pollOutbox,
 } from './outbox-poller.js';
 
 // Mock database
