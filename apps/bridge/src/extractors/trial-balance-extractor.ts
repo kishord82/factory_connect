@@ -52,52 +52,18 @@ export class TrialBalanceExtractor extends BaseExtractor<TrialBalanceData> {
       this.validateResponse(parsed);
 
       const entries: TrialBalanceEntry[] = [];
-      const totals: TrialBalanceTotals = {
-        openingDebit: 0,
-        openingCredit: 0,
-        transactionDebit: 0,
-        transactionCredit: 0,
-        closingDebit: 0,
-        closingCredit: 0,
-      };
+      const totals = this.createEmptyTotals();
 
-      const data = parsed.ENVELOPE?.BODY?.DATA as Record<string, unknown>;
-
-      if (data?.TRIALBALANCE) {
-        const tbData = data.TRIALBALANCE as Record<string, unknown>;
-        const lines = tbData.TBLINE;
-
-        if (Array.isArray(lines)) {
-          lines.forEach((line) => {
-            const entry = this.parseTrialBalanceEntry(line as Record<string, unknown>);
-            entries.push(entry);
-            this.accumulateTotals(totals, entry);
-          });
-        } else if (lines) {
-          const entry = this.parseTrialBalanceEntry(lines as Record<string, unknown>);
-          entries.push(entry);
-          this.accumulateTotals(totals, entry);
-        }
-
-        // Also check for explicit TOTALS section
-        const explicitTotals = tbData.TOTALS as Record<string, unknown>;
-        if (explicitTotals) {
-          totals.openingDebit = Number(explicitTotals.OPENINGDEBIT || totals.openingDebit);
-          totals.openingCredit = Number(explicitTotals.OPENINGCREDIT || totals.openingCredit);
-          totals.transactionDebit = Number(explicitTotals.TRANSACTIONDEBIT || totals.transactionDebit);
-          totals.transactionCredit = Number(explicitTotals.TRANSACTIONCREDIT || totals.transactionCredit);
-          totals.closingDebit = Number(explicitTotals.CLOSINGDEBIT || totals.closingDebit);
-          totals.closingCredit = Number(explicitTotals.CLOSINGCREDIT || totals.closingCredit);
-        }
+      const data = parsed.ENVELOPE?.BODY?.DATA as Record<string, unknown> | undefined;
+      const tbData = data?.TRIALBALANCE as Record<string, unknown> | undefined;
+      if (tbData) {
+        this.collectEntries(tbData.TBLINE, entries, totals);
+        this.applyExplicitTotals(tbData.TOTALS as Record<string, unknown> | undefined, totals);
       }
 
       return {
         success: errors.length === 0,
-        data: {
-          asOfDate: this.asOfDate,
-          entries,
-          totals,
-        },
+        data: { asOfDate: this.asOfDate, entries, totals },
         extractedAt: new Date(),
         recordCount: entries.length,
         errors,
@@ -109,6 +75,48 @@ export class TrialBalanceExtractor extends BaseExtractor<TrialBalanceData> {
         { date: this.asOfDate, duration: Date.now() - startTime },
       );
     }
+  }
+
+  private createEmptyTotals(): TrialBalanceTotals {
+    return {
+      openingDebit: 0,
+      openingCredit: 0,
+      transactionDebit: 0,
+      transactionCredit: 0,
+      closingDebit: 0,
+      closingCredit: 0,
+    };
+  }
+
+  private collectEntries(
+    lines: unknown,
+    entries: TrialBalanceEntry[],
+    totals: TrialBalanceTotals,
+  ): void {
+    if (Array.isArray(lines)) {
+      lines.forEach((line) => {
+        const entry = this.parseTrialBalanceEntry(line as Record<string, unknown>);
+        entries.push(entry);
+        this.accumulateTotals(totals, entry);
+      });
+    } else if (lines) {
+      const entry = this.parseTrialBalanceEntry(lines as Record<string, unknown>);
+      entries.push(entry);
+      this.accumulateTotals(totals, entry);
+    }
+  }
+
+  private applyExplicitTotals(
+    explicitTotals: Record<string, unknown> | undefined,
+    totals: TrialBalanceTotals,
+  ): void {
+    if (!explicitTotals) return;
+    totals.openingDebit = Number(explicitTotals.OPENINGDEBIT || totals.openingDebit);
+    totals.openingCredit = Number(explicitTotals.OPENINGCREDIT || totals.openingCredit);
+    totals.transactionDebit = Number(explicitTotals.TRANSACTIONDEBIT || totals.transactionDebit);
+    totals.transactionCredit = Number(explicitTotals.TRANSACTIONCREDIT || totals.transactionCredit);
+    totals.closingDebit = Number(explicitTotals.CLOSINGDEBIT || totals.closingDebit);
+    totals.closingCredit = Number(explicitTotals.CLOSINGCREDIT || totals.closingCredit);
   }
 
   private parseTrialBalanceEntry(line: Record<string, unknown>): TrialBalanceEntry {

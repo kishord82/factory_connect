@@ -25,6 +25,7 @@ async function main(): Promise<void> {
 }
 
 main().catch((err) => {
-  console.error('Failed to start API:', err);
+  const bootLogger = createLogger({ service: 'api-boot' });
+  bootLogger.fatal({ err }, 'Failed to start API');
   process.exit(1);
 });

@@ -5,6 +5,7 @@
  */
 
 import { getPool } from '@fc/database';
+import { createLogger } from '@fc/observability';
 import { FcError } from '@fc/shared';
 import { Router } from 'express';
 import jwt from 'jsonwebtoken';
@@ -13,12 +14,15 @@ import { z } from 'zod';
 import { getConfig } from '../config.js';
 import { validate } from '../middleware/validate.js';
 
+const logger = createLogger('auth');
 export const authRouter = Router();
 
 const LoginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
 });
+
+const DEV_FACTORY_PASSWORD = 'factory123';
 
 /**
  * Dev-mode user mapping.
@@ -31,19 +35,19 @@ const DEV_USERS: Record<
 > = {
   // Factory Admin users (one per test tenant)
   'admin@rajeshtextiles.in': {
-    password: 'factory123',
+    password: DEV_FACTORY_PASSWORD,
     role: 'factory_admin',
     factory_id: 'a0000000-0000-0000-0000-000000000001',
     sub: 'user-rajesh-admin-001',
   },
   'admin@sunriseauto.in': {
-    password: 'factory123',
+    password: DEV_FACTORY_PASSWORD,
     role: 'factory_admin',
     factory_id: 'b0000000-0000-0000-0000-000000000002',
     sub: 'user-sunrise-admin-001',
   },
   'admin@gujpharma.in': {
-    password: 'factory123',
+    password: DEV_FACTORY_PASSWORD,
     role: 'factory_admin',
     factory_id: 'c0000000-0000-0000-0000-000000000003',
     sub: 'user-gujpharma-admin-001',
@@ -138,13 +142,13 @@ authRouter.post('/login', validate({ body: LoginSchema }), async (req, res, next
         }
         await client.query('COMMIT');
       } catch (innerErr) {
-        console.error('[auth] DB name lookup inner error:', innerErr);
+        logger.error({ err: innerErr }, 'DB name lookup inner error');
         await client.query('ROLLBACK').catch(() => {});
       } finally {
         client.release();
       }
     } catch (outerErr) {
-      console.error('[auth] DB name lookup outer error:', outerErr);
+      logger.error({ err: outerErr }, 'DB name lookup outer error');
       // DB lookup is non-critical for auth; proceed with default name
     }
 

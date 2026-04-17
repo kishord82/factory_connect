@@ -4,7 +4,9 @@
 
 import { FcError } from '@fc/shared';
 
-import { BaseExtractor, type TallyConfig, type ExtractionResult } from './base-extractor.js';
+import { BaseExtractor, type ExtractionResult } from './base-extractor.js';
+
+const TALLY_DATE_FORMAT = 'DD-MMM-YYYY';
 
 export interface TdsDeduction {
   date: string;
@@ -198,20 +200,20 @@ export class TdsExtractor extends BaseExtractor<TdsExtractionData> {
 
   private buildDeductionsTdl(): string {
     return this.buildTdlRequest('TDS Deductions Register', {
-      DATEFORMAT: 'DD-MMM-YYYY',
+      DATEFORMAT: TALLY_DATE_FORMAT,
       SHOWALLLEDGERS: 'No',
     });
   }
 
   private buildChallansTdl(): string {
     return this.buildTdlRequest('TDS Challans Register', {
-      DATEFORMAT: 'DD-MMM-YYYY',
+      DATEFORMAT: TALLY_DATE_FORMAT,
     });
   }
 
   private buildPartySummaryTdl(): string {
     return this.buildTdlRequest('TDS Party Summary', {
-      DATEFORMAT: 'DD-MMM-YYYY',
+      DATEFORMAT: TALLY_DATE_FORMAT,
     });
   }
 

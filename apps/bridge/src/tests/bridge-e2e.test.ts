@@ -28,6 +28,10 @@ interface HealthProbe {
 
 // Mock ERP Adapter
 class MockErpAdapter {
+  readonly erpType: string;
+  constructor(erpType: string) {
+    this.erpType = erpType;
+  }
 
   async extractPurchaseOrders(_date_from: Date, _date_to: Date): Promise<unknown[]> {
     // Simulate data extraction

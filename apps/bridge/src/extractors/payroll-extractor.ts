@@ -4,7 +4,7 @@
 
 import { FcError } from '@fc/shared';
 
-import { BaseExtractor, type TallyConfig, type ExtractionResult } from './base-extractor.js';
+import { BaseExtractor, type ExtractionResult } from './base-extractor.js';
 
 export interface Employee {
   name: string;

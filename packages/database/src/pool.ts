@@ -37,7 +37,8 @@ export function createPool(config: PoolConfig): pg.Pool {
   });
 
   pool.on('error', (err: Error) => {
-    // Pool-level errors are logged by the observability layer
+    // Pool-level errors: emit to stderr only (observability layer intercepts).
+    // eslint-disable-next-line no-console -- bootstrap path runs before logger is wired
     console.error('Unexpected pool error:', err.message);
   });
 

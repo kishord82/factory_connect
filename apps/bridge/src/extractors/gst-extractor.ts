@@ -5,7 +5,7 @@
 
 import { FcError } from '@fc/shared';
 
-import { BaseExtractor, type TallyConfig, type ExtractionResult } from './base-extractor.js';
+import { BaseExtractor, type ExtractionResult } from './base-extractor.js';
 
 const DATE_FORMAT = 'DD-MMM-YYYY';
 
@@ -271,18 +271,19 @@ export class GstExtractor extends BaseExtractor<GstExtractionData> {
     };
   }
 
-  private parseSalesLine(line: Record<string, unknown>): GstSalesLine {
+  private parseTaxableLine<T extends GstSalesLine | GstPurchaseLine>(line: Record<string, unknown>): T {
     return {
       ...this.parseGstLineBase(line),
       ...this.parseGstTaxFields(line),
-    };
+    } as T;
+  }
+
+  private parseSalesLine(line: Record<string, unknown>): GstSalesLine {
+    return this.parseTaxableLine<GstSalesLine>(line);
   }
 
   private parsePurchaseLine(line: Record<string, unknown>): GstPurchaseLine {
-    return {
-      ...this.parseGstLineBase(line),
-      ...this.parseGstTaxFields(line),
-    };
+    return this.parseTaxableLine<GstPurchaseLine>(line);
   }
 
   private parseHsnLine(line: Record<string, unknown>): HsnSummaryLine {

@@ -20,6 +20,8 @@ export interface QueueMessage {
   priority: number;
 }
 
+const DB_NOT_INITIALIZED = 'Database not initialized';
+
 export class LocalQueue {
   private db: SqlDatabase | null = null;
   private dbPath: string;
@@ -27,6 +29,11 @@ export class LocalQueue {
 
   constructor(dataDir: string = './data') {
     this.dbPath = path.join(dataDir, 'queue.db');
+  }
+
+  private assertDb(): SqlDatabase {
+    if (!this.db) throw new Error(DB_NOT_INITIALIZED);
+    return this.db;
   }
 
   async initialize(): Promise<void> {
@@ -48,9 +55,9 @@ export class LocalQueue {
   }
 
   private createTables(): void {
-    if (!this.db) throw new Error('Database not initialized');
+    const db = this.assertDb();
 
-    this.db.run(`
+    db.run(`
       CREATE TABLE IF NOT EXISTS queue_messages (
         id TEXT PRIMARY KEY,
         type TEXT NOT NULL,
@@ -63,7 +70,7 @@ export class LocalQueue {
       )
     `);
 
-    this.db.run(`
+    db.run(`
       CREATE INDEX IF NOT EXISTS idx_queue_priority_created
       ON queue_messages(priority DESC, created_at ASC)
       WHERE completed_at IS NULL
@@ -71,22 +78,22 @@ export class LocalQueue {
   }
 
   async persist(): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
+    const db = this.assertDb();
 
-    const data = this.db.export();
+    const data = db.export();
     const buffer = Buffer.from(data);
     await fs.mkdir(path.dirname(this.dbPath), { recursive: true });
     await fs.writeFile(this.dbPath, buffer);
   }
 
   enqueue(type: string, payload: Record<string, unknown>, priority: number = 0): QueueMessage {
-    if (!this.db) throw new Error('Database not initialized');
+    const db = this.assertDb();
 
     const id = `msg-${Date.now()}-${Math.random().toString(36).substring(7)}`;
     const createdAt = Date.now();
     const payloadJson = JSON.stringify(payload);
 
-    this.db.run(
+    db.run(
       `INSERT INTO queue_messages (id, type, payload, created_at, attempts, priority)
        VALUES (?, ?, ?, ?, 0, ?)`,
       [id, type, payloadJson, createdAt, priority]
@@ -103,9 +110,9 @@ export class LocalQueue {
   }
 
   dequeue(batchSize: number = 10): QueueMessage[] {
-    if (!this.db) throw new Error('Database not initialized');
+    const db = this.assertDb();
 
-    const result = this.db.exec(
+    const result = db.exec(
       `SELECT id, type, payload, created_at, attempts, last_error, priority
        FROM queue_messages
        WHERE completed_at IS NULL
@@ -129,18 +136,18 @@ export class LocalQueue {
   }
 
   markComplete(id: string): void {
-    if (!this.db) throw new Error('Database not initialized');
+    const db = this.assertDb();
 
-    this.db.run(
+    db.run(
       `UPDATE queue_messages SET completed_at = ? WHERE id = ?`,
       [Date.now(), id]
     );
   }
 
   markFailed(id: string, error: string, maxRetries: number = 5): void {
-    if (!this.db) throw new Error('Database not initialized');
+    const db = this.assertDb();
 
-    const result = this.db.exec(
+    const result = db.exec(
       `SELECT attempts FROM queue_messages WHERE id = ?`,
       [id]
     );
@@ -151,7 +158,7 @@ export class LocalQueue {
 
     if (attempts >= maxRetries) {
       // Move to dead letter
-      this.db.run(
+      db.run(
         `UPDATE queue_messages SET attempts = ?, last_error = ?, completed_at = ? WHERE id = ?`,
         [attempts, error, Date.now(), id]
       );
@@ -160,7 +167,7 @@ export class LocalQueue {
       const backoffMs = Math.min(1000 * Math.pow(2, attempts - 1), 60000); // Cap at 60s
       const nextAttemptAt = Date.now() + backoffMs;
 
-      this.db.run(
+      db.run(
         `UPDATE queue_messages SET attempts = ?, last_error = ?, created_at = ? WHERE id = ?`,
         [attempts, error, nextAttemptAt, id]
       );
@@ -168,9 +175,9 @@ export class LocalQueue {
   }
 
   getDepth(): number {
-    if (!this.db) throw new Error('Database not initialized');
+    const db = this.assertDb();
 
-    const result = this.db.exec(
+    const result = db.exec(
       `SELECT COUNT(*) FROM queue_messages WHERE completed_at IS NULL`
     );
 
@@ -179,12 +186,12 @@ export class LocalQueue {
   }
 
   cleanup(olderThanDays: number = 7): number {
-    if (!this.db) throw new Error('Database not initialized');
+    const db = this.assertDb();
 
     const cutoffTime = Date.now() - (olderThanDays * 24 * 60 * 60 * 1000);
 
     // Delete old completed messages
-    this.db.run(
+    db.run(
       `DELETE FROM queue_messages WHERE completed_at IS NOT NULL AND completed_at < ?`,
       [cutoffTime]
     );
@@ -194,9 +201,9 @@ export class LocalQueue {
   }
 
   getDeadLetters(maxAttempts: number = 5): QueueMessage[] {
-    if (!this.db) throw new Error('Database not initialized');
+    const db = this.assertDb();
 
-    const result = this.db.exec(
+    const result = db.exec(
       `SELECT id, type, payload, created_at, attempts, last_error, priority
        FROM queue_messages
        WHERE attempts >= ? AND completed_at IS NOT NULL

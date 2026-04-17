@@ -6,7 +6,9 @@
  */
 
 import { FcError } from '@fc/shared';
+
 import { logger } from '../logger.js';
+
 import { BankExtractor } from './bank-extractor.js';
 import { BaseExtractor, type TallyConfig, type ExtractionResult } from './base-extractor.js';
 import { GstExtractor } from './gst-extractor.js';
@@ -134,9 +136,23 @@ export class ExtractionScheduler {
    * Useful for on-demand extractions.
    */
   async executeExtraction(type: ExtractionType): Promise<ExtractionResult<unknown>> {
-    const jobId = `${type}-${Date.now()}`;
-    const job: ExtractionJob = {
-      id: jobId,
+    const job = this.createJob(type);
+    this.jobs.set(job.id, job);
+
+    try {
+      await this.ensureTallyReachable(job);
+      const result = await this.runExtractor(type);
+      this.recordSuccess(job, result);
+      return result;
+    } catch (error) {
+      this.recordFailure(job, error);
+      throw error;
+    }
+  }
+
+  private createJob(type: ExtractionType): ExtractionJob {
+    return {
+      id: `${type}-${Date.now()}`,
       type,
       status: 'running',
       startedAt: new Date(),
@@ -145,54 +161,51 @@ export class ExtractionScheduler {
       errorCount: 0,
       errors: [],
     };
+  }
 
-    this.jobs.set(jobId, job);
-
-    try {
-      // Check if Tally is reachable
-      if (!(await this.isTallyReachable())) {
-        job.status = 'failed';
-        job.completedAt = new Date();
-        job.errors.push('Tally is not reachable');
-        job.errorCount = 1;
-        this.jobs.set(jobId, job);
-
-        throw new FcError(
-          'FC_ERR_BRIDGE_TALLY_UNREACHABLE',
-          'Tally is not reachable on the configured host:port',
-          { host: this.config.tallyConfig.host, port: this.config.tallyConfig.port },
-        );
-      }
-
-      const extractor = this.extractors.get(type);
-      if (!extractor) {
-        throw new FcError(
-          'FC_ERR_BRIDGE_EXTRACTOR_NOT_FOUND',
-          `No extractor found for type: ${type}`,
-          { type },
-        );
-      }
-
-      const result = await extractor.extract();
-
-      job.status = result.success ? 'success' : 'failed';
-      job.completedAt = new Date();
-      job.recordCount = result.recordCount;
-      job.errorCount = result.errors.length;
-      job.errors = result.errors;
-
-      this.jobs.set(jobId, job);
-
-      return result;
-    } catch (error) {
-      job.status = 'failed';
-      job.completedAt = new Date();
-      job.errorCount = 1;
-      job.errors.push(error instanceof Error ? error.message : String(error));
-      this.jobs.set(jobId, job);
-
-      throw error;
+  private async ensureTallyReachable(job: ExtractionJob): Promise<void> {
+    if (await this.isTallyReachable()) {
+      return;
     }
+    job.status = 'failed';
+    job.completedAt = new Date();
+    job.errors.push('Tally is not reachable');
+    job.errorCount = 1;
+    this.jobs.set(job.id, job);
+    throw new FcError(
+      'FC_ERR_BRIDGE_TALLY_UNREACHABLE',
+      'Tally is not reachable on the configured host:port',
+      { host: this.config.tallyConfig.host, port: this.config.tallyConfig.port },
+    );
+  }
+
+  private async runExtractor(type: ExtractionType): Promise<ExtractionResult<unknown>> {
+    const extractor = this.extractors.get(type);
+    if (!extractor) {
+      throw new FcError(
+        'FC_ERR_BRIDGE_EXTRACTOR_NOT_FOUND',
+        `No extractor found for type: ${type}`,
+        { type },
+      );
+    }
+    return extractor.extract();
+  }
+
+  private recordSuccess(job: ExtractionJob, result: ExtractionResult<unknown>): void {
+    job.status = result.success ? 'success' : 'failed';
+    job.completedAt = new Date();
+    job.recordCount = result.recordCount;
+    job.errorCount = result.errors.length;
+    job.errors = result.errors;
+    this.jobs.set(job.id, job);
+  }
+
+  private recordFailure(job: ExtractionJob, error: unknown): void {
+    job.status = 'failed';
+    job.completedAt = new Date();
+    job.errorCount = 1;
+    job.errors.push(error instanceof Error ? error.message : String(error));
+    this.jobs.set(job.id, job);
   }
 
   /**

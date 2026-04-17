@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
+
 import { redactString, redactValue } from './pii-redactor.js';
 
 describe('PII Redactor', () => {

@@ -332,7 +332,7 @@ describe('Health Score Service', () => {
       const responsiveness = 7;
 
       const overall = compliance * 0.4 + financial * 0.25 + dataQuality * 0.2 + responsiveness * 0.15;
-      expect(overall).toBe(7);
+      expect(overall).toBeCloseTo(7, 10);
     });
   });
 });

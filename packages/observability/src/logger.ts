@@ -9,6 +9,7 @@
  */
 
 import pino from 'pino';
+
 import { redactString, redactValue } from './pii-redactor.js';
 
 export interface LoggerOptions {
@@ -30,7 +31,7 @@ export function createLogger(serviceOrOpts: string | LoggerOptions): pino.Logger
   const level = opts.level ?? process.env.LOG_LEVEL ?? 'info';
   const enableRedaction = !opts.disableRedaction;
 
-  const logger = pino({
+  return pino({
     name: opts.service,
     level,
     timestamp: pino.stdTimeFunctions.isoTime,
@@ -62,8 +63,6 @@ export function createLogger(serviceOrOpts: string | LoggerOptions): pino.Logger
       pid: process.pid,
     },
   });
-
-  return logger;
 }
 
 /**

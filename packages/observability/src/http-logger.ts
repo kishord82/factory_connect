@@ -3,8 +3,9 @@
  * Integrates with Express.js and applies PII redaction.
  */
 
-import type pino from 'pino';
 import type { IncomingMessage, ServerResponse } from 'node:http';
+
+import type pino from 'pino';
 
 export interface HttpLoggerOptions {
   logger: pino.Logger;
@@ -12,20 +13,22 @@ export interface HttpLoggerOptions {
   ignorePaths?: string[];
 }
 
+export type HttpLoggerMiddleware = (req: IncomingMessage, res: ServerResponse, next?: () => void) => void;
+
 /**
  * Create pino-http middleware for Express.
  * Logs request/response with correlation ID and tenant context.
  *
  * Uses dynamic import to handle pino-http's CJS export.
  */
-export async function createHttpLogger(opts: HttpLoggerOptions) {
+export async function createHttpLogger(opts: HttpLoggerOptions): Promise<HttpLoggerMiddleware> {
   // pino-http uses `export =` which requires this import pattern in ESM
   const pinoHttpModule = await import('pino-http');
   const pinoHttp = pinoHttpModule.default ?? pinoHttpModule;
 
   const ignorePaths = new Set(opts.ignorePaths ?? ['/health', '/ready']);
 
-  return (pinoHttp as unknown as (...args: unknown[]) => unknown)({
+  return (pinoHttp as unknown as (...args: unknown[]) => HttpLoggerMiddleware)({
     logger: opts.logger,
     autoLogging: {
       ignore(req: IncomingMessage) {
