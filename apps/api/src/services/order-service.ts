@@ -142,7 +142,12 @@ export async function confirmOrder(
   return withTenantTransaction(ctx, async (client: PoolClient) => {
     const existing = await findOne<OrderRow>(
       client,
-      'SELECT * FROM orders.canonical_orders WHERE id = $1',
+      `SELECT id, factory_id, buyer_id, connection_id, buyer_po_number, factory_order_number,
+              order_date, requested_ship_date, ship_to, bill_to, buyer_contact,
+              currency, subtotal, tax_amount, total_amount, source_type, status,
+              idempotency_key, created_at, updated_at
+       FROM orders.canonical_orders
+       WHERE id = $1`,
       [orderId],
     );
     if (!existing) {
@@ -193,14 +198,23 @@ export async function getOrderById(
   return withTenantClient(ctx, async (client: PoolClient) => {
     const order = await findOne<OrderRow>(
       client,
-      'SELECT * FROM orders.canonical_orders WHERE id = $1',
+      `SELECT id, factory_id, buyer_id, connection_id, buyer_po_number, factory_order_number,
+              order_date, requested_ship_date, ship_to, bill_to, buyer_contact,
+              currency, subtotal, tax_amount, total_amount, source_type, status,
+              idempotency_key, created_at, updated_at
+       FROM orders.canonical_orders
+       WHERE id = $1`,
       [orderId],
     );
     if (!order) return null;
 
     const lineItems = await findMany<LineItemRow>(
       client,
-      'SELECT * FROM orders.canonical_order_line_items WHERE order_id = $1 ORDER BY line_number',
+      `SELECT id, order_id, factory_id, line_number, buyer_sku, factory_sku, description,
+              quantity_ordered, quantity_uom, unit_price, line_total, upc, hsn_code, created_at
+       FROM orders.canonical_order_line_items
+       WHERE order_id = $1
+       ORDER BY line_number`,
       [orderId],
     );
 
@@ -253,7 +267,12 @@ export async function updateOrder(
   return withTenantTransaction(ctx, async (client: PoolClient) => {
     const existing = await findOne<OrderRow>(
       client,
-      'SELECT * FROM orders.canonical_orders WHERE id = $1',
+      `SELECT id, factory_id, buyer_id, connection_id, buyer_po_number, factory_order_number,
+              order_date, requested_ship_date, ship_to, bill_to, buyer_contact,
+              currency, subtotal, tax_amount, total_amount, source_type, status,
+              idempotency_key, created_at, updated_at
+       FROM orders.canonical_orders
+       WHERE id = $1`,
       [orderId],
     );
     if (!existing) {

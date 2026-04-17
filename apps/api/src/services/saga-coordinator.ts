@@ -200,7 +200,10 @@ export async function advanceSaga(
       // Fetch current saga state
       const saga = await findOne<SagaRow>(
         client,
-        `SELECT * FROM workflow.order_sagas WHERE id = $1`,
+        `SELECT id, factory_id, order_id, connection_id, current_step, step_deadline,
+              started_at, updated_at, locked_by, lock_expires, compensation_data
+       FROM workflow.order_sagas
+       WHERE id = $1`,
         [sagaId],
       );
 
@@ -289,7 +292,10 @@ export async function failSaga(
     try {
       const saga = await findOne<SagaRow>(
         client,
-        `SELECT * FROM workflow.order_sagas WHERE id = $1`,
+        `SELECT id, factory_id, order_id, connection_id, current_step, step_deadline,
+              started_at, updated_at, locked_by, lock_expires, compensation_data
+       FROM workflow.order_sagas
+       WHERE id = $1`,
         [sagaId],
       );
 
@@ -347,7 +353,10 @@ export async function getSagaStatus(sagaId: string, ctx: RequestContext): Promis
   return withTenantClient(ctx, async (client: PoolClient) => {
     const saga = await findOne<SagaRow>(
       client,
-      `SELECT * FROM workflow.order_sagas WHERE id = $1`,
+      `SELECT id, factory_id, order_id, connection_id, current_step, step_deadline,
+              started_at, updated_at, locked_by, lock_expires, compensation_data
+       FROM workflow.order_sagas
+       WHERE id = $1`,
       [sagaId],
     );
 
@@ -386,7 +395,9 @@ export async function listSagasByFactory(
     if (filters.order_id) filterObj.order_id = filters.order_id;
 
     const { clause, params } = buildWhereClause(filterObj);
-    const sql = `SELECT * FROM workflow.order_sagas ${clause} ORDER BY updated_at DESC`;
+    const sql = `SELECT id, factory_id, order_id, connection_id, current_step, step_deadline,
+                        started_at, updated_at, locked_by, lock_expires, compensation_data
+                 FROM workflow.order_sagas ${clause} ORDER BY updated_at DESC`;
 
     return paginatedQuery<SagaRow>(client, sql, params, page, pageSize);
   });
@@ -398,7 +409,9 @@ export async function listSagasByFactory(
 async function detectSlaBreaches(): Promise<number> {
   const pool = getPool();
   const result = await pool.query<SagaRow>(
-    `SELECT * FROM workflow.order_sagas
+    `SELECT id, factory_id, order_id, connection_id, current_step, step_deadline,
+            started_at, updated_at, locked_by, lock_expires, compensation_data
+     FROM workflow.order_sagas
      WHERE current_step NOT IN ('COMPLETED', 'FAILED')
        AND step_deadline < NOW()
        AND (locked_by IS NULL OR lock_expires < NOW())
@@ -483,7 +496,10 @@ export async function compensate(sagaId: string, ctx: RequestContext): Promise<S
     try {
       const saga = await findOne<SagaRow>(
         client,
-        `SELECT * FROM workflow.order_sagas WHERE id = $1`,
+        `SELECT id, factory_id, order_id, connection_id, current_step, step_deadline,
+              started_at, updated_at, locked_by, lock_expires, compensation_data
+       FROM workflow.order_sagas
+       WHERE id = $1`,
         [sagaId],
       );
 

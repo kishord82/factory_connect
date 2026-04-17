@@ -183,7 +183,11 @@ export async function reconcileGstr2b(
     // 6. Match items: GSTIN + invoice_number + amount
     const allItems = await findMany<Gstr2bItem>(
       client,
-      `SELECT * FROM ca_gstr2b_items WHERE session_id = $1`,
+      `SELECT id, session_id, source, supplier_gstin, invoice_number, invoice_date,
+              invoice_amount, tax_amount, total_amount, match_status, matched_with,
+              variance_amount, created_at, updated_at
+       FROM compliance.ca_gstr2b_items
+       WHERE session_id = $1`,
       [session.id],
     );
 
@@ -274,7 +278,11 @@ export async function reconcileGstr2b(
 
     const updated = await findOne<Gstr2bSession>(
       client,
-      `SELECT * FROM ca_gstr2b_sessions WHERE id = $1`,
+      `SELECT id, ca_firm_id, client_id, period, session_status,
+              total_invoices_2b, total_invoices_register, matched_count,
+              excess_in_2b, missing_from_2b, amount_mismatch, created_at, updated_at
+       FROM compliance.ca_gstr2b_sessions
+       WHERE id = $1`,
       [session.id],
     );
 
@@ -299,7 +307,11 @@ export async function getItcEligibility(
   return withTenantClient(ctx as any, async (client: PoolClient) => {
     const items = await findMany<Gstr2bItem>(
       client,
-      `SELECT * FROM ca_gstr2b_items WHERE session_id = $1`,
+      `SELECT id, session_id, source, supplier_gstin, invoice_number, invoice_date,
+              invoice_amount, tax_amount, total_amount, match_status, matched_with,
+              variance_amount, created_at, updated_at
+       FROM compliance.ca_gstr2b_items
+       WHERE session_id = $1`,
       [sessionId],
     );
 
@@ -362,7 +374,10 @@ export async function generateMismatchReport(
   return withTenantClient(ctx as any, async (client: PoolClient) => {
     const items = await findMany<Gstr2bItem>(
       client,
-      `SELECT * FROM ca_gstr2b_items
+      `SELECT id, session_id, source, supplier_gstin, invoice_number, invoice_date,
+              invoice_amount, tax_amount, total_amount, match_status, matched_with,
+              variance_amount, created_at, updated_at
+       FROM compliance.ca_gstr2b_items
        WHERE session_id = $1 AND match_status IN ('variance', 'unmatched_source')
        ORDER BY supplier_gstin, invoice_number`,
       [sessionId],
@@ -417,7 +432,10 @@ export async function listReconSessions(
   return withTenantClient(ctx as any, async (client: PoolClient) => {
     return findMany<Gstr2bSession>(
       client,
-      `SELECT * FROM ca_gstr2b_sessions
+      `SELECT id, ca_firm_id, client_id, period, session_status,
+              total_invoices_2b, total_invoices_register, matched_count,
+              excess_in_2b, missing_from_2b, amount_mismatch, created_at, updated_at
+       FROM compliance.ca_gstr2b_sessions
        WHERE ca_firm_id = $1 AND client_id = $2
        ORDER BY created_at DESC`,
       [ctx.caFirmId, clientId],
@@ -433,7 +451,11 @@ export async function getReconSessionDetail(ctx: CaRequestContext, sessionId: st
   return withTenantClient(ctx as any, async (client: PoolClient) => {
     const session = await findOne<Gstr2bSession>(
       client,
-      `SELECT * FROM ca_gstr2b_sessions WHERE id = $1`,
+      `SELECT id, ca_firm_id, client_id, period, session_status,
+              total_invoices_2b, total_invoices_register, matched_count,
+              excess_in_2b, missing_from_2b, amount_mismatch, created_at, updated_at
+       FROM compliance.ca_gstr2b_sessions
+       WHERE id = $1`,
       [sessionId],
     );
 
@@ -445,7 +467,11 @@ export async function getReconSessionDetail(ctx: CaRequestContext, sessionId: st
 
     const items = await findMany<Gstr2bItem>(
       client,
-      `SELECT * FROM ca_gstr2b_items WHERE session_id = $1`,
+      `SELECT id, session_id, source, supplier_gstin, invoice_number, invoice_date,
+              invoice_amount, tax_amount, total_amount, match_status, matched_with,
+              variance_amount, created_at, updated_at
+       FROM compliance.ca_gstr2b_items
+       WHERE session_id = $1`,
       [sessionId],
     );
 

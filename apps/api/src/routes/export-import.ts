@@ -19,22 +19,48 @@ const ExportSchema = z.object({
   to: z.coerce.date().optional(),
 });
 
-const TABLE_MAP: Record<string, string> = {
-  orders: 'canonical_orders',
-  shipments: 'canonical_shipments',
-  invoices: 'canonical_invoices',
-  connections: 'connections',
+interface ExportConfig {
+  qualifiedTable: string;
+  columns: string;
+}
+
+const EXPORT_MAP: Record<string, ExportConfig> = {
+  orders: {
+    qualifiedTable: 'orders.canonical_orders',
+    columns:
+      'id, factory_id, buyer_id, connection_id, buyer_po_number, factory_order_number, ' +
+      'order_date, requested_ship_date, currency, subtotal, tax_amount, total_amount, ' +
+      'source_type, status, created_at, updated_at',
+  },
+  shipments: {
+    qualifiedTable: 'orders.canonical_shipments',
+    columns:
+      'id, factory_id, order_id, connection_id, shipment_date, carrier_name, tracking_number, ' +
+      'weight, weight_uom, status, created_at, updated_at',
+  },
+  invoices: {
+    qualifiedTable: 'orders.canonical_invoices',
+    columns:
+      'id, factory_id, order_id, shipment_id, connection_id, invoice_number, invoice_date, ' +
+      'due_date, subtotal, tax_amount, total_amount, status, created_at, updated_at',
+  },
+  connections: {
+    qualifiedTable: 'core.connections',
+    columns:
+      'id, factory_id, buyer_id, source_type, connection_mode, buyer_endpoint, protocol, ' +
+      'status, created_at, updated_at',
+  },
 };
 
 exportRouter.get('/', validate({ query: ExportSchema }), async (req, res, next) => {
   try {
     const ctx = getRequestContext(req);
     const q = getValidatedQuery<z.infer<typeof ExportSchema>>(req);
-    const table = TABLE_MAP[q.entity_type];
+    const exportConfig = EXPORT_MAP[q.entity_type];
 
     const data = await withTenantClient(ctx, async (client: PoolClient) => {
       const params: unknown[] = [];
-      let sql = `SELECT * FROM ${table} WHERE 1=1`;
+      let sql = `SELECT ${exportConfig.columns} FROM ${exportConfig.qualifiedTable} WHERE 1=1`;
       let idx = 1;
       if (q.from) {
         sql += ` AND created_at >= $${idx++}`;

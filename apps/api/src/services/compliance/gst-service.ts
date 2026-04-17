@@ -374,7 +374,11 @@ export async function listFilings(
 ): Promise<PaginatedResult<FilingRow>> {
   return withTenantClient(ctx, async (client: PoolClient) => {
     const params: unknown[] = [];
-    let sql = 'SELECT * FROM compliance_filings WHERE ca_firm_id = $1';
+    let sql = `SELECT id, ca_firm_id, client_id, filing_type, period, status, due_date,
+              filed_date, data_snapshot, validation_results, exceptions, filed_reference,
+              prepared_by, reviewed_by, created_at, updated_at
+       FROM compliance.compliance_filings
+       WHERE ca_firm_id = $1`;
     params.push(ctx.caFirmId);
 
     if (filters.filing_type) {
@@ -407,7 +411,11 @@ export async function getFilingById(ctx: CaRequestContext, filingId: string): Pr
   return withTenantClient(ctx, async (client: PoolClient) => {
     return findOne<FilingRow>(
       client,
-      'SELECT * FROM compliance_filings WHERE id = $1 AND ca_firm_id = $2',
+      `SELECT id, ca_firm_id, client_id, filing_type, period, status, due_date,
+              filed_date, data_snapshot, validation_results, exceptions, filed_reference,
+              prepared_by, reviewed_by, created_at, updated_at
+       FROM compliance.compliance_filings
+       WHERE id = $1 AND ca_firm_id = $2`,
       [filingId, ctx.caFirmId],
     );
   });
@@ -425,7 +433,11 @@ export async function updateFilingStatus(
   return withTenantTransaction(ctx, async (client: PoolClient) => {
     const filing = await findOne<FilingRow>(
       client,
-      'SELECT * FROM compliance_filings WHERE id = $1 AND ca_firm_id = $2',
+      `SELECT id, ca_firm_id, client_id, filing_type, period, status, due_date,
+              filed_date, data_snapshot, validation_results, exceptions, filed_reference,
+              prepared_by, reviewed_by, created_at, updated_at
+       FROM compliance.compliance_filings
+       WHERE id = $1 AND ca_firm_id = $2`,
       [filingId, ctx.caFirmId],
     );
 

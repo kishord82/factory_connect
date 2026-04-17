@@ -93,7 +93,10 @@ export async function createDocumentRequest(
     // Check for duplicate request (same client + type + period)
     const existing = await findOne<DocumentRequest>(
       client,
-      `SELECT * FROM document_requests
+      `SELECT id, ca_firm_id, client_id, document_type, period, due_date, channel,
+              status, received_at, verified_at, verified_by, reminder_count,
+              last_reminder_at, max_reminders, created_at, updated_at
+       FROM compliance.document_requests
        WHERE ca_firm_id = $1 AND client_id = $2 AND document_type = $3 AND period = $4`,
       [(ctx as any).caFirmId, data.client_id, data.document_type, data.period],
     );
@@ -152,7 +155,10 @@ export async function listDocumentRequests(
     if (filters.document_type) dbFilters.document_type = filters.document_type;
 
     const { clause, params, nextIndex } = buildWhereClause(dbFilters);
-    let sql = `SELECT * FROM document_requests ${clause}`;
+    let sql = `SELECT id, ca_firm_id, client_id, document_type, period, due_date, channel,
+              status, received_at, verified_at, verified_by, reminder_count,
+              last_reminder_at, max_reminders, created_at, updated_at
+       FROM compliance.document_requests ${clause}`;
 
     if (filters.due_date_from && filters.due_date_to) {
       const and = clause ? ' AND' : ' WHERE';
@@ -177,7 +183,11 @@ export async function verifyDocument(
   return withTenantTransaction(ctx, async (client: PoolClient) => {
     const existing = await findOne<DocumentRequest>(
       client,
-      `SELECT * FROM document_requests WHERE id = $1 AND ca_firm_id = $2`,
+      `SELECT id, ca_firm_id, client_id, document_type, period, due_date, channel,
+              status, received_at, verified_at, verified_by, reminder_count,
+              last_reminder_at, max_reminders, created_at, updated_at
+       FROM compliance.document_requests
+       WHERE id = $1 AND ca_firm_id = $2`,
       [requestId, (ctx as any).caFirmId],
     );
 
@@ -232,12 +242,15 @@ export async function getOverdueRequests(ctx: RequestContext): Promise<DocumentR
   return withTenantClient(ctx, async (client: PoolClient) => {
     return findMany<DocumentRequest>(
       client,
-      `SELECT * FROM document_requests
+      `SELECT id, ca_firm_id, client_id, document_type, period, due_date, channel,
+              status, received_at, verified_at, verified_by, reminder_count,
+              last_reminder_at, max_reminders, created_at, updated_at
+       FROM compliance.document_requests
        WHERE ca_firm_id = $1
-       AND status = 'sent'
-       AND due_date < NOW()
-       AND reminder_count < max_reminders
-       AND (last_reminder_at IS NULL OR last_reminder_at < NOW() - INTERVAL '24 hours')
+         AND status = 'sent'
+         AND due_date < NOW()
+         AND reminder_count < max_reminders
+         AND (last_reminder_at IS NULL OR last_reminder_at < NOW() - INTERVAL '24 hours')
        ORDER BY due_date ASC`,
       [(ctx as any).caFirmId],
     );
@@ -259,7 +272,11 @@ export async function updateDocumentRequest(
   return withTenantTransaction(ctx, async (client: PoolClient) => {
     const existing = await findOne<DocumentRequest>(
       client,
-      `SELECT * FROM document_requests WHERE id = $1 AND ca_firm_id = $2`,
+      `SELECT id, ca_firm_id, client_id, document_type, period, due_date, channel,
+              status, received_at, verified_at, verified_by, reminder_count,
+              last_reminder_at, max_reminders, created_at, updated_at
+       FROM compliance.document_requests
+       WHERE id = $1 AND ca_firm_id = $2`,
       [requestId, (ctx as any).caFirmId],
     );
 
@@ -397,7 +414,11 @@ export async function incrementReminder(ctx: RequestContext, requestId: string):
   return withTenantTransaction(ctx, async (client: PoolClient) => {
     const existing = await findOne<DocumentRequest>(
       client,
-      `SELECT * FROM document_requests WHERE id = $1 AND ca_firm_id = $2`,
+      `SELECT id, ca_firm_id, client_id, document_type, period, due_date, channel,
+              status, received_at, verified_at, verified_by, reminder_count,
+              last_reminder_at, max_reminders, created_at, updated_at
+       FROM compliance.document_requests
+       WHERE id = $1 AND ca_firm_id = $2`,
       [requestId, (ctx as any).caFirmId],
     );
 

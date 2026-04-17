@@ -247,9 +247,12 @@ export async function sendFreeformMessage(
   const recentInbound = await withTenantClient(ctx, async (c: PoolClient) => {
     return findOne<CommunicationLogRow>(
       c,
-      `SELECT * FROM communication_log
+      `SELECT id, ca_firm_id, client_id, channel, message_type, direction, subject,
+              body, external_message_id, status, sent_at, delivered_at, read_at,
+              error_code, error_message, metadata, created_at, updated_at
+       FROM compliance.communication_log
        WHERE ca_firm_id = $1 AND client_id = $2 AND channel = 'whatsapp'
-       AND direction = 'inbound' AND created_at > NOW() - INTERVAL '24 hours'
+         AND direction = 'inbound' AND created_at > NOW() - INTERVAL '24 hours'
        ORDER BY created_at DESC LIMIT 1`,
       [ctx.caFirmId, clientId],
     );
@@ -507,9 +510,10 @@ async function getTemplate(ctx: CaRequestContext, templateName: string): Promise
   return withTenantClient(ctx, async (client: PoolClient) => {
     return findOne<TemplateRow>(
       client,
-      `SELECT * FROM document_templates
+      `SELECT id, name, template_type, channel
+       FROM compliance.document_templates
        WHERE (ca_firm_id = $1 OR ca_firm_id IS NULL)
-       AND name = $2 AND channel = 'whatsapp'
+         AND name = $2 AND channel = 'whatsapp'
        ORDER BY ca_firm_id DESC LIMIT 1`,
       [ctx.caFirmId, templateName],
     );

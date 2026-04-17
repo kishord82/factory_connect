@@ -49,8 +49,10 @@ export async function listTemplates(
 ): Promise<DocumentTemplate[]> {
   return withTenantClient(ctx, async (client: PoolClient) => {
     let sql = `
-      SELECT DISTINCT ON (name, channel) *
-      FROM document_templates
+      SELECT DISTINCT ON (name, channel)
+             id, ca_firm_id, name, template_type, channel, subject, body_template,
+             variables, is_system_default, created_at, updated_at
+      FROM compliance.document_templates
       WHERE ca_firm_id = $1 OR ca_firm_id IS NULL
     `;
     const params: unknown[] = [(ctx as any).caFirmId];
@@ -86,7 +88,9 @@ export async function createTemplate(
   const existing = await withTenantClient(ctx, async (client: PoolClient) => {
     return findOne<DocumentTemplate>(
       client,
-      `SELECT * FROM document_templates
+      `SELECT id, ca_firm_id, name, template_type, channel, subject, body_template,
+              variables, is_system_default, created_at, updated_at
+       FROM compliance.document_templates
        WHERE ca_firm_id = $1 AND name = $2 AND template_type = $3 AND channel = $4`,
       [(ctx as any).caFirmId, data.name, data.template_type, data.channel],
     );
@@ -132,7 +136,10 @@ export async function updateTemplate(
   const existing = await withTenantClient(ctx, async (client: PoolClient) => {
     return findOne<DocumentTemplate>(
       client,
-      `SELECT * FROM document_templates WHERE id = $1 AND ca_firm_id = $2`,
+      `SELECT id, ca_firm_id, name, template_type, channel, subject, body_template,
+              variables, is_system_default, created_at, updated_at
+       FROM compliance.document_templates
+       WHERE id = $1 AND ca_firm_id = $2`,
       [templateId, (ctx as any).caFirmId],
     );
   });
@@ -225,7 +232,9 @@ export async function getDefaultTemplate(
   return withTenantClient(ctx, async (client: PoolClient) => {
     return findOne<DocumentTemplate>(
       client,
-      `SELECT * FROM document_templates
+      `SELECT id, ca_firm_id, name, template_type, channel, subject, body_template,
+              variables, is_system_default, created_at, updated_at
+       FROM compliance.document_templates
        WHERE ca_firm_id IS NULL AND template_type = $1 AND channel = $2
        LIMIT 1`,
       [templateType, channel],
@@ -243,7 +252,9 @@ export async function getTemplateByName(
   return withTenantClient(ctx, async (client: PoolClient) => {
     return findOne<DocumentTemplate>(
       client,
-      `SELECT * FROM document_templates
+      `SELECT id, ca_firm_id, name, template_type, channel, subject, body_template,
+              variables, is_system_default, created_at, updated_at
+       FROM compliance.document_templates
        WHERE (ca_firm_id = $1 OR ca_firm_id IS NULL) AND name = $2
        ORDER BY ca_firm_id DESC LIMIT 1`,
       [(ctx as any).caFirmId, templateName],

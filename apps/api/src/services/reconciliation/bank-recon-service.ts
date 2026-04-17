@@ -218,7 +218,11 @@ export async function autoMatch(
     // Fetch all items for this session
     const items = await findMany<ReconciliationItem>(
       client,
-      `SELECT * FROM ca_recon_items WHERE session_id = $1`,
+      `SELECT id, session_id, source_type, source_id, transaction_date, description,
+              amount, reference, match_status, matched_with, match_confidence,
+              created_at, updated_at
+       FROM compliance.ca_recon_items
+       WHERE session_id = $1`,
       [sessionId],
     );
 
@@ -293,7 +297,11 @@ export async function manualMatch(
   return withTenantTransaction(ctx as any, async (client: PoolClient) => {
     const source = await findOne<ReconciliationItem>(
       client,
-      `SELECT * FROM ca_recon_items WHERE id = $1`,
+      `SELECT id, session_id, source_type, source_id, transaction_date, description,
+              amount, reference, match_status, matched_with, match_confidence,
+              created_at, updated_at
+       FROM compliance.ca_recon_items
+       WHERE id = $1`,
       [sourceRecordId],
     );
 
@@ -323,7 +331,11 @@ export async function manualMatch(
 
     const updated = await findOne<ReconciliationItem>(
       client,
-      `SELECT * FROM ca_recon_items WHERE id = $1`,
+      `SELECT id, session_id, source_type, source_id, transaction_date, description,
+              amount, reference, match_status, matched_with, match_confidence,
+              created_at, updated_at
+       FROM compliance.ca_recon_items
+       WHERE id = $1`,
       [sourceRecordId],
     );
 
@@ -345,7 +357,11 @@ export async function generateBrs(ctx: CaRequestContext, sessionId: string): Pro
   return withTenantClient(ctx as any, async (client: PoolClient) => {
     const session = await findOne<ReconciliationSession>(
       client,
-      `SELECT * FROM ca_bank_recon_sessions WHERE id = $1`,
+      `SELECT id, ca_firm_id, client_id, period, bank_code, account_number,
+              statement_date, statement_balance, tally_balance, session_status,
+              match_count, unmatched_count, review_count, created_at, updated_at
+       FROM compliance.ca_bank_recon_sessions
+       WHERE id = $1`,
       [sessionId],
     );
 
@@ -424,7 +440,10 @@ export async function getReconSummary(
   return withTenantClient(ctx as any, async (client: PoolClient) => {
     const sessions = await findMany<ReconciliationSession>(
       client,
-      `SELECT * FROM ca_bank_recon_sessions
+      `SELECT id, ca_firm_id, client_id, period, bank_code, account_number,
+              statement_date, statement_balance, tally_balance, session_status,
+              match_count, unmatched_count, review_count, created_at, updated_at
+       FROM compliance.ca_bank_recon_sessions
        WHERE ca_firm_id = $1 AND client_id = $2
        ORDER BY created_at DESC`,
       [ctx.caFirmId, clientId],
@@ -436,7 +455,11 @@ export async function getReconSummary(
     for (const session of sessions) {
       const items = await findMany<ReconciliationItem>(
         client,
-        `SELECT * FROM ca_recon_items WHERE session_id = $1`,
+        `SELECT id, session_id, source_type, source_id, transaction_date, description,
+              amount, reference, match_status, matched_with, match_confidence,
+              created_at, updated_at
+       FROM compliance.ca_recon_items
+       WHERE session_id = $1`,
         [session.id],
       );
 

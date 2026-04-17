@@ -80,7 +80,15 @@ export async function createInvoice(ctx: RequestContext, data: CanonicalInvoiceC
 
 export async function getInvoiceById(ctx: RequestContext, id: string): Promise<InvoiceRow | null> {
   return withTenantClient(ctx, async (client: PoolClient) => {
-    return findOne<InvoiceRow>(client, 'SELECT * FROM orders.canonical_invoices WHERE id = $1', [id]);
+    return findOne<InvoiceRow>(
+      client,
+      `SELECT id, factory_id, order_id, shipment_id, connection_id,
+              invoice_number, invoice_date, due_date, subtotal,
+              tax_amount, total_amount, status, created_at, updated_at
+       FROM orders.canonical_invoices
+       WHERE id = $1`,
+      [id],
+    );
   });
 }
 

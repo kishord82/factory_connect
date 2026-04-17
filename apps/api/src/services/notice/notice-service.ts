@@ -130,7 +130,12 @@ export async function updateNotice(
   return withTenantTransaction(ctx as any, async (client: PoolClient) => {
     const current = await findOne<Notice>(
       client,
-      `SELECT * FROM ca_notices WHERE id = $1`,
+      `SELECT id, ca_firm_id, client_id, notice_type, reference, authority,
+              issued_date, received_date, response_due_date, appeal_due_date,
+              amount, priority, status, assigned_to, response_notes,
+              resolved_date, created_at, updated_at
+       FROM compliance.ca_notices
+       WHERE id = $1`,
       [noticeId],
     );
 
@@ -198,7 +203,12 @@ export async function listNotices(
   pageSize = 20,
 ) {
   return withTenantClient(ctx as any, async (client: PoolClient) => {
-    let query = `SELECT * FROM ca_notices WHERE ca_firm_id = $1`;
+    let query = `SELECT id, ca_firm_id, client_id, notice_type, reference, authority,
+              issued_date, received_date, response_due_date, appeal_due_date,
+              amount, priority, status, assigned_to, response_notes,
+              resolved_date, created_at, updated_at
+       FROM compliance.ca_notices
+       WHERE ca_firm_id = $1`;
     const params: unknown[] = [ctx.caFirmId];
 
     if (filter.status) {
@@ -274,7 +284,12 @@ export async function getNoticeById(ctx: CaRequestContext, noticeId: string): Pr
   return withTenantClient(ctx as any, async (client: PoolClient) => {
     const notice = await findOne<Notice>(
       client,
-      `SELECT * FROM ca_notices WHERE id = $1`,
+      `SELECT id, ca_firm_id, client_id, notice_type, reference, authority,
+              issued_date, received_date, response_due_date, appeal_due_date,
+              amount, priority, status, assigned_to, response_notes,
+              resolved_date, created_at, updated_at
+       FROM compliance.ca_notices
+       WHERE id = $1`,
       [noticeId],
     );
 

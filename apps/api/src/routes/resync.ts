@@ -55,7 +55,16 @@ resyncRouter.get('/', validate({ query: PaginationSchema }), async (req, res, ne
     const ctx = getRequestContext(req);
     const q = getValidatedQuery<z.infer<typeof PaginationSchema>>(req);
     const result = await withTenantClient(ctx, async (client: PoolClient) => {
-      return paginatedQuery(client, 'SELECT * FROM resync_requests ORDER BY created_at DESC', [], q.page, q.pageSize);
+      return paginatedQuery(
+        client,
+        `SELECT id, factory_id, connection_id, resync_type, message_ids, reason,
+                requested_by, status, approved_by, created_at, updated_at
+         FROM workflow.resync_requests
+         ORDER BY created_at DESC`,
+        [],
+        q.page,
+        q.pageSize,
+      );
     });
     res.json(result);
   } catch (err) { next(err); }

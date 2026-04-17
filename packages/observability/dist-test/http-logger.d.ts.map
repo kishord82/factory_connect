@@ -1,0 +1,1 @@
+{"version":3,"file":"http-logger.d.ts","sourceRoot":"","sources":["../src/http-logger.ts"],"names":[],"mappings":"AAAA;;;GAGG;AAEH,OAAO,KAAK,IAAI,MAAM,MAAM,CAAC;AAG7B,MAAM,WAAW,iBAAiB;IAChC,MAAM,EAAE,IAAI,CAAC,MAAM,CAAC;IACpB,kDAAkD;IAClD,WAAW,CAAC,EAAE,MAAM,EAAE,CAAC;CACxB;AAED;;;;;GAKG;AACH,wBAAsB,gBAAgB,CAAC,IAAI,EAAE,iBAAiB,oBAoD7D"}

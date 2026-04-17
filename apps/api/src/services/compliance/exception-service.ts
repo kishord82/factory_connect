@@ -121,7 +121,11 @@ export async function updateException(
   return withTenantTransaction(ctx, async (client: PoolClient) => {
     const exception = await findOne<ComplianceExceptionRow>(
       client,
-      'SELECT * FROM compliance_exceptions WHERE id = $1 AND ca_firm_id = $2',
+      `SELECT id, filing_id, client_id, ca_firm_id, exception_type, severity, description,
+              source_data, suggested_fix, status, resolved_by, resolved_at,
+              resolution_notes, created_at
+       FROM compliance.compliance_exceptions
+       WHERE id = $1 AND ca_firm_id = $2`,
       [exceptionId, ctx.caFirmId],
     );
 
@@ -204,7 +208,11 @@ export async function listExceptions(
 ): Promise<PaginatedResult<ComplianceExceptionRow>> {
   return withTenantClient(ctx, async (client: PoolClient) => {
     const params: unknown[] = [ctx.caFirmId];
-    let sql = 'SELECT * FROM compliance_exceptions WHERE ca_firm_id = $1';
+    let sql = `SELECT id, filing_id, client_id, ca_firm_id, exception_type, severity,
+              description, source_data, suggested_fix, status, resolved_by,
+              resolved_at, resolution_notes, created_at
+       FROM compliance.compliance_exceptions
+       WHERE ca_firm_id = $1`;
 
     if (filters.severity) {
       sql += ` AND severity = $${params.length + 1}`;
@@ -236,7 +244,11 @@ export async function getExceptionById(ctx: CaRequestContext, exceptionId: strin
   return withTenantClient(ctx, async (client: PoolClient) => {
     return findOne<ComplianceExceptionRow>(
       client,
-      'SELECT * FROM compliance_exceptions WHERE id = $1 AND ca_firm_id = $2',
+      `SELECT id, filing_id, client_id, ca_firm_id, exception_type, severity, description,
+              source_data, suggested_fix, status, resolved_by, resolved_at,
+              resolution_notes, created_at
+       FROM compliance.compliance_exceptions
+       WHERE id = $1 AND ca_firm_id = $2`,
       [exceptionId, ctx.caFirmId],
     );
   });

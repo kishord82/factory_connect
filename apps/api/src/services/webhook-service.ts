@@ -100,7 +100,11 @@ export async function listWebhooks(
   return withTenantClient(ctx, async (client: PoolClient) => {
     return paginatedQuery<WebhookSubscriptionRow>(
       client,
-      'SELECT * FROM webhook_subscriptions WHERE factory_id = $1 ORDER BY created_at DESC',
+      `SELECT id, factory_id, url, events, secret, custom_headers, active,
+              last_delivery_at, failure_count, created_at, updated_at
+       FROM platform.webhook_subscriptions
+       WHERE factory_id = $1
+       ORDER BY created_at DESC`,
       [ctx.tenantId],
       page,
       pageSize,
@@ -115,7 +119,10 @@ export async function deleteWebhook(ctx: RequestContext, webhookId: string): Pro
   return withTenantTransaction(ctx, async (client: PoolClient) => {
     const existing = await findOne<WebhookSubscriptionRow>(
       client,
-      'SELECT * FROM webhook_subscriptions WHERE id = $1 AND factory_id = $2',
+      `SELECT id, factory_id, url, events, secret, custom_headers, active,
+              last_delivery_at, failure_count, created_at, updated_at
+       FROM platform.webhook_subscriptions
+       WHERE id = $1 AND factory_id = $2`,
       [webhookId, ctx.tenantId],
     );
 
@@ -140,7 +147,10 @@ export async function testWebhook(ctx: RequestContext, webhookId: string): Promi
   const subscription = await withTenantClient(ctx, async (client: PoolClient) => {
     return findOne<WebhookSubscriptionRow>(
       client,
-      'SELECT * FROM webhook_subscriptions WHERE id = $1 AND factory_id = $2',
+      `SELECT id, factory_id, url, events, secret, custom_headers, active,
+              last_delivery_at, failure_count, created_at, updated_at
+       FROM platform.webhook_subscriptions
+       WHERE id = $1 AND factory_id = $2`,
       [webhookId, ctx.tenantId],
     );
   });
@@ -254,7 +264,9 @@ export async function deliverWebhook(
     // Get active subscriptions for this event type
     const subscriptions = await findMany<WebhookSubscriptionRow>(
       client,
-      `SELECT * FROM webhook_subscriptions
+      `SELECT id, factory_id, url, events, secret, custom_headers, active,
+              last_delivery_at, failure_count, created_at, updated_at
+       FROM platform.webhook_subscriptions
        WHERE factory_id = $1 AND active = true AND $2 = ANY(events)`,
       [ctx.tenantId, eventType],
     );

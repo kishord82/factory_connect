@@ -390,7 +390,9 @@ export async function detectTdsMismatches(
     // Get all items with variances
     return findMany<ReconciliationItemRow>(
       client,
-      `SELECT * FROM reconciliation_items
+      `SELECT id, session_id, source_record, target_record, match_status,
+              variance_amount, variance_reason, resolution, resolved_by, created_at
+       FROM compliance.reconciliation_items
        WHERE session_id = $1 AND (match_status = 'variance' OR match_status LIKE 'unmatched%')
        ORDER BY variance_amount DESC NULLS LAST`,
       [sessionId],
@@ -410,7 +412,10 @@ export async function getReconciliationSummary(
     // Get latest reconciliation session
     const session = await findOne<ReconciliationSessionRow>(
       client,
-      `SELECT * FROM reconciliation_sessions
+      `SELECT id, ca_firm_id, client_id, recon_type, period, status, source_count,
+              target_count, matched_count, unmatched_source, unmatched_target,
+              variance_amount, summary, created_at, completed_at
+       FROM compliance.reconciliation_sessions
        WHERE ca_firm_id = $1 AND client_id = $2 AND status = 'completed'
        ORDER BY completed_at DESC LIMIT 1`,
       [ctx.tenantId, clientId],
