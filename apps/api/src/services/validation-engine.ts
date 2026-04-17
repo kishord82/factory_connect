@@ -102,7 +102,15 @@ export function validateInvoice(data: Record<string, unknown>): ValidationResult
 
 export async function validateOrderForDispatch(ctx: RequestContext, orderId: string): Promise<ValidationResult> {
   return withTenantClient(ctx, async (client: PoolClient) => {
-    const order = await findOne<Record<string, unknown>>(client, 'SELECT * FROM orders.canonical_orders WHERE id = $1', [orderId]);
+    const order = await findOne<Record<string, unknown>>(
+      client,
+      `SELECT id, factory_id, buyer_id, connection_id, buyer_po_number, factory_order_number,
+              order_date, requested_ship_date, ship_to, bill_to, buyer_contact,
+              currency, subtotal, tax_amount, total_amount, source_type, status,
+              idempotency_key, created_at, updated_at
+       FROM orders.canonical_orders WHERE id = $1`,
+      [orderId],
+    );
     if (!order) {
       return { valid: false, errors: [{ field: 'id', rule: 'EXISTS', message: 'Order not found', severity: 'error' }], warnings: [] };
     }

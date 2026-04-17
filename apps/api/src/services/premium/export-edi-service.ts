@@ -85,9 +85,7 @@ export async function generateShippingBill(
     hs_codes: Record<string, unknown>;
   },
 ): Promise<ShippingBillRow> {
-  return withTenantTransaction(
-    { tenantId: ctx.caFirmId, userId: ctx.userId, correlationId: ctx.correlationId } as any,
-    async (client: PoolClient) => {
+  return withTenantTransaction(ctx, async (client: PoolClient) => {
       if (invoiceIds.length === 0) {
         throw new FcError(
           'FC_ERR_EDI_NO_INVOICES',
@@ -154,9 +152,7 @@ export async function generateBoL(
     weight_kg: string;
   },
 ): Promise<BillOfLadingRow> {
-  return withTenantTransaction(
-    { tenantId: ctx.caFirmId, userId: ctx.userId, correlationId: ctx.correlationId } as any,
-    async (client: PoolClient) => {
+  return withTenantTransaction(ctx, async (client: PoolClient) => {
       // Verify shipment exists and belongs to this client
       const shipmentCheck = await client.query(
         'SELECT id FROM orders.canonical_shipments WHERE id = $1',
@@ -213,12 +209,13 @@ export async function prepareIcegateSubmission(
   clientId: string,
   shippingBillId: string,
 ): Promise<IcegatePrepRow> {
-  return withTenantTransaction(
-    { tenantId: ctx.caFirmId, userId: ctx.userId, correlationId: ctx.correlationId } as any,
-    async (client: PoolClient) => {
+  return withTenantTransaction(ctx, async (client: PoolClient) => {
       // Fetch shipping bill
       const sbResult = await client.query<ShippingBillRow>(
-        'SELECT * FROM export_shipping_bills WHERE id = $1 AND ca_firm_id = $2',
+        `SELECT id, ca_firm_id, client_id, invoice_ids, sb_number, sb_date,
+                fob_value, currency, hs_codes, igst_amount, status,
+                icegate_submitted_at, created_at, updated_at
+         FROM compliance.export_shipping_bills WHERE id = $1 AND ca_firm_id = $2`,
         [shippingBillId, ctx.caFirmId],
       );
 
@@ -272,9 +269,7 @@ export async function trackDutyDrawback(
   clientId: string,
   period: string, // YYYY-MM
 ): Promise<DrawbackClaimRow[]> {
-  return withTenantClient(
-    { tenantId: ctx.caFirmId, userId: ctx.userId, correlationId: ctx.correlationId } as any,
-    async (client: PoolClient) => {
+  return withTenantClient(ctx, async (client: PoolClient) => {
       const [year, month] = period.split('-');
       if (!year || !month) {
         throw new FcError(
@@ -286,7 +281,10 @@ export async function trackDutyDrawback(
       }
 
       const result = await client.query<DrawbackClaimRow>(
-        `SELECT * FROM export_drawback_claims
+        `SELECT id, ca_firm_id, client_id, shipping_bill_id, shipping_bill_no,
+                drawback_type, amount, filing_status, filed_date, claim_reference,
+                created_at, updated_at
+         FROM compliance.export_drawback_claims
          WHERE ca_firm_id = $1 AND client_id = $2
          AND TO_CHAR(created_at, 'YYYY-MM') = $3
          ORDER BY created_at DESC`,
@@ -310,9 +308,7 @@ export async function exportComplianceDashboard(
   drawbackPending: number;
   filingsDue: number;
 }> {
-  return withTenantClient(
-    { tenantId: ctx.caFirmId, userId: ctx.userId, correlationId: ctx.correlationId } as any,
-    async (client: PoolClient) => {
+  return withTenantClient(ctx, async (client: PoolClient) => {
       const [exportersResult, sbResult, drawbackResult, filingResult] = await Promise.all([
         client.query<{ count: string }>(
           'SELECT COUNT(DISTINCT client_id)::text as count FROM export_shipping_bills WHERE ca_firm_id = $1',
