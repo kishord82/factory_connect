@@ -315,13 +315,76 @@ Reference the Architecture Decisions History doc for code samples. Summary:
 
 ## 10. GIT WORKFLOW
 
-- **Branch:** `Phase1` is the main development branch
+- **Branch:** `phase1-dev` is the main development branch. PRs target `phase1-dev`. `main` is production.
 - **Don't commit unless asked.** Don't push unless asked.
 - **Don't amend commits** — create new ones.
 - **Commit messages:** Concise, "why" not "what". Format: `track-X: description`
   - Example: `track-a: add RLS policies for all tenant tables`
   - Example: `track-b: implement saga coordinator with 15-state lifecycle`
 - **Never commit:** `.env`, credentials, PATs, secrets, `node_modules/`, `dist/`
+- **Branch naming:** `track-{letter}/{kebab-case-description}` — e.g., `track-b/saga-coordinator`
+
+---
+
+## 10a. GIT HOOKS (pre-commit)
+
+Git hooks are installed in `.git/hooks/` and run automatically on every commit:
+
+| Hook | What it runs | Fails on |
+|------|-------------|----------|
+| `pre-commit` | `pnpm typecheck` + `pnpm lint` on staged TS files | TypeScript errors, ESLint warnings |
+| `commit-msg` | Validates format `track-X: description` | Malformed commit messages |
+
+If a hook blocks your commit:
+1. Fix the reported error (never bypass with `--no-verify`)
+2. Re-stage and commit again
+
+---
+
+## 10b. CI/CD PIPELINE
+
+Every push and PR to `phase1-dev` / `main` triggers `.github/workflows/ci.yml`:
+
+| Job | Steps | Gate |
+|-----|-------|------|
+| **quality** | typecheck → lint → fmt:check → `pnpm audit` | Must pass before test job runs |
+| **test** | build packages → `pnpm test --coverage` → upload coverage | Coverage ≥ 80% (lines, functions, branches) |
+| **docker-build** | build API + Portal Docker images | Verifies builds don't break |
+
+Coverage reports are posted as PR comments via `davelosert/vitest-coverage-report-action`.
+
+Branch protection rules:
+- `phase1-dev`: CI pass required, no direct push, branch must be up-to-date
+- `main`: CI pass + 1 approval required
+
+---
+
+## 10c. ESLint PLUGINS
+
+The base config (`packages/config/eslint.base.cjs`) enforces:
+
+| Plugin | Rules | Purpose |
+|--------|-------|---------|
+| `@typescript-eslint/strict` | no-explicit-any, unused-vars, explicit-return-type | TypeScript strictness |
+| `eslint-plugin-import` | import/order, import/no-duplicates, **import/no-cycle** | Import order + circular dep detection |
+| `eslint-plugin-sonarjs` | no-duplicate-string, no-identical-functions | DRY enforcement |
+| `eslint-plugin-security` | detect-unsafe-regex, detect-eval, detect-new-buffer | Security anti-patterns |
+
+---
+
+## 10d. ARCHITECTURE DECISION RECORDS (ADRs)
+
+Significant architectural decisions are documented in `docs/adr/`:
+
+| ADR | Decision |
+|-----|---------|
+| [001](../docs/adr/001-raw-sql-no-orm.md) | Raw SQL with `pg` — no ORM |
+| [002](../docs/adr/002-pnpm-monorepo.md) | pnpm workspaces monorepo |
+| [003](../docs/adr/003-rls-tenant-isolation.md) | PostgreSQL RLS for multi-tenant isolation |
+| [004](../docs/adr/004-transactional-outbox.md) | Transactional Outbox for reliable EDI messaging |
+| [005](../docs/adr/005-fle-vault-transit.md) | HashiCorp Vault Transit for FLE of PII |
+
+When making decisions that affect multiple tracks or are hard to reverse, write a new ADR before implementing.
 
 ---
 

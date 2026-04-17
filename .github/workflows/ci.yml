@@ -1,7 +1,7 @@
 ###############################################################################
 # FactoryConnect — CI Pipeline
 # Runs on every push and PR to main / phase1-dev
-# Steps: install → typecheck → lint → test → build Docker images
+# Steps: install → typecheck → lint → audit → test+coverage → build Docker images
 ###############################################################################
 
 name: CI
@@ -23,7 +23,7 @@ env:
 jobs:
   # ─── Quality Checks ─────────────────────────────────────────────────
   quality:
-    name: Typecheck + Lint + Format
+    name: Typecheck + Lint + Format + Audit
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -49,15 +49,18 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
-      - name: Lint
+      - name: Lint (zero warnings enforced)
         run: pnpm lint
 
       - name: Format check
         run: pnpm fmt:check
 
-  # ─── Unit Tests ──────────────────────────────────────────────────────
+      - name: Dependency vulnerability audit
+        run: pnpm audit --audit-level=high
+
+  # ─── Unit Tests + Coverage ───────────────────────────────────────────
   test:
-    name: Tests
+    name: Tests + Coverage
     runs-on: ubuntu-latest
     needs: quality
     services:
@@ -110,9 +113,32 @@ jobs:
         run: |
           pnpm --filter @fc/shared run build
           pnpm --filter @fc/database run build
+          pnpm --filter @fc/observability run build
 
-      - name: Run tests
-        run: pnpm test
+      - name: Run tests with coverage
+        run: pnpm test -- --coverage
+
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-reports
+          path: |
+            apps/api/coverage/
+            apps/portal/coverage/
+            apps/bridge/coverage/
+            packages/shared/coverage/
+            packages/database/coverage/
+            packages/observability/coverage/
+          retention-days: 7
+
+      - name: Report coverage on PR
+        uses: davelosert/vitest-coverage-report-action@v2
+        if: github.event_name == 'pull_request'
+        with:
+          json-summary-compare-path: apps/api/coverage/coverage-summary.json
+          json-summary-path: apps/api/coverage/coverage-summary.json
+          file-coverage-mode: none
 
   # ─── Docker Build (verify images build) ──────────────────────────────
   docker-build:

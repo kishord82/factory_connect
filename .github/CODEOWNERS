@@ -1,0 +1,27 @@
+# FactoryConnect — Code Ownership
+# All files require review from @kishord82 until the team grows.
+# Format: <pattern> <owner>
+
+# Global default — covers everything not matched below
+*                           @kishord82
+
+# Architecture docs — require explicit owner review before changes
+docs/                       @kishord82
+.claude/CLAUDE.md           @kishord82
+
+# Infrastructure — changes here affect prod
+docker/                     @kishord82
+.github/                    @kishord82
+Makefile                    @kishord82
+pnpm-workspace.yaml         @kishord82
+
+# Shared packages — breaking changes cascade to all apps
+packages/shared/            @kishord82
+packages/database/          @kishord82
+packages/config/            @kishord82
+packages/observability/     @kishord82
+
+# Apps
+apps/api/                   @kishord82
+apps/portal/                @kishord82
+apps/bridge/                @kishord82
