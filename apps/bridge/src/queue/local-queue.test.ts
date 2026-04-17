@@ -1,10 +1,12 @@
 /**
  * Local queue tests
  */
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { LocalQueue } from './local-queue.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+
+import { LocalQueue } from './local-queue.js';
 
 describe('LocalQueue', () => {
   let queue: LocalQueue;

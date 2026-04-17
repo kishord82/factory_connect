@@ -5,6 +5,10 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
+import { logger as rootLogger } from '../logger.js';
+
+const logger = rootLogger.child({ component: 'otp-bootstrap' });
+
 export interface OTPBootstrapOptions {
   dataDir: string;
   apiBaseUrl: string;
@@ -118,13 +122,13 @@ export class OTPBootstrap {
       flag: 'w',
     });
 
-    console.log(`[OTPBootstrap] Token stored at ${this.tokenFilePath}`);
+    logger.info({ tokenPath: this.tokenFilePath }, 'Token stored');
   }
 
   async clearToken(): Promise<void> {
     try {
       await fs.unlink(this.tokenFilePath);
-      console.log('[OTPBootstrap] Token cleared');
+      logger.info('Token cleared');
     } catch {
       // File doesn't exist, no-op
     }

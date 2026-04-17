@@ -2,6 +2,7 @@
  * C1-C2: Core mapping engine — applies field mappings with transforms.
  * Validates inputs, applies transforms, detects unmapped fields.
  */
+import { applyTransform, applyTransformChain } from './transform.js';
 import type {
   MappingConfig,
   MappingConfigDef,
@@ -11,7 +12,6 @@ import type {
   FieldMapping,
   MappingFieldDef,
 } from './types.js';
-import { applyTransform, applyTransformChain } from './transform.js';
 
 /**
  * Get a nested value from an object using dot-notation path.

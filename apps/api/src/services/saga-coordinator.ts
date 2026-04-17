@@ -8,8 +8,8 @@
  * - Audit log integration with hash-chain
  */
 
-import type { RequestContext, SagaStep } from '@fc/shared';
-import { FcError, SAGA_POLL_INTERVAL_MS, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from '@fc/shared';
+import crypto from 'node:crypto';
+
 import {
   getPool,
   withTenantTransaction,
@@ -20,9 +20,11 @@ import {
   buildWhereClause,
   insertOne,
 } from '@fc/database';
-import { createLogger } from '@fc/observability';
 import type { PoolClient, PaginatedResult } from '@fc/database';
-import crypto from 'node:crypto';
+import { createLogger } from '@fc/observability';
+import type { RequestContext, SagaStep } from '@fc/shared';
+import { FcError, SAGA_POLL_INTERVAL_MS, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from '@fc/shared';
+
 
 const logger = createLogger('saga-coordinator');
 
@@ -497,7 +499,7 @@ export async function compensate(sagaId: string, ctx: RequestContext): Promise<S
       }
 
       // Define rollback steps per current state
-      let rollbackStep: SagaStep = 'FAILED';
+      const rollbackStep: SagaStep = 'FAILED';
 
       // Compensation strategy: roll back to a known safe state based on current step
       if (saga.current_step === 'FAILED' || saga.current_step === 'COMPLETED') {

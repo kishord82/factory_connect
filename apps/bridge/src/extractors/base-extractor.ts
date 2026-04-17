@@ -75,8 +75,7 @@ export abstract class BaseExtractor<T> {
           );
         }
 
-        const text = await response.text();
-        return text;
+        return await response.text();
       } catch (error) {
         lastError = error as Error;
 

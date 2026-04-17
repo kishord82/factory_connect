@@ -2,8 +2,8 @@
  * F17: Client Health Score Service Tests
  */
 
-import { describe, it, expect } from 'vitest';
 import type { CaRequestContext } from '@fc/shared';
+import { describe, it, expect } from 'vitest';
 
 const mockCaCtx: CaRequestContext = {
   caFirmId: 'ca-firm-123',

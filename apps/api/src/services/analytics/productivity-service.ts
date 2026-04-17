@@ -3,10 +3,10 @@
  * Tracks activity, calculates productivity metrics, analyzes profitability
  */
 
-import type { CaRequestContext } from '@fc/shared';
 
 import type { PoolClient } from '@fc/database';
 import { withTenantTransaction, withTenantClient, insertOne, findOne, findMany } from '@fc/database';
+import type { CaRequestContext } from '@fc/shared';
 
 // ═══════════════════════════════════════════════════════════════════
 // TYPES
@@ -66,8 +66,8 @@ export async function logActivity(
   description: string | null,
   date: Date,
 ): Promise<StaffActivityLog> {
-  return withTenantTransaction(ctx as any, async (client: PoolClient) => {
-    const result = await insertOne<StaffActivityLog>(
+  return withTenantTransaction(ctx, async (client: PoolClient) => {
+    return await insertOne<StaffActivityLog>(
       client,
       `INSERT INTO ca_activity_logs (
         ca_firm_id, staff_id, client_id, activity_type,
@@ -84,8 +84,6 @@ export async function logActivity(
         date,
       ],
     );
-
-    return result;
   });
 }
 
@@ -98,7 +96,7 @@ export async function getStaffProductivity(
   staffId: string,
   dateRange: { start: Date; end: Date },
 ): Promise<StaffProductivity> {
-  return withTenantClient(ctx as any, async (client: PoolClient) => {
+  return withTenantClient(ctx, async (client: PoolClient) => {
     // Total hours and client count
     const summaryStats = await findOne<{
       total_minutes: number;
@@ -172,7 +170,7 @@ export async function getTeamProductivity(
   ctx: CaRequestContext,
   dateRange: { start: Date; end: Date },
 ): Promise<StaffProductivity[]> {
-  return withTenantClient(ctx as any, async (client: PoolClient) => {
+  return withTenantClient(ctx, async (client: PoolClient) => {
     const staffMembers = await findMany<{ id: string }>(
       client,
       `SELECT DISTINCT staff_id as id FROM ca_activity_logs
@@ -198,7 +196,7 @@ export async function getClientProfitability(
   ctx: CaRequestContext,
   clientId: string,
 ): Promise<ClientProfitability> {
-  return withTenantClient(ctx as any, async (client: PoolClient) => {
+  return withTenantClient(ctx, async (client: PoolClient) => {
     // Total time spent
     const timeStats = await findOne<{ total_minutes: number }>(
       client,
@@ -260,7 +258,7 @@ export async function getFirmAnalytics(
   ctx: CaRequestContext,
   period: { start: Date; end: Date },
 ): Promise<FirmAnalytics> {
-  return withTenantClient(ctx as any, async (client: PoolClient) => {
+  return withTenantClient(ctx, async (client: PoolClient) => {
     // Total and active clients
     const clientStats = await findOne<{
       total_clients: number;

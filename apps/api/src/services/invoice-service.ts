@@ -2,12 +2,11 @@
  * B9: Invoice service — CRUD + outbox for Invoice (810).
  */
 
-import type { RequestContext } from '@fc/shared';
-import type { PoolClient } from '@fc/database';
-import { FcError } from '@fc/shared';
-import type { CanonicalInvoiceCreate } from '@fc/shared';
 import { withTenantTransaction, withTenantClient, insertOne, findOne, paginatedQuery } from '@fc/database';
-import type { PaginatedResult } from '@fc/database';
+import type { PoolClient , PaginatedResult } from '@fc/database';
+import { FcError } from '@fc/shared';
+import type { RequestContext , CanonicalInvoiceCreate } from '@fc/shared';
+
 import { buildSearchWhere, buildOrderBy } from '../utils/pagination.js';
 
 const INVOICE_SORT_COLUMNS = ['created_at', 'invoice_date', 'due_date', 'total_amount', 'status'];

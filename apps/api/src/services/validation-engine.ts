@@ -1,9 +1,9 @@
 /**
  * B25: Pre-dispatch validation engine — validates documents before EDI send.
  */
-import type { RequestContext } from '@fc/shared';
 import type { PoolClient } from '@fc/database';
 import { withTenantClient, findOne, findMany } from '@fc/database';
+import type { RequestContext } from '@fc/shared';
 interface ValidationResult {
   valid: boolean;
   errors: ValidationIssue[];

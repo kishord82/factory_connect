@@ -2,11 +2,12 @@
  * B: Dashboard route — Returns summary statistics for the factory.
  */
 
-import { Router } from 'express';
-import { authenticate } from '../middleware/auth.js';
-import { tenantContext, getRequestContext } from '../middleware/tenant-context.js';
 import type { PoolClient } from '@fc/database';
 import { withTenantClient } from '@fc/database';
+import { Router } from 'express';
+
+import { authenticate } from '../middleware/auth.js';
+import { tenantContext, getRequestContext } from '../middleware/tenant-context.js';
 
 export const dashboardRouter = Router();
 dashboardRouter.use(authenticate, tenantContext);

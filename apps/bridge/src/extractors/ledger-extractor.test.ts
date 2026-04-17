@@ -2,10 +2,11 @@
  * Tests for LedgerExtractor: chart of accounts and ledger groups.
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { LedgerExtractor } from './ledger-extractor.js';
-import type { TallyConfig } from './base-extractor.js';
 import { FcError } from '@fc/shared';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+import type { TallyConfig } from './base-extractor.js';
+import { LedgerExtractor } from './ledger-extractor.js';
 
 describe('LedgerExtractor', () => {
   let extractor: LedgerExtractor;

@@ -6,14 +6,16 @@
  */
 
 import { FcError } from '@fc/shared';
-import { GstExtractor } from './gst-extractor.js';
-import { TdsExtractor } from './tds-extractor.js';
-import { LedgerExtractor } from './ledger-extractor.js';
+
+import { logger } from '../logger.js';
 import { BankExtractor } from './bank-extractor.js';
-import { PayrollExtractor } from './payroll-extractor.js';
-import { TrialBalanceExtractor } from './trial-balance-extractor.js';
-import { StockExtractor } from './stock-extractor.js';
 import { BaseExtractor, type TallyConfig, type ExtractionResult } from './base-extractor.js';
+import { GstExtractor } from './gst-extractor.js';
+import { LedgerExtractor } from './ledger-extractor.js';
+import { PayrollExtractor } from './payroll-extractor.js';
+import { StockExtractor } from './stock-extractor.js';
+import { TdsExtractor } from './tds-extractor.js';
+import { TrialBalanceExtractor } from './trial-balance-extractor.js';
 
 export type { TallyConfig };
 
@@ -211,7 +213,7 @@ export class ExtractionScheduler {
         results.set(schedule.type, result);
       } catch (error) {
         // Continue with next extraction even if one fails
-        console.error(`Extraction failed for ${schedule.type}:`, error);
+        logger.error({ err: error, extractionType: schedule.type }, 'Extraction failed');
       }
     }
 

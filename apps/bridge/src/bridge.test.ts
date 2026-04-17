@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+
+import { createErpAdapter } from './erp/index.js';
+import { HealthReporter } from './health/health-reporter.js';
 import { AdaptivePoller } from './polling/adaptive-poller.js';
 import { enqueue, dequeue, clearQueue, queueSize, getDeadLetters, requeueWithError } from './queue/local-queue.js';
-import { HealthReporter } from './health/health-reporter.js';
-import { createErpAdapter } from './erp/index.js';
 
 describe('Local Queue', () => {
   beforeEach(() => clearQueue());

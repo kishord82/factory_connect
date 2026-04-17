@@ -4,9 +4,10 @@
  * before allowing access to protected endpoints.
  */
 
-import type { Request, Response, NextFunction } from 'express';
-import { FcError } from '@fc/shared';
 import { getPool } from '@fc/database';
+import { FcError } from '@fc/shared';
+import type { Request, Response, NextFunction } from 'express';
+
 import { getCaRequestContext } from './ca-tenant-context.js';
 
 interface SubscriptionTierRow {

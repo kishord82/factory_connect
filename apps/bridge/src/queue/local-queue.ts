@@ -2,9 +2,13 @@
  * D4: Local queue — stores outbound messages when cloud is unreachable.
  * Uses SQLite (sql.js) for persistence.
  */
-import initSqlJs from 'sql.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+
+import initSqlJs from 'sql.js';
+
+type SqlJsModule = Awaited<ReturnType<typeof initSqlJs>>;
+type SqlDatabase = InstanceType<SqlJsModule['Database']>;
 
 export interface QueueMessage {
   id: string;
@@ -17,8 +21,7 @@ export interface QueueMessage {
 }
 
 export class LocalQueue {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private db: any = null;
+  private db: SqlDatabase | null = null;
   private dbPath: string;
   private initialized = false;
 
@@ -29,8 +32,7 @@ export class LocalQueue {
   async initialize(): Promise<void> {
     if (this.initialized) return;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const SQL = await (initSqlJs as any)();
+    const SQL = await initSqlJs();
     let data: Uint8Array | undefined;
 
     try {
@@ -114,8 +116,7 @@ export class LocalQueue {
 
     if (result.length === 0) return [];
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const rows = result[0].values as Array<Array<any>>;
+    const rows = result[0].values;
     return rows.map(row => ({
       id: row[0] as string,
       type: row[1] as string,
@@ -146,8 +147,7 @@ export class LocalQueue {
 
     if (result.length === 0) return;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const attempts = ((result[0].values[0] as Array<any>)[0] as number) + 1;
+    const attempts = (result[0].values[0][0] as number) + 1;
 
     if (attempts >= maxRetries) {
       // Move to dead letter
@@ -175,8 +175,7 @@ export class LocalQueue {
     );
 
     if (result.length === 0) return 0;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return (result[0].values[0] as Array<any>)[0] as number;
+    return result[0].values[0][0] as number;
   }
 
   cleanup(olderThanDays: number = 7): number {
@@ -207,8 +206,7 @@ export class LocalQueue {
 
     if (result.length === 0) return [];
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const rows = result[0].values as Array<Array<any>>;
+    const rows = result[0].values;
     return rows.map(row => ({
       id: row[0] as string,
       type: row[1] as string,

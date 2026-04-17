@@ -6,9 +6,10 @@
  * In dev/test mode, accepts a simpler JWT for easier testing.
  */
 
-import jwt from 'jsonwebtoken';
-import type { Request, Response, NextFunction } from 'express';
 import { FcError } from '@fc/shared';
+import type { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
+
 import { getConfig } from '../config.js';
 
 export interface AuthPayload {

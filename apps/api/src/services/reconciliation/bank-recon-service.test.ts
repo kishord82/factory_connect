@@ -3,6 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
+
 import { parseBankStatement } from './bank-recon-service.js';
 
 describe('Bank Reconciliation Service', () => {

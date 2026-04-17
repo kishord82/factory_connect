@@ -3,10 +3,11 @@
  * Covers all valid transitions, error cases, deadline detection, and compensation.
  */
 
-import { beforeEach, describe, it, expect, vi } from 'vitest';
 import type { PoolClient } from '@fc/database';
 import type { RequestContext, SagaStep } from '@fc/shared';
 import { FcError } from '@fc/shared';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
+
 import {
   advanceSaga,
   failSaga,

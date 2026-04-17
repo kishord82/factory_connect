@@ -3,10 +3,10 @@
  * Tests that cross-tenant access is properly blocked
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { v4 as uuidv4 } from 'uuid';
-import type { RequestContext } from '@fc/shared';
 import { withTenantTransaction, withTenantClient, getPool } from '@fc/database';
+import type { RequestContext } from '@fc/shared';
+import { v4 as uuidv4 } from 'uuid';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 describe('Integration: Row-Level Security (RLS)', () => {
   // Create two separate tenant contexts

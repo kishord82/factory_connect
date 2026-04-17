@@ -2,10 +2,11 @@
  * Integration: Middleware stack — auth, tenant context, rate limit, idempotency, validation
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import type { RequestContext } from '@fc/shared';
 import request from 'supertest';
 import { v4 as uuidv4 } from 'uuid';
-import type { RequestContext } from '@fc/shared';
+import { describe, it, expect, beforeEach } from 'vitest';
+
 import { createApp } from '../../app.js';
 
 const app = createApp();

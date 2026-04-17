@@ -4,10 +4,10 @@
  * Status transitions, escalations, resolutions
  */
 
-import type { CaRequestContext } from '@fc/shared';
 import type { PoolClient, PaginatedResult } from '@fc/database';
-import { FcError } from '@fc/shared';
 import { withTenantTransaction, withTenantClient, insertOne, findOne, paginatedQuery } from '@fc/database';
+import type { CaRequestContext } from '@fc/shared';
+import { FcError } from '@fc/shared';
 
 interface ComplianceExceptionRow {
   id: string;

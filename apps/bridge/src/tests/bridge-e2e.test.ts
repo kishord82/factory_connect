@@ -3,8 +3,8 @@
  * Tests offline resilience, health probes, adaptive polling
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
 import { v4 as uuidv4 } from 'uuid';
+import { describe, it, expect, beforeEach } from 'vitest';
 
 /**
  * Mock implementations for testing the bridge lifecycle

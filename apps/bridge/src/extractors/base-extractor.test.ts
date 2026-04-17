@@ -2,9 +2,10 @@
  * Tests for BaseExtractor HTTP, retry, and XML parsing logic.
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { BaseExtractor, type TallyConfig, type ExtractionResult } from './base-extractor.js';
 import { FcError } from '@fc/shared';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+import { BaseExtractor, type TallyConfig, type ExtractionResult } from './base-extractor.js';
 
 // Concrete test implementation of BaseExtractor
 class TestExtractor extends BaseExtractor<{ test: string }> {

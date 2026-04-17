@@ -3,8 +3,9 @@
  * Covers batch processing, distributed locking, retry logic, claim-check pattern, and metrics.
  */
 
-import { beforeEach, afterEach, describe, it, expect, vi } from 'vitest';
 import type { PoolClient } from '@fc/database';
+import { beforeEach, afterEach, describe, it, expect, vi } from 'vitest';
+
 import {
   setOutboxHandler,
   stopOutboxPoller,

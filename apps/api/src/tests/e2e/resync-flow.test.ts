@@ -2,12 +2,14 @@
  * E2E: Resync flow — request, validate, approve, queue, execute, complete
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { withTenantTransaction, withTenantClient, getPool } from '@fc/database';
+import type { RequestContext } from '@fc/shared';
 import request from 'supertest';
 import { v4 as uuidv4 } from 'uuid';
-import type { RequestContext } from '@fc/shared';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+
 import { createApp } from '../../app.js';
-import { withTenantTransaction, withTenantClient, getPool } from '@fc/database';
+
 
 const app = createApp();
 

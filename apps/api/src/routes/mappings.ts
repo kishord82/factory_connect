@@ -2,15 +2,17 @@
  * C: Mappings route — Data transformation rules and field mappings.
  */
 
+import type { PoolClient } from '@fc/database';
+import { withTenantClient, paginatedQuery } from '@fc/database';
+import { PaginationSchema } from '@fc/shared';
 import { Router } from 'express';
 import { z } from 'zod';
+
 import { authenticate } from '../middleware/auth.js';
 import { tenantContext, getRequestContext } from '../middleware/tenant-context.js';
 import { validate, getValidatedQuery } from '../middleware/validate.js';
-import type { PoolClient } from '@fc/database';
-import { withTenantClient, paginatedQuery } from '@fc/database';
 import { parsePagination, buildOrderBy } from '../utils/pagination.js';
-import { PaginationSchema } from '@fc/shared';
+
 
 export const mappingsRouter = Router();
 mappingsRouter.use(authenticate, tenantContext);

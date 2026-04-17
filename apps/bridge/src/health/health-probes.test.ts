@@ -2,6 +2,7 @@
  * Health probes tests
  */
 import { describe, it, expect, vi } from 'vitest';
+
 import { HealthProbeManager } from './health-probes.js';
 
 describe('HealthProbeManager', () => {

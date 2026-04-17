@@ -2,14 +2,16 @@
  * C: EDI messages route — Electronic Data Interchange message log.
  */
 
+import type { PoolClient } from '@fc/database';
+import { withTenantClient, paginatedQuery } from '@fc/database';
+import { PaginationSchema } from '@fc/shared';
 import { Router } from 'express';
+
 import { authenticate } from '../middleware/auth.js';
 import { tenantContext, getRequestContext } from '../middleware/tenant-context.js';
 import { validate } from '../middleware/validate.js';
-import type { PoolClient } from '@fc/database';
-import { withTenantClient, paginatedQuery } from '@fc/database';
 import { parsePagination, buildSearchWhere, buildOrderBy } from '../utils/pagination.js';
-import { PaginationSchema } from '@fc/shared';
+
 
 export const ediRouter = Router();
 ediRouter.use(authenticate, tenantContext);

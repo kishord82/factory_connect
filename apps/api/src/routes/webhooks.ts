@@ -2,9 +2,10 @@
  * B24: Webhook routes — register, list, delete, and test webhooks.
  */
 
+import { OutboxEventTypeSchema } from '@fc/shared';
 import { Router } from 'express';
 import { z } from 'zod';
-import { OutboxEventTypeSchema } from '@fc/shared';
+
 import { authenticate } from '../middleware/auth.js';
 import { tenantContext, getRequestContext } from '../middleware/tenant-context.js';
 import { validate, getValidatedBody, getValidatedParams } from '../middleware/validate.js';

@@ -3,10 +3,10 @@
  * Matches bank statements with Tally entries, generates BRS
  */
 
-import type { CaRequestContext } from '@fc/shared';
-import { FcError } from '@fc/shared';
 import { withTenantTransaction, withTenantClient, insertOne, findOne, findMany } from '@fc/database';
 import type { PoolClient } from '@fc/database';
+import type { CaRequestContext } from '@fc/shared';
+import { FcError } from '@fc/shared';
 
 // ═══════════════════════════════════════════════════════════════════
 // TYPES
@@ -118,7 +118,7 @@ export async function createBankReconSession(
   accountNumber: string,
   statementData: BankTransaction[],
 ): Promise<ReconciliationSession> {
-  return withTenantTransaction(ctx as any, async (client: PoolClient) => {
+  return withTenantTransaction(ctx, async (client: PoolClient) => {
     // 1. Create session
     const session = await insertOne<ReconciliationSession>(
       client,
@@ -214,7 +214,7 @@ export async function autoMatch(
   ctx: CaRequestContext,
   sessionId: string,
 ): Promise<{ matched: number; unmatched: number; needsReview: number }> {
-  return withTenantTransaction(ctx as any, async (client: PoolClient) => {
+  return withTenantTransaction(ctx, async (client: PoolClient) => {
     // Fetch all items for this session
     const items = await findMany<ReconciliationItem>(
       client,
@@ -290,7 +290,7 @@ export async function manualMatch(
   targetRecordId: string,
   _resolution: string,
 ): Promise<ReconciliationItem> {
-  return withTenantTransaction(ctx as any, async (client: PoolClient) => {
+  return withTenantTransaction(ctx, async (client: PoolClient) => {
     const source = await findOne<ReconciliationItem>(
       client,
       `SELECT * FROM ca_recon_items WHERE id = $1`,
@@ -342,7 +342,7 @@ export async function manualMatch(
 // ═══════════════════════════════════════════════════════════════════
 
 export async function generateBrs(ctx: CaRequestContext, sessionId: string): Promise<BrsOutput> {
-  return withTenantClient(ctx as any, async (client: PoolClient) => {
+  return withTenantClient(ctx, async (client: PoolClient) => {
     const session = await findOne<ReconciliationSession>(
       client,
       `SELECT * FROM ca_bank_recon_sessions WHERE id = $1`,
@@ -421,7 +421,7 @@ export async function getReconSummary(
   ctx: CaRequestContext,
   clientId: string,
 ): Promise<BankReconSummary> {
-  return withTenantClient(ctx as any, async (client: PoolClient) => {
+  return withTenantClient(ctx, async (client: PoolClient) => {
     const sessions = await findMany<ReconciliationSession>(
       client,
       `SELECT * FROM ca_bank_recon_sessions

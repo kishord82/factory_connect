@@ -11,8 +11,8 @@
 
 import { getPool, type PoolClient } from '@fc/database';
 import { createLogger } from '@fc/observability';
-import { OUTBOX_POLL_INTERVAL_MS, MAX_RETRY_ATTEMPTS, RETRY_BACKOFF_MS } from '@fc/shared';
-import { FcError } from '@fc/shared';
+import { OUTBOX_POLL_INTERVAL_MS, MAX_RETRY_ATTEMPTS, RETRY_BACKOFF_MS , FcError } from '@fc/shared';
+
 import * as minioClient from '../infrastructure/minio.js';
 
 const logger = createLogger('outbox-poller');

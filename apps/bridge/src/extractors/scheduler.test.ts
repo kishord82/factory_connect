@@ -2,14 +2,15 @@
  * Tests for ExtractionScheduler: job scheduling, execution, and status tracking.
  */
 
+import { FcError } from '@fc/shared';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+
 import {
   ExtractionScheduler,
   DEFAULT_SCHEDULES,
   type ClientScheduleConfig,
   type TallyConfig,
 } from './scheduler.js';
-import { FcError } from '@fc/shared';
 
 describe('ExtractionScheduler', () => {
   let scheduler: ExtractionScheduler;

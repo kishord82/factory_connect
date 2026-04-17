@@ -5,9 +5,10 @@
  * Must be used after authenticate middleware.
  */
 
-import type { Request, Response, NextFunction } from 'express';
 import { FcError } from '@fc/shared';
 import type { CaRequestContext, CaSubscriptionTier } from '@fc/shared';
+import type { Request, Response, NextFunction } from 'express';
+
 import type { AuthPayload } from './auth.js';
 
 declare global {

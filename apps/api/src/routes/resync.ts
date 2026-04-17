@@ -2,15 +2,16 @@
  * B11: Resync routes — 9-state resync state machine.
  */
 
+import type { PoolClient } from '@fc/database';
+import { withTenantTransaction, withTenantClient, insertOne, findOne, paginatedQuery } from '@fc/database';
+import { ResyncRequestCreateSchema, PaginationSchema , FcError } from '@fc/shared';
 import { Router } from 'express';
 import { z } from 'zod';
-import { ResyncRequestCreateSchema, PaginationSchema } from '@fc/shared';
-import { FcError } from '@fc/shared';
+
 import { authenticate } from '../middleware/auth.js';
 import { tenantContext, getRequestContext } from '../middleware/tenant-context.js';
 import { validate, getValidatedQuery, getValidatedParams } from '../middleware/validate.js';
-import type { PoolClient } from '@fc/database';
-import { withTenantTransaction, withTenantClient, insertOne, findOne, paginatedQuery } from '@fc/database';
+
 
 export const resyncRouter = Router();
 resyncRouter.use(authenticate, tenantContext);

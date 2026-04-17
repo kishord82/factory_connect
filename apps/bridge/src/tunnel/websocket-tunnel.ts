@@ -3,8 +3,12 @@
  * Handles reconnection with exponential backoff, heartbeat, message framing,
  * and command dispatch from cloud.
  */
-import { WebSocket } from 'ws';
 import { v4 as uuidv4 } from 'uuid';
+import { WebSocket } from 'ws';
+
+import { logger as rootLogger } from '../logger.js';
+
+const logger = rootLogger.child({ component: 'websocket-tunnel' });
 
 export type ConnectionState = 'CONNECTING' | 'OPEN' | 'CLOSING' | 'CLOSED' | 'RECONNECTING';
 
@@ -173,7 +177,7 @@ export class WebSocketTunnel {
         this.sendAck(message.correlationId);
       }
     } catch (err) {
-      console.error('[WebSocketTunnel] Message parse error:', err);
+      logger.error({ err }, 'Message parse error');
     }
   }
 
@@ -188,7 +192,7 @@ export class WebSocketTunnel {
         this.ws.send(JSON.stringify(ack));
       }
     } catch (err) {
-      console.error('[WebSocketTunnel] Error sending ACK:', err);
+      logger.error({ err }, 'Error sending ACK');
     }
   }
 
@@ -199,7 +203,7 @@ export class WebSocketTunnel {
         try {
           this.ws!.ping();
         } catch (err) {
-          console.error('[WebSocketTunnel] Heartbeat error:', err);
+          logger.error({ err }, 'Heartbeat error');
         }
       }
     }, 30000); // 30s
@@ -221,13 +225,13 @@ export class WebSocketTunnel {
     const delay = Math.min(baseDelay, 60000);
     this.reconnectAttempt++;
 
-    console.log(`[WebSocketTunnel] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempt})`);
+    logger.info({ delayMs: delay, attempt: this.reconnectAttempt }, 'Reconnecting');
 
     this.reconnectTimer = setTimeout(async () => {
       try {
         await this.connect(this.url, this.token);
       } catch (err) {
-        console.error('[WebSocketTunnel] Reconnection failed:', err);
+        logger.error({ err }, 'Reconnection failed');
         if (this.reconnectAttempt < this.maxReconnectAttempt) {
           this.scheduleReconnect();
         }
@@ -239,7 +243,7 @@ export class WebSocketTunnel {
     if (this.state !== newState) {
       const oldState = this.state;
       this.state = newState;
-      console.log(`[WebSocketTunnel] State: ${oldState} → ${newState}`);
+      logger.info({ from: oldState, to: newState }, 'State transition');
       if (this.onStateChangeCallback) {
         this.onStateChangeCallback(newState);
       }

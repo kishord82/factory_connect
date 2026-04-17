@@ -2,12 +2,11 @@
  * B8: Shipment service — CRUD + outbox for ASN (856).
  */
 
-import type { RequestContext } from '@fc/shared';
-import type { PoolClient } from '@fc/database';
-import { FcError } from '@fc/shared';
-import type { CanonicalShipmentCreate } from '@fc/shared';
 import { withTenantTransaction, withTenantClient, insertOne, findOne, paginatedQuery } from '@fc/database';
-import type { PaginatedResult } from '@fc/database';
+import type { PoolClient , PaginatedResult } from '@fc/database';
+import { FcError } from '@fc/shared';
+import type { RequestContext , CanonicalShipmentCreate } from '@fc/shared';
+
 import { buildSearchWhere, buildOrderBy } from '../utils/pagination.js';
 
 interface ShipmentRow {

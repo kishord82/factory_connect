@@ -6,8 +6,8 @@
  * or withTenantTransaction() to ensure RLS filters correctly.
  */
 
-import type pg from 'pg';
 import type { RequestContext } from '@fc/shared';
+import type pg from 'pg';
 
 /**
  * Set session-level tenant context on a client connection.

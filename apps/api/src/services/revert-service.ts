@@ -1,10 +1,11 @@
 /**
  * B15: Revert service — safely revert entity changes using audit log.
  */
-import type { RequestContext } from '@fc/shared';
 import type { PoolClient } from '@fc/database';
-import { FcError } from '@fc/shared';
 import { withTenantTransaction, findOne } from '@fc/database';
+import type { RequestContext } from '@fc/shared';
+import { FcError } from '@fc/shared';
+
 import { analyzeOrderImpact } from './impact-analyzer.js';
 
 interface RevertResult {

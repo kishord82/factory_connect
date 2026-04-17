@@ -1,9 +1,9 @@
 /**
  * B14: Impact analyzer — calculates blast radius before revert/rollback.
  */
-import type { RequestContext } from '@fc/shared';
 import type { PoolClient } from '@fc/database';
 import { withTenantClient, findMany } from '@fc/database';
+import type { RequestContext } from '@fc/shared';
 
 interface ImpactReport {
   entity_type: string;

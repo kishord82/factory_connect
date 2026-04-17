@@ -3,10 +3,10 @@
  * Matches GSTR-2B supplier data with purchase register from Tally
  */
 
-import type { CaRequestContext } from '@fc/shared';
-import { FcError } from '@fc/shared';
 import { withTenantTransaction, withTenantClient, insertOne, findOne, findMany } from '@fc/database';
 import type { PoolClient } from '@fc/database';
+import type { CaRequestContext } from '@fc/shared';
+import { FcError } from '@fc/shared';
 
 // ═══════════════════════════════════════════════════════════════════
 // TYPES
@@ -80,7 +80,7 @@ export async function reconcileGstr2b(
   clientId: string,
   period: string,
 ): Promise<Gstr2bSession> {
-  return withTenantTransaction(ctx as any, async (client: PoolClient) => {
+  return withTenantTransaction(ctx, async (client: PoolClient) => {
     // 1. Create session
     const session = await insertOne<Gstr2bSession>(
       client,
@@ -296,7 +296,7 @@ export async function getItcEligibility(
   ctx: CaRequestContext,
   sessionId: string,
 ): Promise<ItcEligibility> {
-  return withTenantClient(ctx as any, async (client: PoolClient) => {
+  return withTenantClient(ctx, async (client: PoolClient) => {
     const items = await findMany<Gstr2bItem>(
       client,
       `SELECT * FROM ca_gstr2b_items WHERE session_id = $1`,
@@ -359,7 +359,7 @@ export async function generateMismatchReport(
   ctx: CaRequestContext,
   sessionId: string,
 ): Promise<Gstr2bMismatch[]> {
-  return withTenantClient(ctx as any, async (client: PoolClient) => {
+  return withTenantClient(ctx, async (client: PoolClient) => {
     const items = await findMany<Gstr2bItem>(
       client,
       `SELECT * FROM ca_gstr2b_items
@@ -414,7 +414,7 @@ export async function listReconSessions(
   ctx: CaRequestContext,
   clientId: string,
 ): Promise<Gstr2bSession[]> {
-  return withTenantClient(ctx as any, async (client: PoolClient) => {
+  return withTenantClient(ctx, async (client: PoolClient) => {
     return findMany<Gstr2bSession>(
       client,
       `SELECT * FROM ca_gstr2b_sessions
@@ -430,7 +430,7 @@ export async function listReconSessions(
 // ═══════════════════════════════════════════════════════════════════
 
 export async function getReconSessionDetail(ctx: CaRequestContext, sessionId: string) {
-  return withTenantClient(ctx as any, async (client: PoolClient) => {
+  return withTenantClient(ctx, async (client: PoolClient) => {
     const session = await findOne<Gstr2bSession>(
       client,
       `SELECT * FROM ca_gstr2b_sessions WHERE id = $1`,

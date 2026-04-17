@@ -3,9 +3,10 @@
  * Covers registration, listing, deletion, testing, signature verification, and delivery.
  */
 
-import { beforeEach, describe, it, expect, vi } from 'vitest';
 import type { RequestContext } from '@fc/shared';
 import { FcError } from '@fc/shared';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
+
 import {
   registerWebhook,
   listWebhooks,

@@ -4,10 +4,12 @@
  * Concurrency: 10 (can handle 10 webhooks in parallel).
  */
 
-import { Worker, Queue, type Job } from 'bullmq';
 import { createLogger } from '@fc/observability';
-import { processWebhook } from '../../services/communication/whatsapp-service.js';
 import type { CaRequestContext } from '@fc/shared';
+import { Worker, Queue, type Job } from 'bullmq';
+
+import { processWebhook } from '../../services/communication/whatsapp-service.js';
+
 
 const logger = createLogger('whatsapp-webhook-worker');
 

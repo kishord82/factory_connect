@@ -2,8 +2,8 @@
  * F6: Export EDI Service Tests
  */
 
-import { describe, it, expect } from 'vitest';
 import { FcError } from '@fc/shared';
+import { describe, it, expect } from 'vitest';
 
 describe('Export EDI Service', () => {
   describe('generateShippingBill', () => {

@@ -3,6 +3,7 @@
  */
 
 import { FcError } from '@fc/shared';
+
 import { BaseExtractor, type TallyConfig, type ExtractionResult } from './base-extractor.js';
 
 export interface StockItem {

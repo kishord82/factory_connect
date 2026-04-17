@@ -3,9 +3,6 @@
  * 4 writes in 1 transaction: domain + outbox + saga + audit.
  */
 
-import type { RequestContext } from '@fc/shared';
-import { FcError } from '@fc/shared';
-import type { CanonicalOrderCreate, CanonicalOrderUpdate, OrderListQuery } from '@fc/shared';
 import {
   withTenantTransaction,
   withTenantClient,
@@ -16,6 +13,8 @@ import {
   buildWhereClause,
 } from '@fc/database';
 import type { PaginatedResult, PoolClient } from '@fc/database';
+import { FcError } from '@fc/shared';
+import type { RequestContext , CanonicalOrderCreate, CanonicalOrderUpdate, OrderListQuery } from '@fc/shared';
 
 interface OrderRow {
   id: string;

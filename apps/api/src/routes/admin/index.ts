@@ -2,13 +2,13 @@
  * B18: Admin routes — FC admin: factory list, Act As, feature flags.
  */
 
+import type { PoolClient } from '@fc/database';
+import { getPool , withTransaction, insertOne, paginatedQuery } from '@fc/database';
 import { Router } from 'express';
 import { z } from 'zod';
+
 import { authenticate, authorize } from '../../middleware/auth.js';
 import { validate, getValidatedParams } from '../../middleware/validate.js';
-import type { PoolClient } from '@fc/database';
-import { getPool } from '@fc/database';
-import { withTransaction, insertOne, paginatedQuery } from '@fc/database';
 import { parsePagination, buildSearchWhere, buildOrderBy } from '../../utils/pagination.js';
 
 export const adminRouter = Router();

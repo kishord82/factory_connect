@@ -4,8 +4,8 @@
  * /ready — readiness check (DB connection)
  */
 
-import { Router } from 'express';
 import { healthCheck } from '@fc/database';
+import { Router } from 'express';
 
 export const healthRouter = Router();
 

@@ -3,10 +3,10 @@ export { TallyAdapter } from './tally-adapter.js';
 export { ZohoAdapter } from './zoho-adapter.js';
 export { SapB1Adapter } from './sap-b1-adapter.js';
 
-import type { ErpAdapter } from './types.js';
-import { TallyAdapter } from './tally-adapter.js';
-import { ZohoAdapter } from './zoho-adapter.js';
 import { SapB1Adapter } from './sap-b1-adapter.js';
+import { TallyAdapter } from './tally-adapter.js';
+import type { ErpAdapter } from './types.js';
+import { ZohoAdapter } from './zoho-adapter.js';
 
 export function createErpAdapter(type: string, options: Record<string, unknown> = {}): ErpAdapter {
   switch (type) {
