@@ -16,17 +16,17 @@ import { caRouter } from './routes/ca/index.js';
 import { calendarRouter } from './routes/calendar.js';
 import { connectionRouter } from './routes/connections.js';
 import { dashboardRouter } from './routes/dashboard.js';
+import { ediRouter } from './routes/edi.js';
 import { exportRouter } from './routes/export-import.js';
 import { healthRouter } from './routes/health.js';
-import { orderRouter } from './routes/orders.js';
-import { shipmentRouter } from './routes/shipments.js';
 import { invoiceRouter } from './routes/invoices.js';
-import { resyncRouter } from './routes/resync.js';
-import { notificationRouter } from './routes/notifications.js';
-import { webhookRouter } from './routes/webhooks.js';
-import { settingsRouter } from './routes/settings.js';
 import { mappingsRouter } from './routes/mappings.js';
-import { ediRouter } from './routes/edi.js';
+import { notificationRouter } from './routes/notifications.js';
+import { orderRouter } from './routes/orders.js';
+import { resyncRouter } from './routes/resync.js';
+import { settingsRouter } from './routes/settings.js';
+import { shipmentRouter } from './routes/shipments.js';
+import { webhookRouter } from './routes/webhooks.js';
 
 export function createApp(): express.Express {
   const app = express();

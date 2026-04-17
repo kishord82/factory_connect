@@ -67,54 +67,61 @@ function getLeafPaths(obj: Record<string, unknown>, prefix: string = ''): string
 }
 
 /**
+ * Extract fields array from either new MappingConfig or legacy MappingConfigDef.
+ */
+function extractFields(config: MappingConfig | MappingConfigDef): (FieldMapping | MappingFieldDef)[] {
+  if ('field_mappings' in config) return config.field_mappings;
+  if ('fields' in config) return (config as MappingConfigDef).fields;
+  return [];
+}
+
+/**
+ * Validate top-level config scalar fields.
+ */
+function validateConfigScalars(config: MappingConfig | MappingConfigDef): ValidationError[] {
+  const errors: ValidationError[] = [];
+  if (!config.id || typeof config.id !== 'string') {
+    errors.push({ path: 'config.id', message: 'Mapping ID is required and must be a string', severity: 'error' });
+  }
+  if (!config.name || typeof config.name !== 'string') {
+    errors.push({ path: 'config.name', message: 'Mapping name is required and must be a string', severity: 'error' });
+  }
+  if (!config.source_type || typeof config.source_type !== 'string') {
+    errors.push({ path: 'config.source_type', message: 'Source type is required', severity: 'error' });
+  }
+  if (!config.target_type || typeof config.target_type !== 'string') {
+    errors.push({ path: 'config.target_type', message: 'Target type is required', severity: 'error' });
+  }
+  return errors;
+}
+
+/**
+ * Validate each field mapping entry has required path properties.
+ */
+function validateFieldEntries(fields: (FieldMapping | MappingFieldDef)[]): ValidationError[] {
+  const errors: ValidationError[] = [];
+  for (let i = 0; i < fields.length; i++) {
+    const field = fields[i];
+    if (!field.source_path || typeof field.source_path !== 'string') {
+      errors.push({ path: `config.fields[${i}].source_path`, message: 'source_path is required', severity: 'error' });
+    }
+    if (!field.target_path || typeof field.target_path !== 'string') {
+      errors.push({ path: `config.fields[${i}].target_path`, message: 'target_path is required', severity: 'error' });
+    }
+  }
+  return errors;
+}
+
+/**
  * Validate a mapping configuration structure.
  * Returns validation errors if config is invalid.
  */
 export function validateMappingConfig(
   config: MappingConfig | MappingConfigDef,
 ): ValidationError[] {
-  const errors: ValidationError[] = [];
+  const errors: ValidationError[] = [...validateConfigScalars(config)];
 
-  if (!config.id || typeof config.id !== 'string') {
-    errors.push({
-      path: 'config.id',
-      message: 'Mapping ID is required and must be a string',
-      severity: 'error',
-    });
-  }
-
-  if (!config.name || typeof config.name !== 'string') {
-    errors.push({
-      path: 'config.name',
-      message: 'Mapping name is required and must be a string',
-      severity: 'error',
-    });
-  }
-
-  if (!config.source_type || typeof config.source_type !== 'string') {
-    errors.push({
-      path: 'config.source_type',
-      message: 'Source type is required',
-      severity: 'error',
-    });
-  }
-
-  if (!config.target_type || typeof config.target_type !== 'string') {
-    errors.push({
-      path: 'config.target_type',
-      message: 'Target type is required',
-      severity: 'error',
-    });
-  }
-
-  // Handle both new and legacy field names
-  let fields: (FieldMapping | MappingFieldDef)[] = [];
-  if ('field_mappings' in config) {
-    fields = config.field_mappings;
-  } else if ('fields' in config) {
-    fields = (config as MappingConfigDef).fields;
-  }
-
+  const fields = extractFields(config);
   if (!Array.isArray(fields) || fields.length === 0) {
     errors.push({
       path: 'config.fields',
@@ -124,50 +131,31 @@ export function validateMappingConfig(
     return errors;
   }
 
-  // Validate each field
-  for (let i = 0; i < fields.length; i++) {
-    const field = fields[i];
-
-    if (!field.source_path || typeof field.source_path !== 'string') {
-      errors.push({
-        path: `config.fields[${i}].source_path`,
-        message: 'source_path is required',
-        severity: 'error',
-      });
-    }
-
-    if (!field.target_path || typeof field.target_path !== 'string') {
-      errors.push({
-        path: `config.fields[${i}].target_path`,
-        message: 'target_path is required',
-        severity: 'error',
-      });
-    }
-  }
-
+  errors.push(...validateFieldEntries(fields));
   return errors;
 }
 
 /**
  * Validate that all required fields are present in source data.
  */
+/**
+ * Resolve whether a field is required — handles both is_required (new) and required (legacy).
+ */
+function resolveIsRequired(field: FieldMapping | MappingFieldDef): boolean {
+  if ('is_required' in field) return field.is_required;
+  if ('required' in field) return (field as MappingFieldDef).required ?? false;
+  return false;
+}
+
 export function validateRequiredFields(
   sourceData: Record<string, unknown>,
   config: MappingConfig | MappingConfigDef,
 ): ValidationError[] {
   const errors: ValidationError[] = [];
-  let fields: (FieldMapping | MappingFieldDef)[] = [];
-  if ('field_mappings' in config) {
-    fields = config.field_mappings;
-  } else if ('fields' in config) {
-    fields = (config as MappingConfigDef).fields;
-  }
+  const fields = extractFields(config);
 
   for (const field of fields) {
-    // Check both is_required and required (for backward compat)
-    const isRequired = 'is_required' in field ? field.is_required : ('required' in field ? (field as MappingFieldDef).required : false);
-
-    if (isRequired) {
+    if (resolveIsRequired(field)) {
       const value = getNestedValue(sourceData, field.source_path);
       if (value === undefined || value === null) {
         errors.push({
@@ -197,13 +185,10 @@ export function applyMapping(
   const warnings: string[] = [];
   const mappedSourcePaths = new Set<string>();
 
-  // Handle both new and legacy field names
-  let fields: (FieldMapping | MappingFieldDef)[] = [];
-  if ('field_mappings' in config) {
-    fields = config.field_mappings;
-  } else if ('fields' in config) {
-    fields = (config as MappingConfigDef).fields;
-  }
+  // Handle both new and legacy field names — prefer non-empty array
+  const fieldMappings = ('field_mappings' in config) ? config.field_mappings : [];
+  const legacyFields = ('fields' in config) ? ((config as MappingConfigDef).fields ?? []) : [];
+  const fields: (FieldMapping | MappingFieldDef)[] = fieldMappings.length > 0 ? fieldMappings : legacyFields;
 
   for (const field of fields) {
     mappedSourcePaths.add(field.source_path);

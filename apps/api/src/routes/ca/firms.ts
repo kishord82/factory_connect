@@ -2,11 +2,12 @@
  * CA1: CA Firm routes — POST/PATCH firm, GET firm profile, subscription
  */
 
+import { FcError } from '@fc/shared';
 import { Router } from 'express';
 import { z } from 'zod';
 
 import { authenticate } from '../../middleware/auth.js';
-import { caTenantContext, getCaRequestContext } from '../../middleware/ca-tenant-context.js';
+import { caTenantContext } from '../../middleware/ca-tenant-context.js';
 import { validate } from '../../middleware/validate.js';
 
 export const firmRouter = Router();
@@ -29,20 +30,22 @@ const FirmCreateSchema = z.object({
 
 const FirmUpdateSchema = FirmCreateSchema.partial();
 
+const caNotImplemented = (): never => {
+  throw new FcError(
+    'FC_ERR_FEATURE_DISABLED',
+    'CA module not yet implemented',
+    { feature: 'ca_module' },
+    501,
+  );
+};
+
 /** POST /api/v1/ca/firms — Create CA firm (onboarding) */
 firmRouter.post(
   '/',
   validate({ body: FirmCreateSchema }),
-  async (req, res, next) => {
+  async (_req, _res, next) => {
     try {
-            // TODO: Implement firm creation service
-      res.status(201).json({
-        data: {
-          id: 'ca-firm-1',
-          ...req.body,
-          created_at: new Date().toISOString(),
-        },
-      });
+      caNotImplemented();
     } catch (err) {
       next(err);
     }
@@ -50,27 +53,9 @@ firmRouter.post(
 );
 
 /** GET /api/v1/ca/firms/me — Get current firm profile */
-firmRouter.get('/me', async (req, res, next) => {
+firmRouter.get('/me', async (_req, _res, next) => {
   try {
-    const ctx = getCaRequestContext(req);
-    // TODO: Implement get firm service
-    res.json({
-      data: {
-        id: ctx.caFirmId,
-        firm_name: 'Demo Firm',
-        gst_number: '18AABCT0001A1Z0',
-        pan_number: 'AAAPF0001A',
-        firm_type: 'pvt_ltd',
-        phone_number: '+91-40-1234-5678',
-        email: 'firm@example.com',
-        address: '123 Main Street',
-        city: 'Hyderabad',
-        state: 'TS',
-        postal_code: '500001',
-        subscription_tier: ctx.subscriptionTier,
-        created_at: new Date().toISOString(),
-      },
-    });
+    caNotImplemented();
   } catch (err) {
     next(err);
   }
@@ -80,17 +65,9 @@ firmRouter.get('/me', async (req, res, next) => {
 firmRouter.patch(
   '/me',
   validate({ body: FirmUpdateSchema }),
-  async (req, res, next) => {
+  async (_req, _res, next) => {
     try {
-      const ctx = getCaRequestContext(req);
-      // TODO: Implement firm update service
-      res.json({
-        data: {
-          id: ctx.caFirmId,
-          ...req.body,
-          updated_at: new Date().toISOString(),
-        },
-      });
+      caNotImplemented();
     } catch (err) {
       next(err);
     }
@@ -98,52 +75,18 @@ firmRouter.patch(
 );
 
 /** GET /api/v1/ca/firms/me/subscription — Get subscription details */
-firmRouter.get('/me/subscription', async (req, res, next) => {
+firmRouter.get('/me/subscription', async (_req, _res, next) => {
   try {
-    const ctx = getCaRequestContext(req);
-    // TODO: Implement subscription service
-    res.json({
-      data: {
-        firm_id: ctx.caFirmId,
-        tier: ctx.subscriptionTier,
-        status: 'active',
-        clients_limit: ctx.subscriptionTier === 'enterprise' ? -1 : (ctx.subscriptionTier === 'professional' ? 50 : 5),
-        clients_used: 3,
-        auto_renew: true,
-        current_period_start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-        current_period_end: new Date(Date.now() + 300 * 24 * 60 * 60 * 1000).toISOString(),
-      },
-    });
+    caNotImplemented();
   } catch (err) {
     next(err);
   }
 });
 
 /** GET /api/v1/ca/firms/me/dashboard — Main dashboard data */
-firmRouter.get('/me/dashboard', async (_req, res, next) => {
+firmRouter.get('/me/dashboard', async (_req, _res, next) => {
   try {
-        // TODO: Implement dashboard service
-    res.json({
-      data: {
-        total_clients: 23,
-        active_filings: 12,
-        overdue_documents: 4,
-        average_health_score: 78,
-        recent_exceptions: 2,
-        upcoming_deadlines: 5,
-        compliance_status: {
-          gst: 'green',
-          tds: 'yellow',
-          mca: 'green',
-          income_tax: 'green',
-        },
-        quick_stats: [
-          { label: 'This Month Filing Rate', value: '95%', trend: 'up' },
-          { label: 'Avg Resolution Time', value: '2.3 days', trend: 'down' },
-          { label: 'Client Satisfaction', value: '4.7/5', trend: 'stable' },
-        ],
-      },
-    });
+    caNotImplemented();
   } catch (err) {
     next(err);
   }

@@ -165,21 +165,12 @@ describe('ClaudeProvider', () => {
       await expect(() => provider.generate('test')).rejects.toThrow(FcError);
     });
 
-    it('should throw FcError on timeout', async () => {
-      fetchMock.mockImplementation(
-        () => new Promise(() => {
-          // Never resolves
-        }),
-      );
+    it('should throw FcError on timeout (AbortError)', async () => {
+      const abortError = new Error('The operation was aborted');
+      abortError.name = 'AbortError';
+      fetchMock.mockRejectedValue(abortError);
 
-      // We need to mock the AbortController for this test
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const abortSpy = vi.spyOn(global, 'AbortController' as any);
-
-      void provider.generate('test');
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      abortSpy.mockRestore();
+      await expect(() => provider.generate(TEST_PROMPT)).rejects.toThrow(FcError);
     });
 
     it('should throw FcError on network error', async () => {
@@ -228,18 +219,13 @@ describe('ClaudeProvider', () => {
       expect(available).toBe(false);
     });
 
-    it('should return false on timeout', async () => {
-      fetchMock.mockImplementation(
-        () => new Promise(() => {
-          // Never resolves
-        }),
-      );
+    it('should return false on timeout (AbortError)', async () => {
+      const abortError = new Error('The operation was aborted');
+      abortError.name = 'AbortError';
+      fetchMock.mockRejectedValue(abortError);
 
-      void provider.isAvailable();
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      // Can't fully test timeout without better AbortController support
-      // But the method should handle it gracefully
+      const available = await provider.isAvailable();
+      expect(available).toBe(false);
     });
   });
 

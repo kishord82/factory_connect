@@ -62,7 +62,7 @@ export function buildCxmlEnvelope(content: string, config: EdiConfig): string {
   const ts = new Date().toISOString();
   const payloadId = `${config.seller_id}-${Date.now()}`;
 
-  return `<?xml version="1.0" encoding="UTF-8"?>
+  return `<?xml version="1.0"?>
 <!DOCTYPE cXML SYSTEM "http://xml.cxml.org/schemas/cXML/1.2.014/cXML.dtd">
 <cXML payloadID="${payloadId}" timestamp="${ts}">
   <Header>
@@ -123,7 +123,7 @@ export function generateCxmlOrderConfirmation(data: {
     </ConfirmationRequest>
   </Request>`;
 
-    const doc = `<?xml version="1.0" encoding="UTF-8"?>
+    const doc = `<?xml version="1.0"?>
 <!DOCTYPE cXML SYSTEM "http://xml.cxml.org/schemas/cXML/1.2.014/cXML.dtd">
 <cXML payloadID="${data.payload_id}" timestamp="${ts}">
   <Response>

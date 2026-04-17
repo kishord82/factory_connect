@@ -102,8 +102,8 @@ function trim(value: unknown): unknown {
 
 function pad(value: unknown, params?: Record<string, unknown>): unknown {
   const len = (params?.length as number) ?? 10;
-  const char = (params?.char as string) ?? '0';
   const side = (params?.side as string) ?? 'left';
+  const char = (params?.char as string) ?? (side === 'right' ? ' ' : '0');
 
   const str = String(value);
   return side === 'right' ? str.padEnd(len, char) : str.padStart(len, char);
@@ -118,7 +118,8 @@ function substring(value: unknown, params?: Record<string, unknown>): unknown {
 function regexReplace(value: unknown, params?: Record<string, unknown>): unknown {
   const pattern = (params?.pattern as string) ?? '';
   const replacement = (params?.replacement as string) ?? '';
-  const flags = (params?.flags as string) ?? 'g';
+  const extraFlags = (params?.flags as string) ?? '';
+  const flags = extraFlags.includes('g') ? extraFlags : `g${extraFlags}`;
   return String(value).replace(new RegExp(pattern, flags), replacement);
 }
 

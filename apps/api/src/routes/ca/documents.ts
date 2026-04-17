@@ -2,12 +2,13 @@
  * CA5: CA Document request routes — Create, manage, verify document requests
  */
 
+import { FcError } from '@fc/shared';
 import { Router } from 'express';
 import { z } from 'zod';
 
 import { authenticate } from '../../middleware/auth.js';
-import { caTenantContext, getCaRequestContext } from '../../middleware/ca-tenant-context.js';
-import { validate, getValidatedParams, getValidatedQuery } from '../../middleware/validate.js';
+import { caTenantContext } from '../../middleware/ca-tenant-context.js';
+import { validate } from '../../middleware/validate.js';
 
 export const documentRouter = Router();
 
@@ -48,25 +49,22 @@ const DocumentVerifySchema = z.object({
   notes: z.string().optional(),
 });
 
+const caNotImplemented = (): never => {
+  throw new FcError(
+    'FC_ERR_FEATURE_DISABLED',
+    'CA module not yet implemented',
+    { feature: 'ca_module' },
+    501,
+  );
+};
+
 /** POST /api/v1/ca/documents/request — Create document request */
 documentRouter.post(
   '/request',
   validate({ body: DocumentRequestSchema }),
-  async (req, res, next) => {
+  async (_req, _res, next) => {
     try {
-            // TODO: Implement document request service
-      res.status(201).json({
-        data: {
-          id: 'docreq-1',
-          client_id: req.body.client_id,
-          document_type: req.body.document_type,
-          description: req.body.description || '',
-          status: 'pending',
-          due_date: req.body.due_date || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-          priority: req.body.priority || 'medium',
-          created_at: new Date().toISOString(),
-        },
-      });
+      caNotImplemented();
     } catch (err) {
       next(err);
     }
@@ -77,21 +75,9 @@ documentRouter.post(
 documentRouter.post(
   '/request/bulk',
   validate({ body: BulkDocumentRequestSchema }),
-  async (req, res, next) => {
+  async (_req, _res, next) => {
     try {
-            // TODO: Implement bulk document request service
-      res.status(202).json({
-        data: {
-          task_id: 'bulk-task-1',
-          client_id: req.body.client_id,
-          document_type: req.body.document_type,
-          period: req.body.period,
-          count: req.body.count,
-          status: 'queued',
-          created_requests: 0,
-          created_at: new Date().toISOString(),
-        },
-      });
+      caNotImplemented();
     } catch (err) {
       next(err);
     }
@@ -102,42 +88,9 @@ documentRouter.post(
 documentRouter.get(
   '/requests',
   validate({ query: DocumentRequestListQuerySchema }),
-  async (req, res, next) => {
+  async (_req, _res, next) => {
     try {
-      const q = getValidatedQuery<z.infer<typeof DocumentRequestListQuerySchema>>(req);
-      // TODO: Implement list requests service
-      res.json({
-        data: [
-          {
-            id: 'docreq-1',
-            client_id: 'client-1',
-            client_name: 'Acme Corp',
-            document_type: 'invoice',
-            description: 'March invoices for reconciliation',
-            status: 'verified',
-            due_date: '2024-04-15',
-            verified_date: '2024-04-12',
-            priority: 'high',
-            created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-          },
-          {
-            id: 'docreq-2',
-            client_id: 'client-2',
-            client_name: 'Ravi Trading',
-            document_type: 'bank_passbook',
-            description: 'Bank statements for Q1',
-            status: 'overdue',
-            due_date: '2024-04-10',
-            verified_date: null,
-            priority: 'critical',
-            created_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-          },
-        ],
-        total: 34,
-        page: q.page,
-        pageSize: q.pageSize,
-        totalPages: Math.ceil(34 / q.pageSize),
-      });
+      caNotImplemented();
     } catch (err) {
       next(err);
     }
@@ -155,17 +108,9 @@ documentRouter.patch(
       description: z.string().optional(),
     }),
   }),
-  async (req, res, next) => {
+  async (_req, _res, next) => {
     try {
-      const { id } = getValidatedParams<z.infer<typeof IdParamsSchema>>(req);
-      // TODO: Implement update request service
-      res.json({
-        data: {
-          id,
-          ...req.body,
-          updated_at: new Date().toISOString(),
-        },
-      });
+      caNotImplemented();
     } catch (err) {
       next(err);
     }
@@ -176,20 +121,9 @@ documentRouter.patch(
 documentRouter.post(
   '/requests/:id/verify',
   validate({ params: IdParamsSchema, body: DocumentVerifySchema }),
-  async (req, res, next) => {
+  async (_req, _res, next) => {
     try {
-      const ctx = getCaRequestContext(req);
-      const { id } = getValidatedParams<z.infer<typeof IdParamsSchema>>(req);
-      // TODO: Implement verify document service
-      res.json({
-        data: {
-          id,
-          status: req.body.status,
-          notes: req.body.notes || '',
-          verified_at: new Date().toISOString(),
-          verified_by: ctx.userId,
-        },
-      });
+      caNotImplemented();
     } catch (err) {
       next(err);
     }
@@ -197,31 +131,9 @@ documentRouter.post(
 );
 
 /** GET /api/v1/ca/documents/dashboard — Collection dashboard */
-documentRouter.get('/dashboard', async (_req, res, next) => {
+documentRouter.get('/dashboard', async (_req, _res, next) => {
   try {
-        // TODO: Implement documents dashboard service
-    res.json({
-      data: {
-        total_requests: 156,
-        verified: 134,
-        pending: 15,
-        overdue: 7,
-        requests_by_type: {
-          invoice: { total: 45, verified: 42, pending: 2, overdue: 1 },
-          receipt: { total: 38, verified: 38, pending: 0, overdue: 0 },
-          statement: { total: 28, verified: 26, pending: 2, overdue: 0 },
-          bank_passbook: { total: 22, verified: 16, pending: 4, overdue: 2 },
-          other: { total: 23, verified: 12, pending: 7, overdue: 4 },
-        },
-        verification_rate: 85.9,
-        avg_time_to_verify: 2.3,
-        status_breakdown: [
-          { status: 'verified', count: 134, percentage: 85.9 },
-          { status: 'pending', count: 15, percentage: 9.6 },
-          { status: 'overdue', count: 7, percentage: 4.5 },
-        ],
-      },
-    });
+    caNotImplemented();
   } catch (err) {
     next(err);
   }

@@ -2,12 +2,13 @@
  * CA8: CA Communication routes — WhatsApp, templates, communication log
  */
 
+import { FcError } from '@fc/shared';
 import { Router } from 'express';
 import { z } from 'zod';
 
 import { authenticate } from '../../middleware/auth.js';
-import { caTenantContext, getCaRequestContext } from '../../middleware/ca-tenant-context.js';
-import { validate, getValidatedQuery } from '../../middleware/validate.js';
+import { caTenantContext } from '../../middleware/ca-tenant-context.js';
+import { validate } from '../../middleware/validate.js';
 
 export const communicationRouter = Router();
 
@@ -39,25 +40,22 @@ const CommunicationListQuerySchema = z.object({
 // Protected routes require auth + CA tenant context
 communicationRouter.use(authenticate, caTenantContext);
 
+const caNotImplemented = (): never => {
+  throw new FcError(
+    'FC_ERR_FEATURE_DISABLED',
+    'CA module not yet implemented',
+    { feature: 'ca_module' },
+    501,
+  );
+};
+
 /** POST /api/v1/ca/communication/whatsapp/send — Send WhatsApp message */
 communicationRouter.post(
   '/whatsapp/send',
   validate({ body: WhatsappSendSchema }),
-  async (req, res, next) => {
+  async (_req, _res, next) => {
     try {
-      // TODO: Implement WhatsApp send service
-      res.status(202).json({
-        data: {
-          id: 'msg-1',
-          recipient_id: req.body.recipient_id,
-          message: req.body.message,
-          message_type: req.body.message_type || 'text',
-          channel: 'whatsapp',
-          status: 'sent',
-          sent_at: new Date().toISOString(),
-          delivered_at: null,
-        },
-      });
+      caNotImplemented();
     } catch (err) {
       next(err);
     }
@@ -65,10 +63,9 @@ communicationRouter.post(
 );
 
 /** POST /api/v1/ca/communication/whatsapp/webhook — Webhook receiver (no auth) */
-whatsappWebhookRouter.post('/webhook', async (_req, res, next) => {
+whatsappWebhookRouter.post('/webhook', async (_req, _res, next) => {
   try {
-    // TODO: Implement webhook handler (verify signature)
-    res.json({ success: true });
+    caNotImplemented();
   } catch (err) {
     next(err);
   }
@@ -81,33 +78,9 @@ communicationRouter.use('/', whatsappWebhookRouter);
 communicationRouter.get(
   '/templates',
   validate({ query: z.object({ category: z.string().optional() }) }),
-  async (_req, res, next) => {
+  async (_req, _res, next) => {
     try {
-      // TODO: Implement list templates service
-      res.json({
-        data: [
-          {
-            id: 'tmpl-1',
-            name: 'Notice Received Acknowledgment',
-            category: 'notice',
-            content: 'Dear {client_name}, we have received the notice dated {notice_date}. Our team is reviewing it and will get back to you soon.',
-            variables: ['client_name', 'notice_date'],
-            usage_count: 45,
-            is_default: true,
-            created_at: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
-          },
-          {
-            id: 'tmpl-2',
-            name: 'Document Request',
-            category: 'request',
-            content: 'Hi {client_name}, we need the following documents for {filing_type} filing: {document_list}. Please share them by {due_date}.',
-            variables: ['client_name', 'filing_type', 'document_list', 'due_date'],
-            usage_count: 123,
-            is_default: true,
-            created_at: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
-          },
-        ],
-      });
+      caNotImplemented();
     } catch (err) {
       next(err);
     }
@@ -118,19 +91,9 @@ communicationRouter.get(
 communicationRouter.post(
   '/templates',
   validate({ body: TemplateCreateSchema }),
-  async (req, res, next) => {
+  async (_req, _res, next) => {
     try {
-      const _ctx = getCaRequestContext(req);
-      // TODO: Implement template creation service
-      res.status(201).json({
-        data: {
-          id: 'tmpl-3',
-          firm_id: _ctx.caFirmId,
-          ...req.body,
-          usage_count: 0,
-          created_at: new Date().toISOString(),
-        },
-      });
+      caNotImplemented();
     } catch (err) {
       next(err);
     }
@@ -141,42 +104,9 @@ communicationRouter.post(
 communicationRouter.get(
   '/log',
   validate({ query: CommunicationListQuerySchema }),
-  async (req, res, next) => {
+  async (_req, _res, next) => {
     try {
-      const q = getValidatedQuery<z.infer<typeof CommunicationListQuerySchema>>(req);
-      // TODO: Implement communication log service
-      res.json({
-        data: [
-          {
-            id: 'msg-1',
-            recipient_id: 'client-1',
-            recipient_name: 'Acme Corp',
-            type: 'whatsapp',
-            direction: 'outbound',
-            message: 'Document request sent for GST filing',
-            status: 'delivered',
-            sent_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-            delivered_at: new Date(Date.now() - 100 * 60 * 1000).toISOString(),
-            read_at: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-          },
-          {
-            id: 'msg-2',
-            recipient_id: 'client-2',
-            recipient_name: 'Ravi Trading',
-            type: 'whatsapp',
-            direction: 'inbound',
-            message: 'We have all the documents ready',
-            status: 'received',
-            sent_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-            delivered_at: null,
-            read_at: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
-          },
-        ],
-        total: 456,
-        page: q.page,
-        pageSize: q.pageSize,
-        totalPages: Math.ceil(456 / q.pageSize),
-      });
+      caNotImplemented();
     } catch (err) {
       next(err);
     }

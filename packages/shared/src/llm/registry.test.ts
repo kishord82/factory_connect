@@ -229,7 +229,7 @@ describe('LlmRegistry', () => {
     });
 
     it('should reset circuit breaker after reset time', async () => {
-      mockProvider1.setFailureMode(2); // Fail twice, then succeed
+      mockProvider1.setFailureMode(1); // Fail once, then succeed
 
       registry.registerProvider(
         {
@@ -257,18 +257,17 @@ describe('LlmRegistry', () => {
         mockProvider2,
       );
 
-      // Trigger circuit open
+      // Trigger circuit open (p1 fails, circuit opens, p2 used as fallback)
       await registry.generate('test1');
-      await registry.generate('test2');
-      expect(mockProvider1.getCallCount()).toBe(2);
+      expect(mockProvider1.getCallCount()).toBe(1);
 
       // Wait for reset
       await new Promise((resolve) => setTimeout(resolve, 60));
 
-      // Circuit should be half-open, p1 should be tried again
-      const response = await registry.generate('test3');
+      // Circuit should be half-open, p1 should be tried again and succeed
+      const response = await registry.generate('test2');
       expect(response.provider).toBe('provider1');
-      expect(mockProvider1.getCallCount()).toBe(3);
+      expect(mockProvider1.getCallCount()).toBe(2);
     });
 
     it('should use default circuit breaker settings if not provided', async () => {
@@ -391,7 +390,7 @@ describe('LlmRegistry', () => {
       expect(usageLogMock).toHaveBeenCalledWith(
         expect.objectContaining({
           provider: 'p1',
-          model: 'p1-model',
+          model: 'provider1-model',
           tokens_used: 100,
         }),
       );

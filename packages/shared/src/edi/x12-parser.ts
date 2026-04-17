@@ -54,7 +54,7 @@ export function parseX12(raw: string): EdiParseResult {
     const docTypeMap: Record<string, string> = {
       '850': 'PO_850',
       '855': 'PO_ACK_855',
-      '856': 'ASN_856',
+      '856': 'SHIPMENT_856',
       '810': 'INVOICE_810',
       '997': 'FUNC_ACK_997',
     };
@@ -285,7 +285,7 @@ export function extractPOData(document: EdiDocument): Record<string, unknown> {
           quantity: seg.elements[1],
           uom: seg.elements[2],
           unit_price: seg.elements[3],
-          buyer_sku: seg.elements[6] ?? seg.elements[4],
+          buyer_sku: seg.elements[7] ?? seg.elements[6] ?? seg.elements[4],
         };
         break;
       case 'PID':

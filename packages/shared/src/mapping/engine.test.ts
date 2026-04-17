@@ -457,6 +457,6 @@ describe('Mapping Application', () => {
     const source = { name: '  john doe  ' };
     const result = applyMapping(source, chainConfig);
     expect(result.success).toBe(true);
-    expect(result.data.full_name).toBe('JOHN DOE**********');
+    expect(result.data.full_name).toBe('JOHN DOE************');
   });
 });

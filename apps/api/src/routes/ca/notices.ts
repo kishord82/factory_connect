@@ -2,12 +2,13 @@
  * CA6: CA Notice routes — Create, manage, escalate notices
  */
 
+import { FcError } from '@fc/shared';
 import { Router } from 'express';
 import { z } from 'zod';
 
 import { authenticate } from '../../middleware/auth.js';
-import { caTenantContext, getCaRequestContext } from '../../middleware/ca-tenant-context.js';
-import { validate, getValidatedParams, getValidatedQuery } from '../../middleware/validate.js';
+import { caTenantContext } from '../../middleware/ca-tenant-context.js';
+import { validate } from '../../middleware/validate.js';
 
 export const noticeRouter = Router();
 
@@ -47,22 +48,22 @@ const NoticeEscalateSchema = z.object({
   escalated_to: z.string().optional(),
 });
 
+const caNotImplemented = (): never => {
+  throw new FcError(
+    'FC_ERR_FEATURE_DISABLED',
+    'CA module not yet implemented',
+    { feature: 'ca_module' },
+    501,
+  );
+};
+
 /** POST /api/v1/ca/notices — Create notice */
 noticeRouter.post(
   '/',
   validate({ body: NoticeCreateSchema }),
-  async (req, res, next) => {
+  async (_req, _res, next) => {
     try {
-            // TODO: Implement notice creation service
-      res.status(201).json({
-        data: {
-          id: 'notice-1',
-          ...req.body,
-          status: 'received',
-          assigned_to: null,
-          created_at: new Date().toISOString(),
-        },
-      });
+      caNotImplemented();
     } catch (err) {
       next(err);
     }
@@ -73,46 +74,9 @@ noticeRouter.post(
 noticeRouter.get(
   '/',
   validate({ query: NoticeListQuerySchema }),
-  async (req, res, next) => {
+  async (_req, _res, next) => {
     try {
-      const q = getValidatedQuery<z.infer<typeof NoticeListQuerySchema>>(req);
-      // TODO: Implement list notices service
-      res.json({
-        data: [
-          {
-            id: 'notice-1',
-            client_id: 'client-1',
-            client_name: 'Acme Corp',
-            notice_type: 'gst',
-            title: 'GST Audit Notice',
-            notice_number: 'GST/AUDIT/2024/001',
-            received_date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-            due_date: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toISOString(),
-            days_remaining: 20,
-            status: 'in_progress',
-            priority: 'high',
-            assigned_to: 'staff-1',
-          },
-          {
-            id: 'notice-2',
-            client_id: 'client-2',
-            client_name: 'Ravi Trading',
-            notice_type: 'income_tax',
-            title: 'Income Tax Assessment Notice',
-            notice_number: 'IT/ASSESS/2024/002',
-            received_date: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
-            due_date: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-            days_remaining: 5,
-            status: 'escalated',
-            priority: 'critical',
-            assigned_to: 'staff-2',
-          },
-        ],
-        total: 12,
-        page: q.page,
-        pageSize: q.pageSize,
-        totalPages: Math.ceil(12 / q.pageSize),
-      });
+      caNotImplemented();
     } catch (err) {
       next(err);
     }
@@ -123,35 +87,9 @@ noticeRouter.get(
 noticeRouter.get(
   '/:id',
   validate({ params: IdParamsSchema }),
-  async (req, res, next) => {
+  async (_req, _res, next) => {
     try {
-      const { id } = getValidatedParams<z.infer<typeof IdParamsSchema>>(req);
-      // TODO: Implement get notice service
-      res.json({
-        data: {
-          id,
-          client_id: 'client-1',
-          client_name: 'Acme Corp',
-          notice_type: 'gst',
-          title: 'GST Audit Notice',
-          description: 'Notice for GST audit for FY 2023-24',
-          notice_number: 'GST/AUDIT/2024/001',
-          received_date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-          due_date: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toISOString(),
-          authority: 'GST Commissionerate, Hyderabad',
-          status: 'in_progress',
-          priority: 'high',
-          assigned_to: 'staff-1',
-          actions_taken: [
-            { date: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(), action: 'Notice received and logged', done_by: 'staff-1' },
-            { date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), action: 'Preliminary review completed', done_by: 'staff-1' },
-          ],
-          documents: [
-            { id: 'doc-1', name: 'Notice PDF', type: 'pdf', uploaded_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString() },
-          ],
-          created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-        },
-      });
+      caNotImplemented();
     } catch (err) {
       next(err);
     }
@@ -162,17 +100,9 @@ noticeRouter.get(
 noticeRouter.patch(
   '/:id',
   validate({ params: IdParamsSchema, body: NoticeUpdateSchema }),
-  async (req, res, next) => {
+  async (_req, _res, next) => {
     try {
-      const { id } = getValidatedParams<z.infer<typeof IdParamsSchema>>(req);
-      // TODO: Implement update notice service
-      res.json({
-        data: {
-          id,
-          ...req.body,
-          updated_at: new Date().toISOString(),
-        },
-      });
+      caNotImplemented();
     } catch (err) {
       next(err);
     }
@@ -183,21 +113,9 @@ noticeRouter.patch(
 noticeRouter.post(
   '/:id/escalate',
   validate({ params: IdParamsSchema, body: NoticeEscalateSchema }),
-  async (req, res, next) => {
+  async (_req, _res, next) => {
     try {
-      const ctx = getCaRequestContext(req);
-      const { id } = getValidatedParams<z.infer<typeof IdParamsSchema>>(req);
-      // TODO: Implement escalate notice service
-      res.json({
-        data: {
-          id,
-          status: 'escalated',
-          escalation_reason: req.body.reason,
-          escalated_to: req.body.escalated_to || 'senior_partner',
-          escalated_at: new Date().toISOString(),
-          escalated_by: ctx.userId,
-        },
-      });
+      caNotImplemented();
     } catch (err) {
       next(err);
     }
@@ -205,64 +123,18 @@ noticeRouter.post(
 );
 
 /** GET /api/v1/ca/notices/deadlines — Upcoming deadlines */
-noticeRouter.get('/deadlines', async (_req, res, next) => {
+noticeRouter.get('/deadlines', async (_req, _res, next) => {
   try {
-        // TODO: Implement deadlines service
-    res.json({
-      data: [
-        {
-          id: 'notice-2',
-          client_name: 'Ravi Trading',
-          notice_type: 'income_tax',
-          title: 'Income Tax Assessment Notice',
-          due_date: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-          days_remaining: 5,
-          priority: 'critical',
-          status: 'escalated',
-        },
-        {
-          id: 'notice-1',
-          client_name: 'Acme Corp',
-          notice_type: 'gst',
-          title: 'GST Audit Notice',
-          due_date: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toISOString(),
-          days_remaining: 20,
-          priority: 'high',
-          status: 'in_progress',
-        },
-      ],
-    });
+    caNotImplemented();
   } catch (err) {
     next(err);
   }
 });
 
 /** GET /api/v1/ca/notices/dashboard — Notice dashboard */
-noticeRouter.get('/dashboard', async (_req, res, next) => {
+noticeRouter.get('/dashboard', async (_req, _res, next) => {
   try {
-        // TODO: Implement notices dashboard service
-    res.json({
-      data: {
-        total_notices: 12,
-        received_this_month: 2,
-        in_progress: 5,
-        escalated: 1,
-        resolved: 6,
-        critical_notices: 1,
-        notices_by_type: {
-          income_tax: { total: 3, in_progress: 2, escalated: 1 },
-          gst: { total: 5, in_progress: 2, escalated: 0 },
-          tds: { total: 2, in_progress: 1, escalated: 0 },
-          other: { total: 2, in_progress: 0, escalated: 0 },
-        },
-        upcoming_deadlines: [
-          { title: 'Income Tax Assessment Notice', due_in_days: 5 },
-          { title: 'GST Audit Notice', due_in_days: 20 },
-          { title: 'TDS Notice', due_in_days: 35 },
-        ],
-        average_response_time: 8.5,
-      },
-    });
+    caNotImplemented();
   } catch (err) {
     next(err);
   }

@@ -2,12 +2,13 @@
  * CA2: CA Client routes — CRUD clients, health scores
  */
 
+import { FcError } from '@fc/shared';
 import { Router } from 'express';
 import { z } from 'zod';
 
 import { authenticate } from '../../middleware/auth.js';
-import { caTenantContext, getCaRequestContext } from '../../middleware/ca-tenant-context.js';
-import { validate, getValidatedParams, getValidatedQuery } from '../../middleware/validate.js';
+import { caTenantContext } from '../../middleware/ca-tenant-context.js';
+import { validate } from '../../middleware/validate.js';
 
 export const clientRouter = Router();
 
@@ -42,23 +43,22 @@ const ClientListQuerySchema = z.object({
 
 const IdParamsSchema = z.object({ id: z.string().uuid() });
 
+const caNotImplemented = (): never => {
+  throw new FcError(
+    'FC_ERR_FEATURE_DISABLED',
+    'CA module not yet implemented',
+    { feature: 'ca_module' },
+    501,
+  );
+};
+
 /** POST /api/v1/ca/clients — Add client */
 clientRouter.post(
   '/',
   validate({ body: ClientCreateSchema }),
-  async (req, res, next) => {
+  async (_req, _res, next) => {
     try {
-      const _ctx = getCaRequestContext(req);
-      // TODO: Implement client creation service
-      res.status(201).json({
-        data: {
-          id: 'client-1',
-          firm_id: _ctx.caFirmId,
-          ...req.body,
-          health_score: 0,
-          created_at: new Date().toISOString(),
-        },
-      });
+      caNotImplemented();
     } catch (err) {
       next(err);
     }
@@ -69,40 +69,9 @@ clientRouter.post(
 clientRouter.get(
   '/',
   validate({ query: ClientListQuerySchema }),
-  async (req, res, next) => {
+  async (_req, _res, next) => {
     try {
-      const q = getValidatedQuery<z.infer<typeof ClientListQuerySchema>>(req);
-      // TODO: Implement list clients service
-      res.json({
-        data: [
-          {
-            id: 'client-1',
-            client_name: 'Acme Corp',
-            gst_number: '27AACCT9999X1Z0',
-            email: 'contact@acme.com',
-            tally_status: 'connected',
-            health_score: 92,
-            active_filings: 3,
-            overdue_documents: 0,
-            created_at: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
-          },
-          {
-            id: 'client-2',
-            client_name: 'Ravi Trading',
-            gst_number: '18AABCT0001A1Z0',
-            email: 'info@ravitrading.com',
-            tally_status: 'pending',
-            health_score: 65,
-            active_filings: 2,
-            overdue_documents: 2,
-            created_at: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
-          },
-        ],
-        total: 23,
-        page: q.page,
-        pageSize: q.pageSize,
-        totalPages: Math.ceil(23 / q.pageSize),
-      });
+      caNotImplemented();
     } catch (err) {
       next(err);
     }
@@ -113,37 +82,9 @@ clientRouter.get(
 clientRouter.get(
   '/:id',
   validate({ params: IdParamsSchema }),
-  async (req, res, next) => {
+  async (_req, _res, next) => {
     try {
-      const _ctx = getCaRequestContext(req);
-      const { id } = getValidatedParams<z.infer<typeof IdParamsSchema>>(req);
-      // TODO: Implement get client service
-      res.json({
-        data: {
-          id,
-          firm_id: _ctx.caFirmId,
-          client_name: 'Acme Corp',
-          gst_number: '27AACCT9999X1Z0',
-          pan_number: 'AAAPF0001A',
-          email: 'contact@acme.com',
-          phone_number: '+91-98765-43210',
-          address: '123 Business Park',
-          city: 'Bangalore',
-          state: 'KA',
-          postal_code: '560001',
-          tally_id: 'tally-123',
-          tally_status: 'connected',
-          health_score: 92,
-          compliance_status: {
-            gst: 'compliant',
-            tds: 'compliant',
-            mca: 'pending',
-            income_tax: 'compliant',
-          },
-          last_sync: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-          created_at: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
-        },
-      });
+      caNotImplemented();
     } catch (err) {
       next(err);
     }
@@ -154,17 +95,9 @@ clientRouter.get(
 clientRouter.patch(
   '/:id',
   validate({ params: IdParamsSchema, body: ClientUpdateSchema }),
-  async (req, res, next) => {
+  async (_req, _res, next) => {
     try {
-      const { id } = getValidatedParams<z.infer<typeof IdParamsSchema>>(req);
-      // TODO: Implement update client service
-      res.json({
-        data: {
-          id,
-          ...req.body,
-          updated_at: new Date().toISOString(),
-        },
-      });
+      caNotImplemented();
     } catch (err) {
       next(err);
     }
@@ -175,28 +108,9 @@ clientRouter.patch(
 clientRouter.get(
   '/:id/health',
   validate({ params: IdParamsSchema }),
-  async (req, res, next) => {
+  async (_req, _res, next) => {
     try {
-      const { id } = getValidatedParams<z.infer<typeof IdParamsSchema>>(req);
-      // TODO: Implement health score service
-      res.json({
-        data: {
-          client_id: id,
-          current_score: 92,
-          history: [
-            { date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), score: 85 },
-            { date: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(), score: 88 },
-            { date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), score: 91 },
-            { date: new Date().toISOString(), score: 92 },
-          ],
-          breakdown: {
-            filing_compliance: 95,
-            document_collection: 90,
-            communication_response: 92,
-            payment_timeliness: 88,
-          },
-        },
-      });
+      caNotImplemented();
     } catch (err) {
       next(err);
     }
@@ -207,18 +121,9 @@ clientRouter.get(
 clientRouter.post(
   '/:id/bridge',
   validate({ params: IdParamsSchema, body: z.object({ bridge_id: z.string().uuid().optional() }) }),
-  async (req, res, next) => {
+  async (_req, _res, next) => {
     try {
-      const { id } = getValidatedParams<z.infer<typeof IdParamsSchema>>(req);
-      // TODO: Implement bridge linking service
-      res.json({
-        data: {
-          client_id: id,
-          bridge_id: req.body.bridge_id || 'bridge-agent-1',
-          status: 'linked',
-          linked_at: new Date().toISOString(),
-        },
-      });
+      caNotImplemented();
     } catch (err) {
       next(err);
     }
