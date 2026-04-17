@@ -3,10 +3,10 @@
  * Tracks tax notices, manages deadlines, escalations, and response lifecycle
  */
 
-import type { CaRequestContext } from '@fc/shared';
-import { FcError } from '@fc/shared';
 import { withTenantTransaction, withTenantClient, insertOne, findOne, findMany } from '@fc/database';
 import type { PoolClient } from '@fc/database';
+import type { CaRequestContext } from '@fc/shared';
+import { FcError } from '@fc/shared';
 
 // ═══════════════════════════════════════════════════════════════════
 // TYPES
@@ -77,7 +77,7 @@ export async function createNotice(
     priority: 'low' | 'medium' | 'high' | 'critical';
   },
 ): Promise<Notice> {
-  return withTenantTransaction(ctx as any, async (client: PoolClient) => {
+  return withTenantTransaction(ctx, async (client: PoolClient) => {
     // Validate notice type
     const validTypes = ['IT_NOTICE', 'GST_NOTICE', 'TDS_NOTICE', 'INCOME_TAX_SHOW_CAUSE', 'GST_DEMAND'];
     if (!validTypes.includes(data.noticeType)) {
@@ -86,7 +86,7 @@ export async function createNotice(
       }, 400);
     }
 
-    const result = await insertOne<Notice>(
+    return await insertOne<Notice>(
       client,
       `INSERT INTO ca_notices (
         ca_firm_id, client_id, notice_type, reference, authority,
@@ -109,8 +109,6 @@ export async function createNotice(
         'received',
       ],
     );
-
-    return result;
   });
 }
 
@@ -127,7 +125,7 @@ export async function updateNotice(
     responseNotes?: string | null;
   },
 ): Promise<Notice> {
-  return withTenantTransaction(ctx as any, async (client: PoolClient) => {
+  return withTenantTransaction(ctx, async (client: PoolClient) => {
     const current = await findOne<Notice>(
       client,
       `SELECT id, ca_firm_id, client_id, notice_type, reference, authority,
@@ -202,7 +200,7 @@ export async function listNotices(
   page = 1,
   pageSize = 20,
 ) {
-  return withTenantClient(ctx as any, async (client: PoolClient) => {
+  return withTenantClient(ctx, async (client: PoolClient) => {
     let query = `SELECT id, ca_firm_id, client_id, notice_type, reference, authority,
               issued_date, received_date, response_due_date, appeal_due_date,
               amount, priority, status, assigned_to, response_notes,
@@ -281,7 +279,7 @@ export async function listNotices(
 // ═══════════════════════════════════════════════════════════════════
 
 export async function getNoticeById(ctx: CaRequestContext, noticeId: string): Promise<Notice> {
-  return withTenantClient(ctx as any, async (client: PoolClient) => {
+  return withTenantClient(ctx, async (client: PoolClient) => {
     const notice = await findOne<Notice>(
       client,
       `SELECT id, ca_firm_id, client_id, notice_type, reference, authority,
@@ -311,7 +309,7 @@ export async function getUpcomingDeadlines(
   ctx: CaRequestContext,
   daysAhead = 30,
 ): Promise<UpcomingDeadline[]> {
-  return withTenantClient(ctx as any, async (client: PoolClient) => {
+  return withTenantClient(ctx, async (client: PoolClient) => {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() + daysAhead);
 
@@ -372,16 +370,14 @@ export async function escalateNotice(
   noticeId: string,
   escalationReason: string,
 ): Promise<Notice> {
-  return withTenantTransaction(ctx as any, async () => {
-    const notice = await updateNotice(ctx, noticeId, {
-      status: 'escalated',
-      responseNotes: escalationReason,
-    });
-
+  return withTenantTransaction(ctx, async () => {
     // Notify managers (in production, would send actual notification)
     // For now, log to audit trail
 
-    return notice;
+    return await updateNotice(ctx, noticeId, {
+      status: 'escalated',
+      responseNotes: escalationReason,
+    });
   });
 }
 
@@ -390,7 +386,7 @@ export async function escalateNotice(
 // ═══════════════════════════════════════════════════════════════════
 
 export async function getNoticeDashboard(ctx: CaRequestContext): Promise<NoticeDashboard> {
-  return withTenantClient(ctx as any, async (client: PoolClient) => {
+  return withTenantClient(ctx, async (client: PoolClient) => {
     // By status
     const byStatusRows = await findMany<{
       status: string;

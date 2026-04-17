@@ -2,14 +2,15 @@
  * B10: Connection routes — CRUD for buyer connections.
  */
 
+import type { PoolClient } from '@fc/database';
+import { withTenantTransaction, withTenantClient, insertOne, findOne, paginatedQuery } from '@fc/database';
+import { ConnectionCreateSchema, PaginationSchema } from '@fc/shared';
 import { Router } from 'express';
 import { z } from 'zod';
-import { ConnectionCreateSchema, PaginationSchema } from '@fc/shared';
+
 import { authenticate } from '../middleware/auth.js';
 import { tenantContext, getRequestContext } from '../middleware/tenant-context.js';
 import { validate, getValidatedParams } from '../middleware/validate.js';
-import type { PoolClient } from '@fc/database';
-import { withTenantTransaction, withTenantClient, insertOne, findOne, paginatedQuery } from '@fc/database';
 import { parsePagination, buildSearchWhere, buildOrderBy } from '../utils/pagination.js';
 
 export const connectionRouter = Router();

@@ -3,8 +3,8 @@
  * Extracts or generates X-Correlation-ID for request tracing.
  */
 
-import { v4 as uuidv4 } from 'uuid';
 import type { Request, Response, NextFunction } from 'express';
+import { v4 as uuidv4 } from 'uuid';
 
 const HEADER = 'x-correlation-id';
 

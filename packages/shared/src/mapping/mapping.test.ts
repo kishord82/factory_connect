@@ -1,4 +1,12 @@
 import { describe, it, expect } from 'vitest';
+
+import {
+  heuristicMap,
+  suggestionsToMappings,
+  createTestProvider,
+  registerProvider,
+  generateMappingSuggestions,
+} from './ai-mapper.js';
 import {
   applyMapping,
   validateMappingConfig,
@@ -19,13 +27,6 @@ import {
   substring,
   regexReplace,
 } from './transform.js';
-import {
-  heuristicMap,
-  suggestionsToMappings,
-  createTestProvider,
-  registerProvider,
-  generateMappingSuggestions,
-} from './ai-mapper.js';
 import type { MappingConfig, MappingConfigDef } from './types.js';
 
 describe('Mapping Engine', () => {

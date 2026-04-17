@@ -11,8 +11,9 @@
  * 6. Release client
  */
 
-import type pg from 'pg';
 import type { RequestContext } from '@fc/shared';
+import type pg from 'pg';
+
 import { getPool } from './pool.js';
 import { setTenantContext, clearTenantContext } from './tenant-context.js';
 

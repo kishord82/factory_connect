@@ -4,13 +4,14 @@
  * In dev/test, this provides a simple login endpoint that issues HS256 JWTs.
  */
 
-import { Router } from 'express';
-import { z } from 'zod';
-import jwt from 'jsonwebtoken';
-import { validate } from '../middleware/validate.js';
 import { getPool } from '@fc/database';
 import { FcError } from '@fc/shared';
+import { Router } from 'express';
+import jwt from 'jsonwebtoken';
+import { z } from 'zod';
+
 import { getConfig } from '../config.js';
+import { validate } from '../middleware/validate.js';
 
 export const authRouter = Router();
 

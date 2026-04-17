@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
+
 import { validateHsn } from './gst-service.js';
 
 describe('GST Service', () => {

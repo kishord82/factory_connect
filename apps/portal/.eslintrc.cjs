@@ -1,8 +1,10 @@
+const base = require('../../packages/config/eslint.base.cjs');
+
 module.exports = {
-  ...require('../../packages/config/eslint.base.cjs'),
+  ...base,
   root: true,
-  plugins: ['react-hooks'],
-  extends: ['plugin:react-hooks/recommended'],
+  plugins: [...(base.plugins ?? []), 'react-hooks'],
+  extends: [...(base.extends ?? []), 'plugin:react-hooks/recommended'],
   settings: {
     react: { version: 'detect' },
   },

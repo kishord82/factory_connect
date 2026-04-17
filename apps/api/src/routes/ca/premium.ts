@@ -4,14 +4,15 @@
  */
 
 import { Router } from 'express';
+import { z } from 'zod';
+
 import { authenticate } from '../../middleware/auth.js';
 import { caTenantContext, getCaRequestContext } from '../../middleware/ca-tenant-context.js';
 import { requireSubscriptionFeature } from '../../middleware/subscription-gate.js';
 import { validate } from '../../middleware/validate.js';
-import { z } from 'zod';
+import * as ecommerce from '../../services/premium/ecommerce-service.js';
 import * as exportEdi from '../../services/premium/export-edi-service.js';
 import * as tradeFinance from '../../services/premium/trade-finance-service.js';
-import * as ecommerce from '../../services/premium/ecommerce-service.js';
 
 export const premiumRouter = Router();
 

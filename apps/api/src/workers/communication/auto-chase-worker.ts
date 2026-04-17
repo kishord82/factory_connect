@@ -5,11 +5,13 @@
  * Respects quiet hours (21:00-08:00 IST).
  */
 
-import { Worker, Queue, type Job, type JobsOptions } from 'bullmq';
 import { createLogger } from '@fc/observability';
-import { sendTemplateMessage } from '../../services/communication/whatsapp-service.js';
-import { incrementReminder, getOverdueRequests } from '../../services/communication/doc-request-service.js';
 import type { RequestContext, CaRequestContext } from '@fc/shared';
+import { Worker, Queue, type Job, type JobsOptions } from 'bullmq';
+
+import { incrementReminder, getOverdueRequests } from '../../services/communication/doc-request-service.js';
+import { sendTemplateMessage } from '../../services/communication/whatsapp-service.js';
+
 
 const logger = createLogger('auto-chase-worker');
 

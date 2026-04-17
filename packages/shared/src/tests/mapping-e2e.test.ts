@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
+
 import { applyMapping } from '../mapping/index.js';
 import type { MappingConfig } from '../mapping/types.js';
 

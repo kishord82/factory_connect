@@ -2,10 +2,11 @@
  * Tests for PayrollExtractor: employees and salary registers.
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { PayrollExtractor } from './payroll-extractor.js';
-import type { TallyConfig } from './base-extractor.js';
 import { FcError } from '@fc/shared';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+import type { TallyConfig } from './base-extractor.js';
+import { PayrollExtractor } from './payroll-extractor.js';
 
 describe('PayrollExtractor', () => {
   let extractor: PayrollExtractor;

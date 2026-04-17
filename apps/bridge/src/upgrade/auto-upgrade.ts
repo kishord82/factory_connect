@@ -2,8 +2,12 @@
  * D10: Auto-upgrader — checks for and applies updates automatically.
  */
 import * as fs from 'fs/promises';
-import * as path from 'path';
 import * as os from 'os';
+import * as path from 'path';
+
+import { logger as rootLogger } from '../logger.js';
+
+const logger = rootLogger.child({ component: 'auto-upgrade' });
 
 export interface UpdateInfo {
   version: string;
@@ -56,13 +60,13 @@ export class AutoUpgrader {
       }
 
       const delay = target.getTime() - now.getTime();
-      console.log(`[AutoUpgrader] Next check at ${target.toISOString()} (in ${Math.round(delay / 1000)}s)`);
+      logger.info({ nextCheck: target.toISOString(), delaySec: Math.round(delay / 1000) }, 'Next upgrade check scheduled');
 
       setTimeout(async () => {
         try {
           await this.check();
         } catch (err) {
-          console.error('[AutoUpgrader] Check error:', err);
+          logger.error({ err }, 'Upgrade check error');
         }
         checkInterval(); // Schedule next check
       }, delay);
@@ -73,23 +77,23 @@ export class AutoUpgrader {
   }
 
   async check(): Promise<boolean> {
-    console.log(`[AutoUpgrader] Checking for updates (current: ${this.currentVersion})`);
+    logger.info({ currentVersion: this.currentVersion }, 'Checking for updates');
 
     try {
       const updateInfo = await this.fetchUpdateInfo();
 
       if (!updateInfo) {
-        console.log('[AutoUpgrader] Already on latest version');
+        logger.info('Already on latest version');
         return false;
       }
 
-      console.log(`[AutoUpgrader] Update available: ${updateInfo.version}`);
+      logger.info({ newVersion: updateInfo.version }, 'Update available');
       await this.download(updateInfo);
       await this.apply(updateInfo);
 
       return true;
     } catch (err) {
-      console.error('[AutoUpgrader] Update failed:', err);
+      logger.error({ err }, 'Update failed');
       await this.rollback();
       throw err;
     }
@@ -121,7 +125,7 @@ export class AutoUpgrader {
   }
 
   private async download(updateInfo: UpdateInfo): Promise<string> {
-    console.log(`[AutoUpgrader] Downloading ${updateInfo.version} from ${updateInfo.url}`);
+    logger.info({ version: updateInfo.version, url: updateInfo.url }, 'Downloading update');
 
     const response = await fetch(updateInfo.url);
     if (!response.ok) {
@@ -146,12 +150,12 @@ export class AutoUpgrader {
     const tmpPath = path.join(this.dataDir, `bridge-${updateInfo.version}.tmp`);
     await fs.writeFile(tmpPath, Buffer.from(buffer));
 
-    console.log(`[AutoUpgrader] Downloaded to ${tmpPath}`);
+    logger.info({ tmpPath }, 'Download complete');
     return tmpPath;
   }
 
   private async apply(updateInfo: UpdateInfo): Promise<void> {
-    console.log(`[AutoUpgrader] Applying update ${updateInfo.version}`);
+    logger.info({ version: updateInfo.version }, 'Applying update');
 
     // Backup current binary
     await this.backupCurrent();
@@ -175,7 +179,7 @@ export class AutoUpgrader {
     // Clean up temp file
     await fs.unlink(tmpPath);
 
-    console.log(`[AutoUpgrader] Update applied. Restart required.`);
+    logger.info('Update applied — restart required');
 
     // In a real scenario, trigger process restart
     // For safety, log and require manual verification
@@ -190,11 +194,11 @@ export class AutoUpgrader {
     await fs.mkdir(this.backupDir, { recursive: true });
     await fs.copyFile(execPath, backupPath);
 
-    console.log(`[AutoUpgrader] Current version backed up to ${backupPath}`);
+    logger.info({ backupPath }, 'Current version backed up');
   }
 
   async rollback(): Promise<void> {
-    console.log('[AutoUpgrader] Rolling back to previous version');
+    logger.info('Rolling back to previous version');
 
     try {
       const backups = await fs.readdir(this.backupDir);
@@ -213,9 +217,9 @@ export class AutoUpgrader {
         await fs.chmod(execPath, 0o755);
       }
 
-      console.log(`[AutoUpgrader] Rolled back to ${latest}`);
+      logger.info({ restoredFrom: latest }, 'Rollback complete');
     } catch (err) {
-      console.error('[AutoUpgrader] Rollback failed:', err);
+      logger.error({ err }, 'Rollback failed');
     }
   }
 

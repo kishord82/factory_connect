@@ -2,10 +2,11 @@
  * Tests for BankExtractor: bank transactions and account details.
  */
 
+import { FcError } from '@fc/shared';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+
 import { BankExtractor } from './bank-extractor.js';
 import type { TallyConfig } from './base-extractor.js';
-import { FcError } from '@fc/shared';
 
 describe('BankExtractor', () => {
   let extractor: BankExtractor;

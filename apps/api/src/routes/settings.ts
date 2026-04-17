@@ -3,14 +3,16 @@
  * Provides tenant-scoped settings management for the portal Settings page.
  */
 
+import type { PoolClient } from '@fc/database';
+import { withTenantClient, withTenantTransaction, findMany, paginatedQuery, insertOne } from '@fc/database';
+import { FcError } from '@fc/shared';
 import { Router } from 'express';
 import { z } from 'zod';
-import { FcError } from '@fc/shared';
+
 import { authenticate } from '../middleware/auth.js';
 import { tenantContext, getRequestContext } from '../middleware/tenant-context.js';
 import { validate } from '../middleware/validate.js';
-import type { PoolClient } from '@fc/database';
-import { withTenantClient, withTenantTransaction, findMany, paginatedQuery, insertOne } from '@fc/database';
+
 
 export const settingsRouter = Router();
 settingsRouter.use(authenticate, tenantContext);

@@ -1,9 +1,10 @@
 /**
  * B19: Notification routes.
  */
+import { PaginationSchema } from '@fc/shared';
 import { Router } from 'express';
 import { z } from 'zod';
-import { PaginationSchema } from '@fc/shared';
+
 import { authenticate } from '../middleware/auth.js';
 import { tenantContext, getRequestContext } from '../middleware/tenant-context.js';
 import { validate, getValidatedQuery } from '../middleware/validate.js';

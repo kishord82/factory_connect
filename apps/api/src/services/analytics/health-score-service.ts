@@ -3,9 +3,9 @@
  * AI-powered risk scoring for compliance clients
  */
 
-import type { CaRequestContext } from '@fc/shared';
 import { withTenantTransaction, withTenantClient, insertOne, findOne, findMany } from '@fc/database';
 import type { PoolClient } from '@fc/database';
+import type { CaRequestContext } from '@fc/shared';
 
 // ═══════════════════════════════════════════════════════════════════
 // TYPES
@@ -257,7 +257,7 @@ export async function calculateHealthScore(
   ctx: CaRequestContext,
   clientId: string,
 ): Promise<ClientHealthScore> {
-  return withTenantTransaction(ctx as any, async (client: PoolClient) => {
+  return withTenantTransaction(ctx, async (client: PoolClient) => {
     const compliance = await calculateComplianceScore(client, ctx.caFirmId, clientId);
     const financial = await calculateFinancialScore(client, ctx.caFirmId, clientId);
     const dataQuality = await calculateDataQualityScore(client, ctx.caFirmId, clientId);
@@ -265,7 +265,7 @@ export async function calculateHealthScore(
 
     const { score: overall, riskLevel } = calculateOverallScore(compliance, financial, dataQuality, responsiveness);
 
-    const result = await insertOne<ClientHealthScore>(
+    return await insertOne<ClientHealthScore>(
       client,
       `INSERT INTO ca_health_scores (
         ca_firm_id, client_id, overall_score, compliance_score,
@@ -279,8 +279,6 @@ export async function calculateHealthScore(
       RETURNING *`,
       [ctx.caFirmId, clientId, overall, compliance, financial, dataQuality, responsiveness, riskLevel],
     );
-
-    return result;
   });
 }
 
@@ -291,7 +289,7 @@ export async function calculateHealthScore(
 export async function batchCalculateHealthScores(
   ctx: CaRequestContext,
 ): Promise<{ calculated: number; errors: number }> {
-  return withTenantClient(ctx as any, async (client: PoolClient) => {
+  return withTenantClient(ctx, async (client: PoolClient) => {
     const clients = await findMany<{ id: string }>(
       client,
       `SELECT id FROM ca_clients WHERE ca_firm_id = $1`,
@@ -323,7 +321,7 @@ export async function getHealthScoreHistory(
   clientId: string,
   months = 6,
 ): Promise<HealthScoreHistory[]> {
-  return withTenantClient(ctx as any, async (client: PoolClient) => {
+  return withTenantClient(ctx, async (client: PoolClient) => {
     const records = await findMany<{
       created_at: Date;
       overall_score: number;
@@ -368,7 +366,7 @@ export async function getAtRiskClients(
   ctx: CaRequestContext,
   threshold = 5.0,
 ): Promise<Array<{ id: string; name: string; score: number; riskLevel: string }>> {
-  return withTenantClient(ctx as any, async (client: PoolClient) => {
+  return withTenantClient(ctx, async (client: PoolClient) => {
     const results = await findMany<{
       id: string;
       name: string;
@@ -399,7 +397,7 @@ export async function getAtRiskClients(
 // ═══════════════════════════════════════════════════════════════════
 
 export async function getHealthDashboard(ctx: CaRequestContext): Promise<HealthDashboard> {
-  return withTenantClient(ctx as any, async (client: PoolClient) => {
+  return withTenantClient(ctx, async (client: PoolClient) => {
     const scores = await findMany<{
       overall_score: number;
       risk_level: string;

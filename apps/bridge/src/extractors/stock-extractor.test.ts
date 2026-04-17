@@ -2,10 +2,11 @@
  * Tests for StockExtractor: stock items, groups, godowns, and movements.
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { StockExtractor } from './stock-extractor.js';
-import type { TallyConfig } from './base-extractor.js';
 import { FcError } from '@fc/shared';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+import type { TallyConfig } from './base-extractor.js';
+import { StockExtractor } from './stock-extractor.js';
 
 describe('StockExtractor', () => {
   let extractor: StockExtractor;

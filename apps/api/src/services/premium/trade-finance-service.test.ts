@@ -2,8 +2,8 @@
  * F8: Trade Finance Service Tests
  */
 
-import { describe, it, expect } from 'vitest';
 import { FcError } from '@fc/shared';
+import { describe, it, expect } from 'vitest';
 
 describe('Trade Finance Service', () => {
   describe('listEligibleInvoices', () => {

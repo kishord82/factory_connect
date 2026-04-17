@@ -2,14 +2,15 @@
  * B16: Calendar + escalation routes.
  */
 
+import type { PoolClient } from '@fc/database';
+import { withTenantTransaction, withTenantClient, insertOne, paginatedQuery } from '@fc/database';
+import { PaginationSchema } from '@fc/shared';
 import { Router } from 'express';
 import { z } from 'zod';
-import { PaginationSchema } from '@fc/shared';
+
 import { authenticate } from '../middleware/auth.js';
 import { tenantContext, getRequestContext } from '../middleware/tenant-context.js';
 import { validate, getValidatedQuery } from '../middleware/validate.js';
-import type { PoolClient } from '@fc/database';
-import { withTenantTransaction, withTenantClient, insertOne, paginatedQuery } from '@fc/database';
 import { parsePagination, buildSearchWhere, buildOrderBy } from '../utils/pagination.js';
 
 export const calendarRouter = Router();

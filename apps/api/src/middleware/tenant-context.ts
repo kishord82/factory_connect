@@ -4,9 +4,9 @@
  * for database RLS via RequestContext.
  */
 
-import type { Request, Response, NextFunction } from 'express';
 import { FcError } from '@fc/shared';
 import type { RequestContext } from '@fc/shared';
+import type { Request, Response, NextFunction } from 'express';
 
 /**
  * Build RequestContext from the authenticated request.

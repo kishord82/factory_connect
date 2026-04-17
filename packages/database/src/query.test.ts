@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
+
 import { buildWhereClause } from './query.js';
 
 describe('Query Helpers', () => {

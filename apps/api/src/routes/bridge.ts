@@ -2,14 +2,16 @@
  * D: Bridge agents route — Remote agent management and health status.
  */
 
+import type { PoolClient } from '@fc/database';
+import { withTenantClient, paginatedQuery } from '@fc/database';
+import { PaginationSchema } from '@fc/shared';
 import { Router } from 'express';
+
 import { authenticate } from '../middleware/auth.js';
 import { tenantContext, getRequestContext } from '../middleware/tenant-context.js';
 import { validate } from '../middleware/validate.js';
-import type { PoolClient } from '@fc/database';
-import { withTenantClient, paginatedQuery } from '@fc/database';
 import { parsePagination, buildOrderBy } from '../utils/pagination.js';
-import { PaginationSchema } from '@fc/shared';
+
 
 export const bridgeRouter = Router();
 bridgeRouter.use(authenticate, tenantContext);

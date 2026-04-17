@@ -3,9 +3,9 @@
  * Validates request body, query, and params against Zod schemas.
  */
 
+import { FcError } from '@fc/shared';
 import type { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { FcError } from '@fc/shared';
 
 interface ValidationSchemas {
   body?: z.ZodTypeAny;

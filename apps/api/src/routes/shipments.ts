@@ -2,9 +2,10 @@
  * B8: Shipment routes.
  */
 
+import { CanonicalShipmentCreateSchema, PaginationSchema } from '@fc/shared';
 import { Router } from 'express';
 import { z } from 'zod';
-import { CanonicalShipmentCreateSchema, PaginationSchema } from '@fc/shared';
+
 import { authenticate } from '../middleware/auth.js';
 import { tenantContext, getRequestContext } from '../middleware/tenant-context.js';
 import { validate, getValidatedQuery, getValidatedParams } from '../middleware/validate.js';

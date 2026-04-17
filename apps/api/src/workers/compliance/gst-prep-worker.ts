@@ -5,11 +5,12 @@
  * Processes GSTR-1 and GSTR-3B filings with exception detection
  */
 
-import { Worker, type Job } from 'bullmq';
 import { createLogger } from '@fc/observability';
 import type { CaRequestContext } from '@fc/shared';
-import { prepareGstr1, prepareGstr3b } from '../../services/compliance/gst-service.js';
+import { Worker, type Job } from 'bullmq';
+
 import { createException } from '../../services/compliance/exception-service.js';
+import { prepareGstr1, prepareGstr3b } from '../../services/compliance/gst-service.js';
 
 const logger = createLogger('gst-prep-worker');
 

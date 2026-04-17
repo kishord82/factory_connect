@@ -3,8 +3,6 @@
  * Manages document requests, verification, and reminder scheduling.
  */
 
-import type { RequestContext } from '@fc/shared';
-import { FcError } from '@fc/shared';
 import {
   withTenantTransaction,
   withTenantClient,
@@ -16,6 +14,8 @@ import {
 } from '@fc/database';
 import type { PaginatedResult, PoolClient } from '@fc/database';
 import { createLogger } from '@fc/observability';
+import { FcError } from '@fc/shared';
+import type { CaRequestContext } from '@fc/shared';
 
 const logger = createLogger('doc-request-service');
 
@@ -70,7 +70,7 @@ interface DocumentRequestFilters {
  * Sends initial notification via WhatsApp/email.
  */
 export async function createDocumentRequest(
-  ctx: RequestContext,
+  ctx: CaRequestContext,
   data: DocumentRequestCreateInput,
 ): Promise<DocumentRequest> {
   return withTenantTransaction(ctx, async (client: PoolClient) => {
@@ -78,7 +78,7 @@ export async function createDocumentRequest(
     const clientExists = await findOne<{ id: string }>(
       client,
       `SELECT id FROM clients WHERE ca_firm_id = $1 AND id = $2`,
-      [(ctx as any).caFirmId, data.client_id],
+      [ctx.caFirmId, data.client_id],
     );
 
     if (!clientExists) {
@@ -98,7 +98,7 @@ export async function createDocumentRequest(
               last_reminder_at, max_reminders, created_at, updated_at
        FROM compliance.document_requests
        WHERE ca_firm_id = $1 AND client_id = $2 AND document_type = $3 AND period = $4`,
-      [(ctx as any).caFirmId, data.client_id, data.document_type, data.period],
+      [ctx.caFirmId, data.client_id, data.document_type, data.period],
     );
 
     if (existing) {
@@ -118,7 +118,7 @@ export async function createDocumentRequest(
       ) VALUES ($1, $2, $3, $4, $5, $6, 'sent', 0, 3)
       RETURNING *`,
       [
-        (ctx as any).caFirmId,
+        ctx.caFirmId,
         data.client_id,
         data.document_type,
         data.period,
@@ -140,14 +140,14 @@ export async function createDocumentRequest(
  * List document requests with pagination and filters.
  */
 export async function listDocumentRequests(
-  ctx: RequestContext,
+  ctx: CaRequestContext,
   filters: DocumentRequestFilters = {},
   page: number = 1,
   pageSize: number = 20,
 ): Promise<PaginatedResult<DocumentRequest>> {
   return withTenantClient(ctx, async (client: PoolClient) => {
     const dbFilters: Record<string, unknown> = {
-      ca_firm_id: (ctx as any).caFirmId,
+      ca_firm_id: ctx.caFirmId,
     };
 
     if (filters.status) dbFilters.status = filters.status;
@@ -176,7 +176,7 @@ export async function listDocumentRequests(
  * Mark a document request as verified.
  */
 export async function verifyDocument(
-  ctx: RequestContext,
+  ctx: CaRequestContext,
   requestId: string,
   verifiedBy: string,
 ): Promise<DocumentRequest> {
@@ -188,7 +188,7 @@ export async function verifyDocument(
               last_reminder_at, max_reminders, created_at, updated_at
        FROM compliance.document_requests
        WHERE id = $1 AND ca_firm_id = $2`,
-      [requestId, (ctx as any).caFirmId],
+      [requestId, ctx.caFirmId],
     );
 
     if (!existing) {
@@ -238,7 +238,7 @@ export async function verifyDocument(
  * - reminder_count < max_reminders
  * - (last_reminder_at IS NULL OR last_reminder_at < NOW() - 24 hours)
  */
-export async function getOverdueRequests(ctx: RequestContext): Promise<DocumentRequest[]> {
+export async function getOverdueRequests(ctx: CaRequestContext): Promise<DocumentRequest[]> {
   return withTenantClient(ctx, async (client: PoolClient) => {
     return findMany<DocumentRequest>(
       client,
@@ -252,7 +252,7 @@ export async function getOverdueRequests(ctx: RequestContext): Promise<DocumentR
          AND reminder_count < max_reminders
          AND (last_reminder_at IS NULL OR last_reminder_at < NOW() - INTERVAL '24 hours')
        ORDER BY due_date ASC`,
-      [(ctx as any).caFirmId],
+      [ctx.caFirmId],
     );
   });
 }
@@ -261,7 +261,7 @@ export async function getOverdueRequests(ctx: RequestContext): Promise<DocumentR
  * Update document request status and reminder tracking.
  */
 export async function updateDocumentRequest(
-  ctx: RequestContext,
+  ctx: CaRequestContext,
   requestId: string,
   updates: {
     status?: string;
@@ -277,7 +277,7 @@ export async function updateDocumentRequest(
               last_reminder_at, max_reminders, created_at, updated_at
        FROM compliance.document_requests
        WHERE id = $1 AND ca_firm_id = $2`,
-      [requestId, (ctx as any).caFirmId],
+      [requestId, ctx.caFirmId],
     );
 
     if (!existing) {
@@ -311,13 +311,11 @@ export async function updateDocumentRequest(
     sets.push('updated_at = NOW()');
     values.push(requestId);
 
-    const updated = await insertOne<DocumentRequest>(
+    return await insertOne<DocumentRequest>(
       client,
       `UPDATE document_requests SET ${sets.join(', ')} WHERE id = $${idx} RETURNING *`,
       values,
     );
-
-    return updated;
   });
 }
 
@@ -326,7 +324,7 @@ export async function updateDocumentRequest(
  * Useful for periodic batch document collection campaigns.
  */
 export async function bulkCreateRequests(
-  ctx: RequestContext,
+  ctx: CaRequestContext,
   clientIds: string[],
   requestType: string,
   description: string,
@@ -364,7 +362,7 @@ export async function bulkCreateRequests(
 /**
  * Get collection dashboard stats.
  */
-export async function getCollectionDashboard(ctx: RequestContext): Promise<DocumentCollectionDashboard> {
+export async function getCollectionDashboard(ctx: CaRequestContext): Promise<DocumentCollectionDashboard> {
   return withTenantClient(ctx, async (client: PoolClient) => {
     const result = await client.query<{
       status: string;
@@ -372,7 +370,7 @@ export async function getCollectionDashboard(ctx: RequestContext): Promise<Docum
     }>(
       `SELECT status, COUNT(*) as count FROM document_requests
        WHERE ca_firm_id = $1 GROUP BY status`,
-      [(ctx as any).caFirmId],
+      [ctx.caFirmId],
     );
 
     const counts = new Map<string, number>();
@@ -383,7 +381,7 @@ export async function getCollectionDashboard(ctx: RequestContext): Promise<Docum
     // Get total count
     const totalResult = await client.query<{ total: number }>(
       `SELECT COUNT(*) as total FROM document_requests WHERE ca_firm_id = $1`,
-      [(ctx as any).caFirmId],
+      [ctx.caFirmId],
     );
     const total = totalResult.rows[0]?.total || 0;
 
@@ -391,7 +389,7 @@ export async function getCollectionDashboard(ctx: RequestContext): Promise<Docum
     const overdueResult = await client.query<{ count: number }>(
       `SELECT COUNT(*) as count FROM document_requests
        WHERE ca_firm_id = $1 AND status = 'sent' AND due_date < NOW()`,
-      [(ctx as any).caFirmId],
+      [ctx.caFirmId],
     );
     const overdueCount = overdueResult.rows[0]?.count || 0;
 
@@ -410,7 +408,7 @@ export async function getCollectionDashboard(ctx: RequestContext): Promise<Docum
 /**
  * For internal use by auto-chase worker: increment reminder count and update timestamp.
  */
-export async function incrementReminder(ctx: RequestContext, requestId: string): Promise<DocumentRequest> {
+export async function incrementReminder(ctx: CaRequestContext, requestId: string): Promise<DocumentRequest> {
   return withTenantTransaction(ctx, async (client: PoolClient) => {
     const existing = await findOne<DocumentRequest>(
       client,
@@ -419,7 +417,7 @@ export async function incrementReminder(ctx: RequestContext, requestId: string):
               last_reminder_at, max_reminders, created_at, updated_at
        FROM compliance.document_requests
        WHERE id = $1 AND ca_firm_id = $2`,
-      [requestId, (ctx as any).caFirmId],
+      [requestId, ctx.caFirmId],
     );
 
     if (!existing) {

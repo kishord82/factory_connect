@@ -3,9 +3,9 @@
  * Catches all errors, formats as structured FC_ERR responses.
  */
 
-import type { Request, Response, NextFunction } from 'express';
-import { FcError } from '@fc/shared';
 import { createLogger } from '@fc/observability';
+import { FcError } from '@fc/shared';
+import type { Request, Response, NextFunction } from 'express';
 
 const logger = createLogger('api');
 

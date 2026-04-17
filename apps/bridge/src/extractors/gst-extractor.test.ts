@@ -2,10 +2,11 @@
  * Tests for GstExtractor: sales register, purchase register, HSN summary, B2B summary.
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { GstExtractor } from './gst-extractor.js';
-import type { TallyConfig } from './base-extractor.js';
 import { FcError } from '@fc/shared';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+import type { TallyConfig } from './base-extractor.js';
+import { GstExtractor } from './gst-extractor.js';
 
 describe('GstExtractor', () => {
   let extractor: GstExtractor;

@@ -2,28 +2,29 @@
  * Bridge Agent — on-premises ERP connector for FactoryConnect.
  * Integrates: config → OTP bootstrap → ERP adapter → cloud sync → WebSocket tunnel → health probes → auto-upgrade.
  */
+import { OTPBootstrap } from './auth/otp-bootstrap.js';
 import { loadBridgeConfig } from './config.js';
 import { createErpAdapter } from './erp/index.js';
-import { AdaptivePoller } from './polling/adaptive-poller.js';
-import { CloudSync } from './sync/cloud-sync.js';
-import { HealthReporter } from './health/health-reporter.js';
 import { HealthProbeManager } from './health/health-probes.js';
-import { WebSocketTunnel } from './tunnel/websocket-tunnel.js';
-import { OTPBootstrap } from './auth/otp-bootstrap.js';
-import { AutoUpgrader } from './upgrade/auto-upgrade.js';
+import { HealthReporter } from './health/health-reporter.js';
+import { logger } from './logger.js';
+import { AdaptivePoller } from './polling/adaptive-poller.js';
 import { initializeQueue } from './queue/local-queue.js';
+import { CloudSync } from './sync/cloud-sync.js';
+import { WebSocketTunnel } from './tunnel/websocket-tunnel.js';
+import { AutoUpgrader } from './upgrade/auto-upgrade.js';
 
 const BRIDGE_VERSION = '1.0.0';
 
 async function main(): Promise<void> {
   const config = loadBridgeConfig();
-  console.log(`[Bridge] Starting bridge ${config.BRIDGE_ID} for factory ${config.FACTORY_ID}`);
-  console.log(`[Bridge] Version: ${BRIDGE_VERSION}`);
-  console.log(`[Bridge] ERP type: ${config.ERP_TYPE}, host: ${config.ERP_HOST}:${config.ERP_PORT}`);
+  logger.info({ bridgeId: config.BRIDGE_ID, factoryId: config.FACTORY_ID }, 'Starting bridge');
+  logger.info({ version: BRIDGE_VERSION }, 'Bridge version');
+  logger.info({ erpType: config.ERP_TYPE, host: config.ERP_HOST, port: config.ERP_PORT }, 'ERP config');
 
   // Initialize local queue
   const queue = await initializeQueue(config.DATA_DIR);
-  console.log('[Bridge] Local queue initialized');
+  logger.info('Local queue initialized');
 
   // Initialize OTP bootstrap
   const otpBootstrap = new OTPBootstrap({
@@ -36,16 +37,16 @@ async function main(): Promise<void> {
   if (!apiToken || apiToken === 'BOOTSTRAP') {
     const isBootstrapped = await otpBootstrap.isBootstrapped();
     if (!isBootstrapped) {
-      console.log('[Bridge] Not bootstrapped. Requesting OTP...');
+      logger.info('Not bootstrapped. Requesting OTP...');
       const messageId = await otpBootstrap.requestOTP(config.FACTORY_ID);
-      console.log(`[Bridge] OTP sent: ${messageId}`);
+      logger.info({ messageId }, 'OTP sent');
       throw new Error('Bootstrap required — OTP sent to factory admin. Re-run with verified OTP.');
     } else {
       apiToken = (await otpBootstrap.getToken()) || '';
       if (!apiToken) {
         throw new Error('Bootstrap token file found but empty');
       }
-      console.log('[Bridge] Using bootstrapped token');
+      logger.info('Using bootstrapped token');
     }
   }
 
@@ -55,7 +56,7 @@ async function main(): Promise<void> {
     port: config.ERP_PORT,
   });
   await erp.connect();
-  console.log('[Bridge] ERP connected');
+  logger.info('ERP connected');
 
   // Create cloud sync
   const cloudSync = new CloudSync(config.API_BASE_URL, apiToken, config.FACTORY_ID);
@@ -149,7 +150,7 @@ async function main(): Promise<void> {
   setInterval(async () => {
     const report = await probeManager.runAllProbes();
     const status = report.overall === 'healthy' ? 'OK' : report.overall.toUpperCase();
-    console.log(`[Bridge] Health: ${status} (${report.probes.length} probes)`);
+    logger.info({ status, probeCount: report.probes.length }, 'Health check');
   }, 60000); // Every minute
 
   // Adaptive poller for ERP data
@@ -171,7 +172,7 @@ async function main(): Promise<void> {
       health.setCloudConnected(true);
       return drainResult.sent;
     } catch (err) {
-      console.error('[Bridge] Sync error:', err);
+      logger.error({ err }, 'Sync error');
       health.setCloudConnected(false);
       return 0;
     }
@@ -182,31 +183,31 @@ async function main(): Promise<void> {
   });
 
   await poller.start();
-  console.log(`[Bridge] Polling started (interval: ${config.POLL_INTERVAL_MS}ms)`);
+  logger.info({ intervalMs: config.POLL_INTERVAL_MS }, 'Polling started');
 
   // WebSocket tunnel to cloud
   const tunnel = new WebSocketTunnel();
   tunnel.onCommand(async (cmd) => {
-    console.log('[Bridge] Received command:', cmd.action);
+    logger.info({ action: cmd.action }, 'Received command');
     if (cmd.action === 'resync') {
-      console.log('[Bridge] Force resync requested');
+      logger.info('Force resync requested');
       // Could trigger immediate sync or clear last timestamp
     } else if (cmd.action === 'update_config') {
-      console.log('[Bridge] Config update requested:', cmd.payload);
+      logger.info({ payload: cmd.payload }, 'Config update requested');
       // In production: update config and persist
     } else if (cmd.action === 'restart') {
-      console.log('[Bridge] Restart requested');
+      logger.info('Restart requested');
       await shutdown(true); // Exit code 0 → process manager restarts
     }
   });
 
   tunnel.onStateChange((state) => {
-    console.log(`[Bridge] Tunnel state: ${state}`);
+    logger.info({ state }, 'Tunnel state changed');
   });
 
   try {
     await tunnel.connect(config.API_BASE_URL, apiToken);
-    console.log('[Bridge] WebSocket tunnel connected');
+    logger.info('WebSocket tunnel connected');
 
     // Send periodic health reports over tunnel
     setInterval(async () => {
@@ -221,12 +222,12 @@ async function main(): Promise<void> {
           };
           await tunnel.send('health_report', payload);
         } catch (err) {
-          console.error('[Bridge] Failed to send health report:', err);
+          logger.error({ err }, 'Failed to send health report');
         }
       }
     }, 60000); // Every minute
   } catch (err) {
-    console.warn('[Bridge] WebSocket connection failed (will retry):', err);
+    logger.warn({ err }, 'WebSocket connection failed (will retry)');
     // Tunnel will auto-reconnect, this is not fatal
   }
 
@@ -240,29 +241,29 @@ async function main(): Promise<void> {
     dataDir: config.DATA_DIR,
   });
   upgrader.scheduleDaily('02:00');
-  console.log('[Bridge] Auto-upgrade check scheduled daily at 02:00');
+  logger.info('Auto-upgrade check scheduled daily at 02:00');
 
   // Heartbeat log
   setInterval(() => {
     const healthStatus = health.getStatus();
     const metrics = cloudSync.getMetrics();
-    console.log(
-      `[Bridge] Heartbeat | Health: ${healthStatus.status} | ` +
-      `Queue: ${healthStatus.queue_depth} | ` +
-      `Synced: ${metrics.itemsSynced} | ` +
-      `Tunnel: ${tunnel.getState()}`
-    );
+    logger.info({
+      health: healthStatus.status,
+      queueDepth: healthStatus.queue_depth,
+      itemsSynced: metrics.itemsSynced,
+      tunnelState: tunnel.getState(),
+    }, 'Heartbeat');
   }, config.HEARTBEAT_INTERVAL_MS);
 
   // Graceful shutdown
   const shutdown = async (restart = false): Promise<void> => {
-    console.log(`[Bridge] Shutting down${restart ? ' for restart' : ''}...`);
+    logger.info({ restart }, 'Shutting down');
     poller.stop();
     await tunnel.disconnect();
     await erp.disconnect();
     await queue.persist();
-    console.log('[Bridge] Shutdown complete');
-    process.exit(restart ? 0 : 0);
+    logger.info('Shutdown complete');
+    process.exit(0);
   };
 
   process.on('SIGINT', () => {
@@ -273,7 +274,7 @@ async function main(): Promise<void> {
   });
 }
 
-main().catch((err) => {
-  console.error('[Bridge] Fatal error:', err);
+main().catch((err: unknown) => {
+  logger.error({ err }, 'Fatal error');
   process.exit(1);
 });

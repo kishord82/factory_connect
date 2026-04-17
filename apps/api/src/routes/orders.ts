@@ -2,13 +2,14 @@
  * B7: Order routes — POST/GET orders, confirmOrder.
  */
 
-import { Router } from 'express';
 import { CanonicalOrderCreateSchema, CanonicalOrderUpdateSchema, OrderListQuerySchema } from '@fc/shared';
+import { Router } from 'express';
+import { z } from 'zod';
+
 import { authenticate } from '../middleware/auth.js';
+import { idempotency } from '../middleware/idempotency.js';
 import { tenantContext, getRequestContext } from '../middleware/tenant-context.js';
 import { validate, getValidatedQuery, getValidatedParams } from '../middleware/validate.js';
-import { idempotency } from '../middleware/idempotency.js';
-import { z } from 'zod';
 import * as orderService from '../services/order-service.js';
 
 export const orderRouter = Router();

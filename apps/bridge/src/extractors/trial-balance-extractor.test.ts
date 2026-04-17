@@ -2,10 +2,11 @@
  * Tests for TrialBalanceExtractor: trial balance for any date range.
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { TrialBalanceExtractor } from './trial-balance-extractor.js';
-import type { TallyConfig } from './base-extractor.js';
 import { FcError } from '@fc/shared';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+import type { TallyConfig } from './base-extractor.js';
+import { TrialBalanceExtractor } from './trial-balance-extractor.js';
 
 describe('TrialBalanceExtractor', () => {
   let extractor: TrialBalanceExtractor;

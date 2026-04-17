@@ -1,8 +1,8 @@
 /**
  * B22: Rate limiter middleware — token bucket per tenant.
  */
-import type { Request, Response, NextFunction } from 'express';
 import { FcError } from '@fc/shared';
+import type { Request, Response, NextFunction } from 'express';
 
 interface TokenBucket {
   tokens: number;

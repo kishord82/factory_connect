@@ -5,11 +5,12 @@
  * Processes reconciliation sessions and detects mismatches
  */
 
-import { Worker, type Job } from 'bullmq';
 import { createLogger } from '@fc/observability';
 import type { CaRequestContext } from '@fc/shared';
-import { reconcileTds } from '../../services/compliance/tds-service.js';
+import { Worker, type Job } from 'bullmq';
+
 import { createException } from '../../services/compliance/exception-service.js';
+import { reconcileTds } from '../../services/compliance/tds-service.js';
 
 const logger = createLogger('tds-recon-worker');
 

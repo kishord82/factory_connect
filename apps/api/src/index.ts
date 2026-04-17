@@ -3,10 +3,11 @@
  * Loads config, initializes DB pool, starts Express server.
  */
 
-import { loadConfig } from './config.js';
-import { createApp } from './app.js';
 import { createPool } from '@fc/database';
 import { createLogger } from '@fc/observability';
+
+import { createApp } from './app.js';
+import { loadConfig } from './config.js';
 
 async function main(): Promise<void> {
   const config = loadConfig();

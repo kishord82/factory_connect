@@ -2,9 +2,9 @@
  * B19-B20: Notification service — in-memory event bus + notification creation.
  */
 import type { RequestContext } from '@fc/shared';
-import type { PoolClient } from '@fc/database';
 import { withTenantTransaction, withTenantClient, insertOne, paginatedQuery } from '@fc/database';
-import type { PaginatedResult } from '@fc/database';
+import type { PoolClient , PaginatedResult } from '@fc/database';
+
 import { buildSearchWhere, buildOrderBy } from '../utils/pagination.js';
 
 const NOTIFICATION_SORT_COLUMNS = ['created_at', 'severity', 'channel'];

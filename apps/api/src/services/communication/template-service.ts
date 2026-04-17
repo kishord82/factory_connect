@@ -3,11 +3,11 @@
  * Handles listing, creating, updating templates with variable substitution.
  */
 
-import type { RequestContext } from '@fc/shared';
 import type { PoolClient } from '@fc/database';
-import { FcError } from '@fc/shared';
 import { withTenantTransaction, withTenantClient, insertOne, findOne } from '@fc/database';
 import { createLogger } from '@fc/observability';
+import { FcError } from '@fc/shared';
+import type { CaRequestContext } from '@fc/shared';
 
 const logger = createLogger('template-service');
 
@@ -44,7 +44,7 @@ interface TemplateFilters {
  * Firm-specific templates override system defaults with same name.
  */
 export async function listTemplates(
-  ctx: RequestContext,
+  ctx: CaRequestContext,
   filters: TemplateFilters = {},
 ): Promise<DocumentTemplate[]> {
   return withTenantClient(ctx, async (client: PoolClient) => {
@@ -55,7 +55,7 @@ export async function listTemplates(
       FROM compliance.document_templates
       WHERE ca_firm_id = $1 OR ca_firm_id IS NULL
     `;
-    const params: unknown[] = [(ctx as any).caFirmId];
+    const params: unknown[] = [ctx.caFirmId];
     let idx = 2;
 
     if (filters.template_type) {
@@ -81,7 +81,7 @@ export async function listTemplates(
  * Create a firm-specific template.
  */
 export async function createTemplate(
-  ctx: RequestContext,
+  ctx: CaRequestContext,
   data: TemplateCreateInput,
 ): Promise<DocumentTemplate> {
   // Validate: no duplicate names for same type+channel
@@ -92,7 +92,7 @@ export async function createTemplate(
               variables, is_system_default, created_at, updated_at
        FROM compliance.document_templates
        WHERE ca_firm_id = $1 AND name = $2 AND template_type = $3 AND channel = $4`,
-      [(ctx as any).caFirmId, data.name, data.template_type, data.channel],
+      [ctx.caFirmId, data.name, data.template_type, data.channel],
     );
   });
 
@@ -113,7 +113,7 @@ export async function createTemplate(
       ) VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING *`,
       [
-        (ctx as any).caFirmId,
+        ctx.caFirmId,
         data.name,
         data.template_type,
         data.channel,
@@ -129,7 +129,7 @@ export async function createTemplate(
  * Update an existing template.
  */
 export async function updateTemplate(
-  ctx: RequestContext,
+  ctx: CaRequestContext,
   templateId: string,
   data: Partial<TemplateCreateInput>,
 ): Promise<DocumentTemplate> {
@@ -140,7 +140,7 @@ export async function updateTemplate(
               variables, is_system_default, created_at, updated_at
        FROM compliance.document_templates
        WHERE id = $1 AND ca_firm_id = $2`,
-      [templateId, (ctx as any).caFirmId],
+      [templateId, ctx.caFirmId],
     );
   });
 
@@ -225,7 +225,7 @@ export function renderTemplate(template: DocumentTemplate, variableValues: Recor
  * System defaults have ca_firm_id IS NULL.
  */
 export async function getDefaultTemplate(
-  ctx: RequestContext,
+  ctx: CaRequestContext,
   templateType: string,
   channel: string,
 ): Promise<DocumentTemplate | null> {
@@ -246,7 +246,7 @@ export async function getDefaultTemplate(
  * Get template by name (searches firm-specific first, then system defaults).
  */
 export async function getTemplateByName(
-  ctx: RequestContext,
+  ctx: CaRequestContext,
   templateName: string,
 ): Promise<DocumentTemplate | null> {
   return withTenantClient(ctx, async (client: PoolClient) => {
@@ -257,7 +257,7 @@ export async function getTemplateByName(
        FROM compliance.document_templates
        WHERE (ca_firm_id = $1 OR ca_firm_id IS NULL) AND name = $2
        ORDER BY ca_firm_id DESC LIMIT 1`,
-      [(ctx as any).caFirmId, templateName],
+      [ctx.caFirmId, templateName],
     );
   });
 }

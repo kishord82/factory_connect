@@ -2,10 +2,11 @@
  * Tests for TdsExtractor: deductions, challans, and party summaries.
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { TdsExtractor } from './tds-extractor.js';
-import type { TallyConfig } from './base-extractor.js';
 import { FcError } from '@fc/shared';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+import type { TallyConfig } from './base-extractor.js';
+import { TdsExtractor } from './tds-extractor.js';
 
 describe('TdsExtractor', () => {
   let extractor: TdsExtractor;

@@ -2,8 +2,8 @@
  * F9: E-commerce Service Tests
  */
 
-import { describe, it, expect } from 'vitest';
 import { FcError } from '@fc/shared';
+import { describe, it, expect } from 'vitest';
 
 describe('E-commerce Service', () => {
   describe('reconcileMarketplace', () => {

@@ -3,17 +3,19 @@
  * Tests full saga progression with audit trail verification.
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import request from 'supertest';
-import { v4 as uuidv4 } from 'uuid';
+import { withTenantTransaction, withTenantClient, getPool } from '@fc/database';
 import type { RequestContext } from '@fc/shared';
 import {
   CanonicalOrderCreateSchema,
   LineItemCreateSchema,
   AddressSchema,
 } from '@fc/shared';
+import request from 'supertest';
+import { v4 as uuidv4 } from 'uuid';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+
 import { createApp } from '../../app.js';
-import { withTenantTransaction, withTenantClient, getPool } from '@fc/database';
+
 
 const app = createApp();
 

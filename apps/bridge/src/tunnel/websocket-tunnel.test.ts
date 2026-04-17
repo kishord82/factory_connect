@@ -2,12 +2,13 @@
  * WebSocket tunnel tests
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
 import { WebSocketTunnel } from './websocket-tunnel.js';
 
 describe('WebSocketTunnel', () => {
   let tunnel: WebSocketTunnel;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let wsServer: any = null;
+  const wsServer: any = null;
 
   beforeEach(() => {
     tunnel = new WebSocketTunnel();

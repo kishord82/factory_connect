@@ -4,9 +4,10 @@
  * requireFeature(flagName) checks both levels.
  */
 
-import type { Request, Response, NextFunction } from 'express';
-import { FcError } from '@fc/shared';
 import { getPool } from '@fc/database';
+import { FcError } from '@fc/shared';
+import type { Request, Response, NextFunction } from 'express';
+
 import { getRequestContext } from './tenant-context.js';
 
 /**

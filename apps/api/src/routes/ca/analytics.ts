@@ -3,10 +3,11 @@
  */
 
 import { Router } from 'express';
+import { z } from 'zod';
+
 import { authenticate } from '../../middleware/auth.js';
 import { caTenantContext, getCaRequestContext } from '../../middleware/ca-tenant-context.js';
 import { validate } from '../../middleware/validate.js';
-import { z } from 'zod';
 
 export const analyticsRouter = Router();
 
